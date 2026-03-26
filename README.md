@@ -293,67 +293,113 @@ Service 레이어에서 UPDATE 후 직접 INSERT해야 합니다.
 ## 파일구조 (권장)
 
 ```
-src/main/
-├── java/
-│   └── com/hrms/
-│       ├── controller/          # 서블릿, Dispatcher
-│       │   ├── employee/
-│       │   ├── payroll/
-│       │   ├── attendance/
-│       │   └── management/
-│       ├── service/            # 비즈니스 로직
-│       │   ├── employee/
-│       │   ├── payroll/
-│       │   ├── attendance/
-│       │   └── management/
-│       ├── dao/                # DB 접근
-│       │   ├── employee/
-│       │   ├── payroll/
-│       │   ├── attendance/
-│       │   └── management/
-│       ├── dto/                # DTO 객체
-│       │   ├── EmployeeDTO.java
-│       │   ├── PayrollDTO.java
-│       │   └── ...
-│       ├── util/               # 공통 유틸
-│       │   ├── DateUtil.java
-│       │   ├── SecurityUtil.java
-│       │   └── ValidationUtil.java
-│       └── exception/
-│           ├── DAOException.java
-│           └── ServiceException.java
+hrms-project/
 │
-└── webapp/
-    └── WEB-INF/
-        ├── views/              # JSP 파일 (기능별)
-        │   ├── employee/       # 직원 관리
-        │   │   ├── list.jsp    # 직원 목록
-        │   │   ├── detail.jsp  # 직원 상세
-        │   │   ├── form.jsp    # 직원 등록/수정
-        │   │   └── search.jsp  # 직원 검색
-        │   ├── payroll/        # 급여 관리
-        │   │   ├── list.jsp
-        │   │   ├── detail.jsp
-        │   │   └── slip.jsp
-        │   ├── attendance/     # 출퇴근 관리
-        │   ├── management/     # 관리자 기능
-        │   ├── common/         # 공통 (헤더, 푸터, 레이아웃)
-        │   │   ├── header.jsp
-        │   │   ├── footer.jsp
-        │   │   ├── sidebar.jsp
-        │   │   └── layout.jsp
-        │   └── error/
-        │       ├── 404.jsp
-        │       └── 500.jsp
-        ├── css/
-        │   ├── common.css
-        │   ├── employee.css
-        │   └── payroll.css
-        ├── js/
-        │   ├── common.js
-        │   ├── validation.js
-        │   └── ajax-handler.js
-        └── web.xml
+├── src/main/java/com/hrms/
+│   │
+│   ├── controller/              ← Servlet (요청 수신 → Service 호출 → JSP 전달)
+│   │   ├── DepartmentController.java
+│   │   ├── EmployeeController.java
+│   │   ├── PayrollController.java
+│   │   ├── AttendanceController.java
+│   │   └── LeaveController.java
+│   │
+│   ├── service/                 ← 비즈니스 로직 (예외처리, 트랜잭션)
+│   │   ├── DepartmentService.java
+│   │   ├── EmployeeService.java
+│   │   ├── PayrollService.java
+│   │   ├── AttendanceService.java
+│   │   └── LeaveService.java
+│   │
+│   ├── dao/                     ← DB 접근 (CRUD만, PreparedStatement 사용)
+│   │   ├── BaseDAO.java         ← 공통 JDBC 유틸리티
+│   │   ├── DepartmentDAO.java
+│   │   ├── EmployeeDAO.java
+│   │   ├── PayrollDAO.java
+│   │   ├── AttendanceDAO.java
+│   │   └── LeaveDAO.java
+│   │
+│   ├── dto/                     ← DTO (데이터 전달용)
+│   │   ├── DepartmentDTO.java
+│   │   ├── EmployeeDTO.java
+│   │   ├── PayrollDTO.java
+│   │   ├── AttendanceDTO.java
+│   │   ├── LeaveDTO.java
+│   │   └── ResponseDTO.java     ← 응답용 공통 DTO
+│   │
+│   ├── exception/               ← 사용자정의 예외
+│   │   ├── DAOException.java
+│   │   ├── ServiceException.java
+│   │   └── ValidationException.java
+│   │
+│   ├── util/
+│   │   ├── DBConnectionPool.java ← 커넥션 풀 관리
+│   │   ├── SecurityUtil.java    ← XSS 방지, 입력검증
+│   │   ├── DateUtil.java
+│   │   ├── Logger.java
+│   │   └── Constants.java
+│   │
+│   └── filter/                  ← 필터 (인증, 인코딩)
+│       ├── AuthFilter.java
+│       └── EncodingFilter.java
+│
+├── src/main/webapp/
+│   │
+│   ├── WEB-INF/
+│   │   │
+│   │   ├── views/               ← JSP 파일 (JSTL + EL만 사용)
+│   │   │   ├── common/
+│   │   │   │   ├── header.jsp
+│   │   │   │   ├── sidebar.jsp
+│   │   │   │   ├── footer.jsp
+│   │   │   │   └── layout.jsp
+│   │   │   │
+│   │   │   ├── employee/
+│   │   │   │   ├── list.jsp       (목록 조회)
+│   │   │   │   ├── detail.jsp     (상세 조회)
+│   │   │   │   ├── form.jsp       (등록/수정 폼)
+│   │   │   │   └── search.jsp     (검색)
+│   │   │   │
+│   │   │   ├── department/
+│   │   │   │   ├── list.jsp
+│   │   │   │   ├── form.jsp
+│   │   │   │   └── tree.jsp
+│   │   │   │
+│   │   │   ├── payroll/
+│   │   │   │   ├── list.jsp
+│   │   │   │   ├── detail.jsp
+│   │   │   │   └── slip.jsp
+│   │   │   │
+│   │   │   ├── attendance/
+│   │   │   │   ├── list.jsp
+│   │   │   │   └── daily.jsp
+│   │   │   │
+│   │   │   ├── leave/
+│   │   │   │   ├── request.jsp
+│   │   │   │   ├── list.jsp
+│   │   │   │   └── approval.jsp
+│   │   │   │
+│   │   │   └── error/
+│   │   │       ├── 404.jsp
+│   │   │       └── 500.jsp
+│   │   │
+│   │   ├── css/
+│   │   │   ├── common.css
+│   │   │   ├── employee.css
+│   │   │   ├── payroll.css
+│   │   │   └── layout.css
+│   │   │
+│   │   ├── js/
+│   │   │   ├── common.js
+│   │   │   ├── validation.js     ← 클라이언트 검증
+│   │   │   └── ajax.js
+│   │   │
+│   │   └── web.xml              ← 서블릿 매핑
+│   │
+│   └── index.jsp                ← 진입점
+│   
+│
+└── pom.xml (또는 build.gradle)
 ```
 
 ## 📄 관련 문서
