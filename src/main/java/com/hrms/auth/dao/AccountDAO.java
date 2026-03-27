@@ -1,15 +1,13 @@
 package com.hrms.auth.dao;
 
 import com.hrms.auth.dto.AccountDTO;
-import com.hrms.common.db.DBConnectionMgr;
+import com.hrms.util.DatabaseConnection; // 팀장님이 만든 클래스로 임포트 변경
 import java.sql.*;
 
 public class AccountDAO {
-    private DBConnectionMgr pool;
 
-    public AccountDAO() {
-        pool = DBConnectionMgr.getInstance();
-    }
+    // 생성자와 DBConnectionMgr 변수 제거 (static 메서드 사용)
+    public AccountDAO() {}
 
     public AccountDTO getAccountByUsername(String username) {
         Connection con = null;
@@ -17,7 +15,8 @@ public class AccountDAO {
         ResultSet rs = null;
         AccountDTO dto = null;
         try {
-            con = pool.getConnection();
+            // DatabaseConnection을 통한 커넥션 획득
+            con = DatabaseConnection.getConnection();
             String sql = "SELECT * FROM account WHERE username = ?";
             pstmt = con.prepareStatement(sql);
             pstmt.setString(1, username);
@@ -32,10 +31,13 @@ public class AccountDAO {
                 dto.setRole(rs.getString("role"));
                 dto.setIsActive(rs.getInt("is_active"));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            pool.freeConnection(con, pstmt, rs);
+            // 표준 자원 반납 (HikariCP 풀 반납)
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException e) {}
+            if (con != null) try { con.close(); } catch (SQLException e) {}
         }
         return dto;
     }
@@ -46,8 +48,7 @@ public class AccountDAO {
         ResultSet rs = null;
         String passwordHash = null;
         try {
-            con = pool.getConnection();
-            // 컬럼명이 'password_hash'이므로 수정
+            con = DatabaseConnection.getConnection();
             String sql = "SELECT password_hash FROM account WHERE username = ?";
             pstmt = con.prepareStatement(sql);
             pstmt.setString(1, userId);
@@ -56,10 +57,12 @@ public class AccountDAO {
             if (rs.next()) {
                 passwordHash = rs.getString("password_hash");
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            pool.freeConnection(con, pstmt, rs); // 풀링 반납
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException e) {}
+            if (con != null) try { con.close(); } catch (SQLException e) {}
         }
         return passwordHash;
     }
@@ -69,8 +72,7 @@ public class AccountDAO {
         PreparedStatement pstmt = null;
         boolean isSuccess = false;
         try {
-            con = pool.getConnection();
-            // 컬럼명 'password_hash'로 업데이트
+            con = DatabaseConnection.getConnection();
             String sql = "UPDATE account SET password_hash = ? WHERE username = ?";
             pstmt = con.prepareStatement(sql);
             pstmt.setString(1, newHashedPw);
@@ -78,10 +80,11 @@ public class AccountDAO {
             
             int result = pstmt.executeUpdate();
             if (result > 0) isSuccess = true;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            pool.freeConnection(con, pstmt); // ResultSet 없는 버전으로 반납
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException e) {}
+            if (con != null) try { con.close(); } catch (SQLException e) {}
         }
         return isSuccess;
     }
