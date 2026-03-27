@@ -5,6 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Insert title here</title>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>
 
@@ -14,7 +15,7 @@
     <div class="nav-group open">
       <div class="nav-group-header" onclick="toggleAccordion(this)">공통·인증</div>
       <div class="nav-group-content">
-        <a href="/main" class="nav-item active">메인 대시보드</a>
+        <a href="${pageContext.request.contextPath}/main" class="nav-item">메인 대시보드</a>
         <a href="/auth/pw-change" class="nav-item">비밀번호 변경</a>
       </div>
     </div>
@@ -72,7 +73,7 @@
       <div class="nav-group-content">
         <a href="/sys/unlock" class="nav-item">계정 잠금 해제</a>
         <a href="/sys/holiday" class="nav-item">공휴일 관리</a>
-        <a href="/sys/audit" class="nav-item">변경 이력 조회</a>
+        <a href="${pageContext.request.contextPath}/sys/audit" class="nav-item">변경 이력 조회</a>
         <a href="/sys/pw-reset" class="nav-item">비밀번호 초기화</a>
         <a href="/sys/role" class="nav-item">계정 권한 변경</a>
       </div>
