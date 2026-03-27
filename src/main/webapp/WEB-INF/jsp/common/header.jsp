@@ -17,7 +17,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<%-- 아이콘 표시를 위해 FontAwesome을 index에서 쓰고 계시겠지만, 여기서도 참고용으로만 둡니다 --%>
+<title>Insert title here</title>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>
     <header class="app-header" style="display: flex; justify-content: space-between; align-items: center; padding: 0 20px;">

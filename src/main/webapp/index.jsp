@@ -20,8 +20,8 @@
 %>
 <body>
 
-
-    <!-- 사이드바 -->
+`
+ `   <!-- 사이드바 -->
     <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 
   <div id="main-wrapper">
