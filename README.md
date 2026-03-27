@@ -13,6 +13,33 @@
 | 개발 환경 | Java 17 · Tomcat 10 · MySQL 8.0 · JSP/Servlet |
 
 ---
+## 🚫 개발 준수 사항 (Critical Constraints)
+
+### 1. 절대 금지 사항
+* **스크립틀릿 금지**: JSP 파일 내부(`<% %>`) 작성을 금지하며, 데이터 렌더링은 JSTL과 EL(`${}`)만 사용하라.
+* **라이브러리 의존 지양**: 외부 매퍼 라이브러리 없이 `Connection`, `PreparedStatement`, `ResultSet`을 직접 제어하라.
+
+### 2. 트랜잭션 및 예외 처리 (Transaction & Exception)
+* **수동 커밋 제어**: Service 계층에서 `connection.setAutoCommit(false)`를 호출하여 트랜잭션을 시작하라.
+* **원자성 보장**: 다중 테이블 DML 수행 중 예외 발생 시 `catch` 블록에서 반드시 `connection.rollback()`을 실행하라.
+* **자원 해제**: `finally` 블록에서 `ResultSet`, `Statement`, `Connection`을 반드시 역순으로 `close()` 하라.
+* **알림 격리**: 알림(`notification`) 처리는 메인 트랜잭션 `commit()` 완료 후 별도의 `try-catch`로 실행하여 본체 데이터에 영향을 주지 않도록 하라.
+
+### 3. 검증 및 감사 로그 (Validation & Audit Log)
+* **사전 상태 검증**: DB 제약으로 확인 불가능한 로직(휴가 중복 등)은 `INSERT/UPDATE` 실행 전 `SELECT` 쿼리로 반드시 먼저 확인하라.
+* **Audit 기록**: 주요 테이블 변경 시, `UPDATE` 전 기존 값을 조회하여 `old_value`와 `new_value`를 기록하는 `INSERT` 쿼리를 트랜잭션 내에 포함하라.
+* **민감 정보 마스킹**: 로그 기록 시 계좌번호 등은 `****` 처리 후 저장하라.
+
+### 4. 데이터베이스 규칙 (Database Rules)
+* **예약어 회피**: `job_position`, `target_year`, `eval_comment` 등 명세된 컬럼명을 준수하고 쿼리 시 백틱(`` ` ``)을 사용하라.
+* **논리적 삭제**: 물리적 `DELETE` 대신 `is_active=0` 또는 `status='퇴직'`과 같은 상태 값 업데이트(Soft Delete)를 활용하라.
+* **정밀도 유지**: Java의 `BigDecimal`과 DB의 `DECIMAL` 타입을 매핑하여 소수점 연산 오차를 방지하라.
+
+### 5. 컨트롤러 및 라우팅 (Controller & Routing)
+* **Servlet 매핑**: 모든 요청은 `@WebServlet` 기반의 `HttpServlet`에서 처리하라.
+* **PRG 패턴**: `doPost`에서 데이터 처리 후에는 반드시 `sendRedirect()`를 사용하여 브라우저 새로고침에 의한 중복 제출을 막아라.
+* **공통 필터**: 세션 및 권한 검증은 `AuthFilter`에서 일괄적으로 처리하라.
+
 
 ## 🛠 기술 스택
 
