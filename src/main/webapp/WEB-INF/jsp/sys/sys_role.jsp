@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HR ERP - 메인 대시보드</title>
+<title>HR ERP - sys_role</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
   <div id="main-wrapper">
     <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
     <main class="app-content">
-      <h1 style="font-size: 20px; font-weight: 700;">메인 대시보드 영역</h1>
+      <h1 style="font-size: 20px; font-weight: 700;">audit_log</h1>
       <p style="margin-top: 10px; color: var(--gray-500);">위젯 및 현황판 데이터 바인딩 위치</p>
     </main>
   </div>
