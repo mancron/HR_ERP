@@ -5,7 +5,7 @@ public class EmpDTO {
 	private int emp_id; 			//직원고유 ID
 	private String emp_name; //직원 이름
 	private String emp_no;		 //사번
-	private int dept_id;			 //소속 부서
+	private int dept_id;			 //소속 부서 ID
 	private int position_id; 	//직급
 	private String hire_date; 	//입사일
 	private String resign_date; //퇴사일
@@ -21,7 +21,29 @@ public class EmpDTO {
 	private String phone;		//연락처
 	private String created_at;//등록일시
 	
+	//Join으로 이름을 가져옴
+	private String dept_name; 	 //부서명
+	private String position_name; //직급명
+	
+	
 	public EmpDTO() {}
+	
+	
+	public String getDept_name() {
+		return dept_name;
+	}
+
+	public void setDept_name(String dept_name) {
+		this.dept_name = dept_name;
+	}
+
+	public String getPosition_name() {
+		return position_name;
+	}
+
+	public void setPosition_name(String position_name) {
+		this.position_name = position_name;
+	}
 	
 	public int getEmp_id() {
 		return emp_id;
