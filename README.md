@@ -456,8 +456,8 @@ hr-erp/
 │           ├── AuditLogDTO.java
 │           └── RoleDTO.java
 │
-├── src/main/webapp/
-│   ├── jsp/
+├── src/main/webapp/WEB-INF/
+│   ├── WEB-INF/jsp/
 │   │   ├── layout/                      # 레이아웃 JSP
 │   │   │   ├── header.jsp
 │   │   │   ├── sidebar.jsp
