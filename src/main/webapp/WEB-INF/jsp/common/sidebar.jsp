@@ -15,7 +15,7 @@
       <div class="nav-group-header" onclick="toggleAccordion(this)">공통·인증</div>
       <div class="nav-group-content">
         <a href="/main" class="nav-item active">메인 대시보드</a>
-        <a href="/auth/pw-change" class="nav-item">비밀번호 변경</a>
+        <a href="${pageContext.request.contextPath}/auth/pw-change" class="nav-item">비밀번호 변경</a>
       </div>
     </div>
 
