@@ -1,5 +1,7 @@
 package com.hrms.emp.dto;
 
+import java.math.BigDecimal;
+
 public class EmpDTO {
 	
 	private int emp_id; 			//직원고유 ID
@@ -11,7 +13,7 @@ public class EmpDTO {
 	private String resign_date; //퇴사일
 	private String emp_type; //정규직,계약직,파트타임
 	private String status; 		//재식,휴직,퇴직
-	private int base_salary;	//개인 기본급
+	private BigDecimal base_salary;	//개인 기본급
 	private String birth_date; //생년월일
 	private String gender;		//성별
 	private String address;		//주소
@@ -99,10 +101,10 @@ public class EmpDTO {
 	public void setStatus(String status) {
 		this.status = status;
 	}
-	public int getBase_salary() {
+	public BigDecimal getBase_salary() {
 		return base_salary;
 	}
-	public void setBase_salary(int base_salary) {
+	public void setBase_salary(BigDecimal base_salary) {
 		this.base_salary = base_salary;
 	}
 	public String getBirth_date() {

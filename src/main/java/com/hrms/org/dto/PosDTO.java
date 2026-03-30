@@ -1,11 +1,13 @@
 package com.hrms.org.dto;
 
+import java.math.BigDecimal;
+
 public class PosDTO {
 
 	private int position_id;
 	private String position_name;
 	private int	position_level;
-	private int base_salary;
+	private BigDecimal base_salary;
 	private int meal_allowance;
 	private int transport_allowance;
 	private int position_allowance;
@@ -32,10 +34,10 @@ public class PosDTO {
 	public void setPosition_level(int position_level) {
 		this.position_level = position_level;
 	}
-	public int getBase_salary() {
+	public BigDecimal getBase_salary() {
 		return base_salary;
 	}
-	public void setBase_salary(int base_salary) {
+	public void setBase_salary(BigDecimal base_salary) {
 		this.base_salary = base_salary;
 	}
 	public int getMeal_allowance() {
