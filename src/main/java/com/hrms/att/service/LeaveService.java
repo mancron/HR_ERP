@@ -7,6 +7,7 @@ import com.hrms.att.dto.LeaveDTO;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 public class LeaveService {
 
@@ -21,6 +22,10 @@ public class LeaveService {
         double days = dto.getDays();
         String reason = dto.getReason();
 
+        if (!"반차".equals(dto.getLeaveType())) {
+            dto.setHalfType(null);
+        }
+        
         // 🔥 1. 사유 공백 체크
         if (reason == null || reason.trim().isEmpty()) {
             return "empty_reason";
@@ -64,5 +69,10 @@ public class LeaveService {
         }
 
         return daysBetween;
+    }
+    
+    //휴가 리스트 출력
+    public List<LeaveDTO> getLeaveList(int empId) {
+        return leaveDAO.getLeaveList(empId);
     }
 }

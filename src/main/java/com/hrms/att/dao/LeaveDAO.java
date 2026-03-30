@@ -96,9 +96,11 @@ public class LeaveDAO {
     // 4. 내 휴가 목록 조회
     // =========================================================
     public List<LeaveDTO> getLeaveList(int empId) {
+
         List<LeaveDTO> list = new ArrayList<>();
 
-        String sql = "SELECT * FROM leave_request WHERE emp_id = ? ORDER BY leave_id DESC";
+        String sql = "SELECT * FROM leave_request "
+                   + "WHERE emp_id = ? ORDER BY leave_id DESC";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -107,8 +109,8 @@ public class LeaveDAO {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    LeaveDTO dto = new LeaveDTO();
 
+                    LeaveDTO dto = new LeaveDTO();
                     dto.setLeaveId(rs.getInt("leave_id"));
                     dto.setEmpId(rs.getInt("emp_id"));
                     dto.setLeaveType(rs.getString("leave_type"));
@@ -116,17 +118,7 @@ public class LeaveDAO {
                     dto.setStartDate(rs.getDate("start_date"));
                     dto.setEndDate(rs.getDate("end_date"));
                     dto.setDays(rs.getDouble("days"));
-                    dto.setReason(rs.getString("reason"));
                     dto.setStatus(rs.getString("status"));
-
-                    int approverId = rs.getInt("approver_id");
-                    if (!rs.wasNull()) {
-                        dto.setApproverId(approverId);
-                    }
-
-                    dto.setApprovedAt(rs.getTimestamp("approved_at"));
-                    dto.setRejectReason(rs.getString("reject_reason"));
-                    dto.setCreatedAt(rs.getTimestamp("created_at"));
 
                     list.add(dto);
                 }

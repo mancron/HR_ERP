@@ -11,6 +11,7 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.sql.Date;
+import java.util.List;
 
 @WebServlet("/att/leave/req")
 public class LeaveRequestServlet extends HttpServlet {
@@ -33,8 +34,10 @@ public class LeaveRequestServlet extends HttpServlet {
 
 		// 🔥 연차 정보 조회
 		AnnualLeaveDTO annual = leaveService.getAnnualLeave(empId);
-
+		List<LeaveDTO> list = leaveService.getLeaveList(empId);
+		
 		request.setAttribute("annual", annual);
+		request.setAttribute("list", list);
 
 		request.getRequestDispatcher("/WEB-INF/jsp/att/leaveRequest.jsp").forward(request, response);
 	}

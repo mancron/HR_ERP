@@ -9,27 +9,33 @@
 
 <!-- 알림 -->
 <c:if test="${param.msg eq 'success'}">
-    <script>alert("휴가 신청이 완료되었습니다.");</script>
+	<script>
+		alert("휴가 신청이 완료되었습니다.");
+	</script>
 </c:if>
 
 <c:if test="${param.error eq 'not_enough'}">
-    <script>alert("잔여 연차가 부족합니다.");</script>
+	<script>
+		alert("잔여 연차가 부족합니다.");
+	</script>
 </c:if>
 
 <c:if test="${param.error eq 'overlap'}">
-    <script>alert("이미 해당 기간에 신청된 휴가가 있습니다.");</script>
+	<script>
+		alert("이미 해당 기간에 신청된 휴가가 있습니다.");
+	</script>
 </c:if>
 
 <c:if test="${param.error eq 'empty_reason'}">
-    <script>
-        alert("휴가 사유를 입력해주세요.");
-    </script>
+	<script>
+		alert("휴가 사유를 입력해주세요.");
+	</script>
 </c:if>
 
 <c:if test="${param.error eq 'invalid_date'}">
-    <script>
-        alert("시작일은 종료일보다 늦을 수 없습니다.");
-    </script>
+	<script>
+		alert("시작일은 종료일보다 늦을 수 없습니다.");
+	</script>
 </c:if>
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
@@ -51,26 +57,29 @@
 				<div class="leave-summary">
 					<div class="summary-box summary-total">
 						부여 연차<br>
-						<c:out value="${annual.totalDays}" />일
+						<c:out value="${annual.totalDays}" />
+						일
 					</div>
 					<div class="summary-box summary-remain">
 						잔여 연차<br>
-						<c:out value="${annual.remainDays}" />일
+						<c:out value="${annual.remainDays}" />
+						일
 					</div>
 					<div class="summary-box summary-used">
 						사용 연차<br>
-						<c:out value="${annual.usedDays}" />일
+						<c:out value="${annual.usedDays}" />
+						일
 					</div>
 				</div>
 
 				<!-- 신청 폼 -->
 				<div class="leave-card">
 
-					<form action="<c:out value='${pageContext.request.contextPath}/att/leave/req'/>"
+					<form
+						action="<c:out value='${pageContext.request.contextPath}/att/leave/req'/>"
 						method="post">
 
-						<label>휴가 유형</label>
-						<select name="leave_type" id="leaveType">
+						<label>휴가 유형</label> <select name="leave_type" id="leaveType">
 							<option value="연차">연차</option>
 							<option value="반차">반차</option>
 							<option value="병가">병가</option>
@@ -79,8 +88,7 @@
 						</select>
 
 						<div id="halfTypeDiv" style="display: none;">
-							<label>반차 구분</label>
-							<select name="half_type">
+							<label>반차 구분</label> <select name="half_type">
 								<option value="오전">오전</option>
 								<option value="오후">오후</option>
 							</select>
@@ -88,18 +96,14 @@
 
 						<div class="leave-row">
 							<div>
-								<label>시작일</label>
-								<input type="date" name="start_date" required>
+								<label>시작일</label> <input type="date" name="start_date" required>
 							</div>
 							<div>
-								<label>종료일</label>
-								<input type="date" name="end_date" required>
+								<label>종료일</label> <input type="date" name="end_date" required>
 							</div>
 						</div>
 
-						<br>
-
-						<label>사유</label>
+						<br> <label>사유</label>
 						<textarea name="reason" rows="4"></textarea>
 
 						<br>
@@ -125,21 +129,19 @@
 							<th>상태</th>
 						</tr>
 
-						<tr>
-							<td>3/19~3/20</td>
-							<td>연차</td>
-							<td>승인</td>
-						</tr>
-						<tr>
-							<td>3/21(오후)</td>
-							<td>반차</td>
-							<td>승인</td>
-						</tr>
-						<tr>
-							<td>3/26~3/28</td>
-							<td>연차</td>
-							<td>대기</td>
-						</tr>
+						<c:forEach var="item" items="${list}">
+							<tr>
+								<td><c:out value="${item.startDate}" /> ~ <c:out
+										value="${item.endDate}" /></td>
+
+								<td><c:out value="${item.leaveType}" /> <c:if
+										test="${item.halfType != null}">
+                (<c:out value="${item.halfType}" />)
+            </c:if></td>
+
+								<td><c:out value="${item.status}" /></td>
+							</tr>
+						</c:forEach>
 
 					</table>
 				</div>
@@ -151,5 +153,6 @@
 	</main>
 </div>
 
-<script src="<c:out value='${pageContext.request.contextPath}/js/sidebar.js'/>"></script>
+<script
+	src="<c:out value='${pageContext.request.contextPath}/js/sidebar.js'/>"></script>
 <script src="${pageContext.request.contextPath}/js/leave.js"></script>
