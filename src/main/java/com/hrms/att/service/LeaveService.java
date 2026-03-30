@@ -19,25 +19,35 @@ public class LeaveService {
         Date startDate = dto.getStartDate();
         Date endDate = dto.getEndDate();
         double days = dto.getDays();
+        String reason = dto.getReason();
 
-        // 1. 잔여 연차 체크
+        // 🔥 1. 사유 공백 체크
+        if (reason == null || reason.trim().isEmpty()) {
+            return "empty_reason";
+        }
+
+        // 🔥 2. 날짜 검증
+        if (startDate.after(endDate)) {
+            return "invalid_date";
+        }
+
+        // 3. 잔여 연차 체크
         double remainDays = leaveDAO.getRemainDays(empId);
         if (days > remainDays) {
             return "not_enough";
         }
 
-        // 2. 기간 중복 체크
+        // 4. 기간 중복 체크
         if (leaveDAO.isOverlapping(empId, startDate, endDate)) {
             return "overlap";
         }
 
-        // 3. DB 저장
+        // 5. DB 저장
         boolean result = leaveDAO.insertLeave(dto);
         if (!result) {
             return "fail";
         }
 
-        // 4. 성공
         return "success";
     }
     

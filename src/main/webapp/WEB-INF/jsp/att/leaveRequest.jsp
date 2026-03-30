@@ -20,6 +20,18 @@
     <script>alert("이미 해당 기간에 신청된 휴가가 있습니다.");</script>
 </c:if>
 
+<c:if test="${param.error eq 'empty_reason'}">
+    <script>
+        alert("휴가 사유를 입력해주세요.");
+    </script>
+</c:if>
+
+<c:if test="${param.error eq 'invalid_date'}">
+    <script>
+        alert("시작일은 종료일보다 늦을 수 없습니다.");
+    </script>
+</c:if>
+
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 
 <div id="main-wrapper">
