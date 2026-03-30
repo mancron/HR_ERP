@@ -80,7 +80,7 @@ public class PasswordResetService {
                 throw new RuntimeException("비밀번호 업데이트 실패 — 해당 직원의 계정이 없습니다.");
             }
 
-            // 5. audit_log INSERT (비밀번호는 민감 정보 → 마스킹)
+            // 5. audit_log INSERT
             int accountId = passwordResetDAO.findAccountIdByEmpId(empId, conn);
             passwordResetDAO.insertAuditLog(
                 actorEmpId,
@@ -88,8 +88,8 @@ public class PasswordResetService {
                 accountId,
                 "UPDATE",
                 "password_hash",
-                "****",   // old_value 마스킹
-                "****",   // new_value 마스킹
+                "이전 비밀번호",          // old_value — 해시값 저장 불필요
+                "임시 비밀번호로 초기화",   // new_value — 작업 내용 명시
                 conn
             );
 
