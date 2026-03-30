@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/eval/evaluation.css">
 
 <div class="eval-wrapper">
+    <%-- 왼쪽: 메인 평가 영역 --%>
     <div class="eval-main">
         <div class="section-title">
             <c:choose>
@@ -16,7 +17,6 @@
         </div>
 
         <form action="${pageContext.request.contextPath}/eval/write" method="post" id="evalForm">
-            <%-- 수정 모드일 때 evalId 전송 --%>
             <c:if test="${not empty evalData}">
                 <input type="hidden" name="evalId" value="${evalData.evalId}">
             </c:if>
@@ -71,10 +71,15 @@
                     <div class="score-info"><span>${itemName}</span></div>
                     <div class="slider-container">
                         <input type="hidden" name="itemNames" value="${itemName}">
+                        
+                        <%-- 슬라이더 값은 정수로 변환 --%>
+                        <fmt:parseNumber var="intScore" value="${not empty itemScores ? itemScores[loop.index] : 80}" integerOnly="true" />
+                        
                         <input type="range" name="scores" min="0" max="100"
-                            value="${not empty itemScores ? itemScores[loop.index] : 80}"
+                            value="${intScore}"
                             oninput="document.getElementById('out${loop.index}').innerText = this.value">
-                        <span class="current-val" id="out${loop.index}">${not empty itemScores ? itemScores[loop.index] : 80}</span>
+                        
+                        <span class="current-val" id="out${loop.index}">${intScore}</span>
                         <span class="max-val">/100</span>
                     </div>
                 </div>
@@ -94,7 +99,6 @@
                 </div>
                 <div style="text-align: right;">
                     <div style="font-size: 14px; color: #64748b;">등급</div>
-                    <%-- 서블릿에서 계산해서 넘겨준 gradeColor 사용 --%>
                     <div class="grade-badge" id="gradeBadge" style="color: ${gradeColor};">
                         ${not empty evalData ? evalData.grade : 'A'}
                     </div>
@@ -117,6 +121,7 @@
         </form>
     </div>
 
+    <%-- 오른쪽: 등급 기준표 사이드바 (부활!) --%>
     <div class="eval-side">
         <div class="section-title" style="font-size: 15px;">등급 기준표</div>
         <table class="grade-table">
@@ -137,67 +142,43 @@
         </div>
     </div>
 </div>
+
 <script>
-    /**
-     * 슬라이더(input range) 변경 시 실시간으로 평균 점수와 등급을 계산하여 화면에 반영
-     */
     function updateEvaluation() {
         const scores = document.getElementsByName('scores');
         let total = 0;
         let count = scores.length;
-
         if (count === 0) return;
 
-        // 1. 모든 항목의 점수 합산
         scores.forEach(input => {
             total += parseInt(input.value || 0);
         });
 
-        // 2. 평균 계산 (소수점 첫째자리까지)
-        const avg = (total / count).toFixed(1);
+        const avg = (total / count).toFixed(1); 
         document.getElementById('avgScore').innerText = avg + "점";
 
-        // 3. 등급 판정 로직 및 색상 설정
         let grade = 'D';
-        let color = '#ef4444'; // 기본 Red (D등급)
+        let color = '#ef4444';
 
-        if (avg >= 95) {
-            grade = 'S';
-            color = '#8b5cf6'; // Purple
-        } else if (avg >= 85) {
-            grade = 'A';
-            color = '#3b82f6'; // Blue
-        } else if (avg >= 75) {
-            grade = 'B';
-            color = '#10b981'; // Green
-        } else if (avg >= 60) {
-            grade = 'C';
-            color = '#f59e0b'; // Orange
-        }
+        if (avg >= 95) { grade = 'S'; color = '#8b5cf6'; }
+        else if (avg >= 85) { grade = 'A'; color = '#3b82f6'; }
+        else if (avg >= 75) { grade = 'B'; color = '#10b981'; }
+        else if (avg >= 60) { grade = 'C'; color = '#f59e0b'; }
 
-        // 4. 화면 업데이트 (등급 텍스트 및 색상)
         const gradeBadge = document.getElementById('gradeBadge');
         gradeBadge.innerText = grade;
         gradeBadge.style.color = color;
     }
 
-    // 초기 로딩 시와 슬라이더 조작 시 이벤트 연결
     document.addEventListener('DOMContentLoaded', function() {
         const scoreInputs = document.querySelectorAll('input[name="scores"]');
-        
         scoreInputs.forEach(input => {
-            // 슬라이더를 움직일 때마다 실시간 호출
             input.addEventListener('input', function() {
-                // 개별 숫차 표시 업데이트 (기존 oninput 로직 보완)
                 const outputId = this.getAttribute('oninput').match(/'([^']+)'/)[1];
                 document.getElementById(outputId).innerText = this.value;
-                
-                // 전체 평균 및 등급 업데이트
                 updateEvaluation();
             });
         });
-
-        // 수정 모드일 경우 초기 값으로 한 번 계산 실행
         updateEvaluation();
     });
 </script>
