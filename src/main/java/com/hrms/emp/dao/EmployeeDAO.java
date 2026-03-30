@@ -1,8 +1,12 @@
 package com.hrms.emp.dao;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import com.hrms.common.db.DatabaseConnection;
 import com.hrms.emp.dto.EmployeeDTO;
-import com.hrms.util.DatabaseConnection;
-import java.sql.*;
 
 public class EmployeeDAO {
 

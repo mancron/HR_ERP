@@ -1,8 +1,12 @@
 package com.hrms.auth.dao;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import com.hrms.auth.dto.AccountDTO;
-import com.hrms.util.DatabaseConnection; // 사용하는 공통 DB 연결 클래스
-import java.sql.*;
+import com.hrms.common.db.DatabaseConnection;
 
 public class AccountDAO {
 

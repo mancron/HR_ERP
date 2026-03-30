@@ -16,7 +16,7 @@
   <div id="main-wrapper">
     <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
     <main class="app-content">
-      <h1 style="font-size: 20px; font-weight: 700;">audit_log</h1>
+      <h1 style="font-size: 20px; font-weight: 700;">sys_password</h1>
       <p style="margin-top: 10px; color: var(--gray-500);">위젯 및 현황판 데이터 바인딩 위치</p>
     </main>
   </div>

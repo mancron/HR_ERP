@@ -8,12 +8,20 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 import java.io.IOException;
-import java.net.URLEncoder; // 인코딩용 추가
+import java.net.URLEncoder;
 
 @WebServlet("/auth/login.do")
 public class LoginServlet extends HttpServlet {
     private AuthService authService = new AuthService();
 
+    // 1. 화면을 보여주는 GET 방식 추가 (필터가 튕겨내면 일로 들어온다)
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // WEB-INF 내부에 있는 실제 로그인 JSP 파일로 포워딩
+        request.getRequestDispatcher("/WEB-INF/jsp/auth/login.jsp").forward(request, response);
+    }
+
+    // 2. 로그인을 처리하는 POST 방식
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String user = request.getParameter("username");
@@ -22,7 +30,6 @@ public class LoginServlet extends HttpServlet {
         try {
             // [수정] authService.login이 이제 Exception을 던집니다.
             AccountDTO account = authService.login(user, pass);
-
             // 1. 로그인 성공 시 로직
             if (account != null) {
                 HttpSession session = request.getSession();

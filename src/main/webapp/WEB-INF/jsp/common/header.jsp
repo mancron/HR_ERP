@@ -19,6 +19,7 @@
     if (displayRealName == null) displayRealName = "Guest";
     if (userRole == null) userRole = "USER";
 %>
+
 <!DOCTYPE html>
 <html>
 <head>
