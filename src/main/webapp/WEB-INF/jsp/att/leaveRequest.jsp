@@ -25,27 +25,25 @@
 }
 
 .leave-card {
-    background: #ffffff;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    margin-top: 15px;
+	background: #ffffff;
+	padding: 25px;
+	border-radius: 12px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+	margin-top: 15px;
 }
 
-.leave-card input,
-.leave-card select,
-.leave-card textarea {
-    width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 14px;
+.leave-card input, .leave-card select, .leave-card textarea {
+	width: 100%;
+	padding: 10px;
+	margin-top: 5px;
+	margin-bottom: 15px;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	font-size: 14px;
 }
 
 .leave-card textarea {
-    resize: none;
+	resize: none;
 }
 
 .summary-box {
@@ -89,7 +87,23 @@
 	flex: 1;
 }
 </style>
+<c:if test="${param.msg eq 'success'}">
+    <script>
+        alert("휴가 신청이 완료되었습니다.");
+    </script>
+</c:if>
 
+<c:if test="${param.error eq 'not_enough'}">
+    <script>
+        alert("잔여 연차가 부족합니다.");
+    </script>
+</c:if>
+
+<c:if test="${param.error eq 'overlap'}">
+    <script>
+        alert("이미 해당 기간에 신청된 휴가가 있습니다.");
+    </script>
+</c:if>
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 
 <div id="main-wrapper">

@@ -42,7 +42,7 @@ public class LeaveRequestServlet extends HttpServlet {
         request.getRequestDispatcher("/WEB-INF/jsp/att/leaveRequest.jsp").forward(request, response);
     }
 
-    // POST → 휴가 신청 처리
+ // POST → 휴가 신청 처리
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -50,10 +50,10 @@ public class LeaveRequestServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
 
         HttpSession session = request.getSession();
-        AccountDTO loginUser = (AccountDTO) session.getAttribute("loginUser");
+        EmployeeDTO loginUser = (EmployeeDTO) session.getAttribute("loginUser");
 
         if (loginUser == null) {
-            response.sendRedirect("/auth/login.do");
+            response.sendRedirect(request.getContextPath() + "/auth/login.do");
             return;
         }
 
@@ -70,9 +70,6 @@ public class LeaveRequestServlet extends HttpServlet {
             Date startDate = Date.valueOf(request.getParameter("start_date"));
             Date endDate = Date.valueOf(request.getParameter("end_date"));
 
-            // (임시) 승인자 - 나중에 조직도 붙이면 자동 지정
-            int approverId = Integer.parseInt(request.getParameter("approver_id"));
-
             // =========================
             // 2. days 계산
             // =========================
@@ -84,8 +81,7 @@ public class LeaveRequestServlet extends HttpServlet {
             double remainDays = leaveDAO.getRemainDays(empId);
 
             if (days > remainDays) {
-                request.setAttribute("errorMsg", "잔여 연차가 부족합니다. (잔여: " + remainDays + "일)");
-                request.getRequestDispatcher("/WEB-INF/jsp/att/leaveRequest.jsp").forward(request, response);
+                response.sendRedirect(request.getContextPath() + "/att/leave/req?error=not_enough");
                 return;
             }
 
@@ -93,8 +89,7 @@ public class LeaveRequestServlet extends HttpServlet {
             // 4. 기간 중복 체크
             // =========================
             if (leaveDAO.isOverlapping(empId, startDate, endDate)) {
-                request.setAttribute("errorMsg", "해당 기간에 이미 신청된 휴가가 있습니다.");
-                request.getRequestDispatcher("/WEB-INF/jsp/att/leaveRequest.jsp").forward(request, response);
+                response.sendRedirect(request.getContextPath() + "/att/leave/req?error=overlap");
                 return;
             }
 
@@ -109,25 +104,22 @@ public class LeaveRequestServlet extends HttpServlet {
             dto.setEndDate(endDate);
             dto.setDays(days);
             dto.setReason(reason);
-            dto.setApproverId(approverId);
 
             // =========================
             // 6. INSERT
             // =========================
             boolean result = leaveDAO.insertLeave(dto);
+            System.out.println("insert result = " + result);
 
             if (result) {
-                // TODO: 알림 테이블 INSERT (LEAVE_PENDING)
-                response.sendRedirect("/leave/list.do");
+                response.sendRedirect(request.getContextPath() + "/att/leave/req?msg=success");
             } else {
-                request.setAttribute("errorMsg", "휴가 신청 실패");
-                request.getRequestDispatcher("/WEB-INF/jsp/att/leaveRequest.jsp").forward(request, response);
+                response.sendRedirect(request.getContextPath() + "/att/leave/req?error=fail");
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            request.setAttribute("errorMsg", "서버 오류 발생");
-            request.getRequestDispatcher("/WEB-INF/jsp/att/leaveRequest.jsp").forward(request, response);
+            response.sendRedirect(request.getContextPath() + "/att/leave/req?error=exception");
         }
     }
 

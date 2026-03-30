@@ -13,36 +13,30 @@ public class LeaveDAO {
     // =========================================================
     // 1. 휴가 신청 (INSERT)
     // =========================================================
-    public boolean insertLeave(LeaveDTO dto) {
-        String sql = "INSERT INTO leave_request "
-                + "(emp_id, leave_type, half_type, start_date, end_date, days, reason, status, approver_id) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, '대기', ?)";
+	public boolean insertLeave(LeaveDTO dto) {
+	    String sql = "INSERT INTO leave_request "
+	            + "(emp_id, leave_type, half_type, start_date, end_date, days, reason, status) "
+	            + "VALUES (?, ?, ?, ?, ?, ?, ?, '대기')";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, dto.getEmpId());
-            pstmt.setString(2, dto.getLeaveType());
-            pstmt.setString(3, dto.getHalfType());
-            pstmt.setDate(4, dto.getStartDate());
-            pstmt.setDate(5, dto.getEndDate());
-            pstmt.setDouble(6, dto.getDays());
-            pstmt.setString(7, dto.getReason());
+	        pstmt.setInt(1, dto.getEmpId());
+	        pstmt.setString(2, dto.getLeaveType());
+	        pstmt.setString(3, dto.getHalfType());
+	        pstmt.setDate(4, dto.getStartDate());
+	        pstmt.setDate(5, dto.getEndDate());
+	        pstmt.setDouble(6, dto.getDays());
+	        pstmt.setString(7, dto.getReason());
 
-            if (dto.getApproverId() != null) {
-                pstmt.setInt(8, dto.getApproverId());
-            } else {
-                pstmt.setNull(8, Types.INTEGER);
-            }
+	        return pstmt.executeUpdate() > 0;
 
-            return pstmt.executeUpdate() > 0;
+	    } catch (Exception e) {
+	        e.printStackTrace(); // 🔥 콘솔 꼭 확인
+	    }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return false;
-    }
+	    return false;
+	}
 
     // =========================================================
     // 2. 기간 중복 체크
