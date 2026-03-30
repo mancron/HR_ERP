@@ -2,108 +2,24 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <link rel="stylesheet"
-	href="${pageContext.request.contextPath}/css/attendance.css">
+	href="<c:out value='${pageContext.request.contextPath}/css/attendance.css'/>">
 
-<style>
-.leave-container {
-	display: flex;
-	gap: 20px;
-}
+<link rel="stylesheet"
+	href="<c:out value='${pageContext.request.contextPath}/css/leave.css'/>">
 
-.leave-left {
-	flex: 3;
-}
-
-.leave-right {
-	flex: 1;
-}
-
-.leave-summary {
-	display: flex;
-	gap: 15px;
-	margin-bottom: 20px;
-}
-
-.leave-card {
-	background: #ffffff;
-	padding: 25px;
-	border-radius: 12px;
-	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-	margin-top: 15px;
-}
-
-.leave-card input, .leave-card select, .leave-card textarea {
-	width: 100%;
-	padding: 10px;
-	margin-top: 5px;
-	margin-bottom: 15px;
-	border: 1px solid #ccc;
-	border-radius: 6px;
-	font-size: 14px;
-}
-
-.leave-card textarea {
-	resize: none;
-}
-
-.summary-box {
-	flex: 1;
-	padding: 15px;
-	border-radius: 10px;
-	text-align: center;
-	font-weight: bold;
-}
-
-.summary-total {
-	background: #dbe2ef;
-}
-
-.summary-remain {
-	background: #d4edda;
-}
-
-.summary-used {
-	background: #fff3cd;
-}
-
-.leave-card {
-	background: white;
-	padding: 20px;
-	border-radius: 10px;
-}
-
-.leave-right-box {
-	background: white;
-	padding: 15px;
-	border-radius: 10px;
-}
-
-.leave-row {
-	display: flex;
-	gap: 10px;
-}
-
-.leave-row input {
-	flex: 1;
-}
-</style>
+<!-- 알림 -->
 <c:if test="${param.msg eq 'success'}">
-    <script>
-        alert("휴가 신청이 완료되었습니다.");
-    </script>
+    <script>alert("휴가 신청이 완료되었습니다.");</script>
 </c:if>
 
 <c:if test="${param.error eq 'not_enough'}">
-    <script>
-        alert("잔여 연차가 부족합니다.");
-    </script>
+    <script>alert("잔여 연차가 부족합니다.");</script>
 </c:if>
 
 <c:if test="${param.error eq 'overlap'}">
-    <script>
-        alert("이미 해당 기간에 신청된 휴가가 있습니다.");
-    </script>
+    <script>alert("이미 해당 기간에 신청된 휴가가 있습니다.");</script>
 </c:if>
+
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 
 <div id="main-wrapper">
@@ -113,6 +29,7 @@
 
 		<h2>휴가 신청</h2>
 		<br>
+
 		<div class="leave-container">
 
 			<!-- 좌측 -->
@@ -121,23 +38,27 @@
 				<!-- 연차 요약 -->
 				<div class="leave-summary">
 					<div class="summary-box summary-total">
-						부여 연차<br> ${annual.totalDays}일
+						부여 연차<br>
+						<c:out value="${annual.totalDays}" />일
 					</div>
 					<div class="summary-box summary-remain">
-						잔여 연차<br> ${annual.remainDays}일
+						잔여 연차<br>
+						<c:out value="${annual.remainDays}" />일
 					</div>
 					<div class="summary-box summary-used">
-						사용 연차<br> ${annual.usedDays}일
+						사용 연차<br>
+						<c:out value="${annual.usedDays}" />일
 					</div>
 				</div>
 
 				<!-- 신청 폼 -->
 				<div class="leave-card">
 
-					<form action="${pageContext.request.contextPath}/att/leave/req"
+					<form action="<c:out value='${pageContext.request.contextPath}/att/leave/req'/>"
 						method="post">
 
-						<label>휴가 유형</label> <select name="leave_type" id="leaveType">
+						<label>휴가 유형</label>
+						<select name="leave_type" id="leaveType">
 							<option value="연차">연차</option>
 							<option value="반차">반차</option>
 							<option value="병가">병가</option>
@@ -146,7 +67,8 @@
 						</select>
 
 						<div id="halfTypeDiv" style="display: none;">
-							<label>반차 구분</label> <select name="half_type">
+							<label>반차 구분</label>
+							<select name="half_type">
 								<option value="오전">오전</option>
 								<option value="오후">오후</option>
 							</select>
@@ -154,14 +76,18 @@
 
 						<div class="leave-row">
 							<div>
-								<label>시작일</label> <input type="date" name="start_date" required>
+								<label>시작일</label>
+								<input type="date" name="start_date" required>
 							</div>
 							<div>
-								<label>종료일</label> <input type="date" name="end_date" required>
+								<label>종료일</label>
+								<input type="date" name="end_date" required>
 							</div>
 						</div>
 
-						<br> <label>사유</label>
+						<br>
+
+						<label>사유</label>
 						<textarea name="reason" rows="4"></textarea>
 
 						<br>
@@ -187,7 +113,6 @@
 							<th>상태</th>
 						</tr>
 
-						<!-- 나중에 연결 -->
 						<tr>
 							<td>3/19~3/20</td>
 							<td>연차</td>
@@ -214,13 +139,5 @@
 	</main>
 </div>
 
-<script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
-
-<script>
-	const leaveType = document.getElementById("leaveType");
-	const halfTypeDiv = document.getElementById("halfTypeDiv");
-
-	leaveType.addEventListener("change", function() {
-		halfTypeDiv.style.display = (this.value === "반차") ? "block" : "none";
-	});
-</script>
+<script src="<c:out value='${pageContext.request.contextPath}/js/sidebar.js'/>"></script>
+<script src="${pageContext.request.contextPath}/js/leave.js"></script>
