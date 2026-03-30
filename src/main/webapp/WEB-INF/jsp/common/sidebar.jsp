@@ -37,17 +37,17 @@
         <a href="/emp/history" class="nav-item">인사발령 이력</a>
       </div>
     </div>
-
-    <div class="nav-group">
-      <div class="nav-group-header" onclick="toggleAccordion(this)">근태 관리</div>
-      <div class="nav-group-content">
-        <a href="/att/record" class="nav-item">출퇴근</a>
-        <a href="/att/leave/req" class="nav-item">휴가 신청</a>
-        <a href="/att/leave/approve" class="nav-item">휴가 승인</a>
-        <a href="/att/overtime" class="nav-item">초과근무</a>
-        <a href="/att/status" class="nav-item">근태 현황·보정</a>
-        <a href="/att/annual" class="nav-item">연차 현황</a>
-        <a href="/att/annual/grant" class="nav-item">연차 일괄 부여</a>
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleAccordion(this)">근태 관리</div>
+        <div class="nav-group-content">
+          <a href="${pageContext.request.contextPath}/att/record" class="nav-item">출퇴근</a>
+          <a href="/att/leave/req" class="nav-item">휴가 신청</a>
+          <a href="/att/leave/approve" class="nav-item">휴가 승인</a>
+          <a href="/att/overtime" class="nav-item">초과근무</a>
+          <a href="/att/status" class="nav-item">근태 현황·보정</a>
+          <a href="/att/annual" class="nav-item">연차 현황</a>
+          <a href="/att/annual/grant" class="nav-item">연차 일괄 부여</a>
+        </div>
       </div>
     </div>
 
