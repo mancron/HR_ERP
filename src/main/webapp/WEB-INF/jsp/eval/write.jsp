@@ -1,14 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@ page import="com.hrms.eval.service.EvaluationService" %>
-<%
-    // 서비스 호출하여 초기 UI 데이터(등급 색상 등) 준비
-    EvaluationService evalService = new EvaluationService();
-    String currentGrade = (String)request.getAttribute("currentGrade"); 
-    // 등급이 없으면 기본 'A' 또는 'B'의 색상을 가져오도록 설정
-    String gradeColor = evalService.getGradeColor(currentGrade != null ? currentGrade : "A");
-%>
+
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/eval/evaluation.css">
 
 <div class="eval-wrapper">
@@ -29,7 +22,6 @@
             </c:if>
 
             <div class="form-grid">
-                <%-- 평가 대상자 선택 --%>
                 <div class="form-group">
                     <label>평가 대상자 *</label>
                     <select name="empId" required>
@@ -43,31 +35,16 @@
                     </select>
                 </div>
 
-                <%-- 평가 연도 선택 (동적 생성 로직 복구) --%>
                 <div class="form-group">
                     <label>평가 연도 *</label>
                     <select name="evalYear">
-                        <c:choose>
-                            <c:when test="${not empty yearList}">
-                                <c:forEach var="y" items="${yearList}">
-                                    <option value="${y}"
-                                        ${not empty evalData && evalData.evalYear == y ? 'selected' : ''}>${y}년</option>
-                                </c:forEach>
-                            </c:when>
-                            <c:otherwise>
-                                <jsp:useBean id="now" class="java.util.Date" />
-                                <fmt:formatDate var="currentYear" value="${now}" pattern="yyyy"/>
-                                <c:forEach var="i" begin="0" end="2">
-                                    <fmt:parseNumber var="yr" value="${currentYear - i}" integerOnly="true"/>
-                                    <option value="${yr}"
-                                        ${not empty evalData && evalData.evalYear == yr ? 'selected' : ''}>${yr}년</option>
-                                </c:forEach>
-                            </c:otherwise>
-                        </c:choose>
+                        <c:forEach var="y" items="${yearList}">
+                            <option value="${y}"
+                                ${not empty evalData && evalData.evalYear == y ? 'selected' : ''}>${y}년</option>
+                        </c:forEach>
                     </select>
                 </div>
 
-                <%-- 평가 기간 선택 --%>
                 <div class="form-group">
                     <label>평가 기간 *</label>
                     <select name="evalPeriod">
@@ -77,7 +54,6 @@
                     </select>
                 </div>
 
-                <%-- 평가 유형 선택 --%>
                 <div class="form-group">
                     <label>평가 유형 *</label>
                     <select name="evalType">
@@ -90,7 +66,6 @@
 
             <div style="font-weight: 700; margin-bottom: 20px;">📊 항목별 점수 (각 100점 만점)</div>
 
-            <%-- 항목별 슬라이더 (oninput으로 실시간 수치 반영) --%>
             <c:forEach var="itemName" items="${itemNames}" varStatus="loop">
                 <div class="score-item">
                     <div class="score-info"><span>${itemName}</span></div>
@@ -119,13 +94,13 @@
                 </div>
                 <div style="text-align: right;">
                     <div style="font-size: 14px; color: #64748b;">등급</div>
-                    <div class="grade-badge" id="gradeBadge" style="color: <%= gradeColor %>;">
+                    <%-- 서블릿에서 계산해서 넘겨준 gradeColor 사용 --%>
+                    <div class="grade-badge" id="gradeBadge" style="color: ${gradeColor};">
                         ${not empty evalData ? evalData.grade : 'A'}
                     </div>
                 </div>
             </div>
 
-            <%-- 확정일시 표시 --%>
             <c:if test="${not empty evalData && not empty evalData.confirmedAt}">
                 <div style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">
                     확정일시: <fmt:formatDate value="${evalData.confirmedAt}" pattern="yyyy-MM-dd HH:mm"/>
@@ -142,7 +117,6 @@
         </form>
     </div>
 
-    <%-- 등급 기준표 (상세 내용 복구) --%>
     <div class="eval-side">
         <div class="section-title" style="font-size: 15px;">등급 기준표</div>
         <table class="grade-table">
@@ -163,5 +137,67 @@
         </div>
     </div>
 </div>
+<script>
+    /**
+     * 슬라이더(input range) 변경 시 실시간으로 평균 점수와 등급을 계산하여 화면에 반영
+     */
+    function updateEvaluation() {
+        const scores = document.getElementsByName('scores');
+        let total = 0;
+        let count = scores.length;
 
-<%-- 스크립트 태그가 완전히 제거되었습니다. --%>
+        if (count === 0) return;
+
+        // 1. 모든 항목의 점수 합산
+        scores.forEach(input => {
+            total += parseInt(input.value || 0);
+        });
+
+        // 2. 평균 계산 (소수점 첫째자리까지)
+        const avg = (total / count).toFixed(1);
+        document.getElementById('avgScore').innerText = avg + "점";
+
+        // 3. 등급 판정 로직 및 색상 설정
+        let grade = 'D';
+        let color = '#ef4444'; // 기본 Red (D등급)
+
+        if (avg >= 95) {
+            grade = 'S';
+            color = '#8b5cf6'; // Purple
+        } else if (avg >= 85) {
+            grade = 'A';
+            color = '#3b82f6'; // Blue
+        } else if (avg >= 75) {
+            grade = 'B';
+            color = '#10b981'; // Green
+        } else if (avg >= 60) {
+            grade = 'C';
+            color = '#f59e0b'; // Orange
+        }
+
+        // 4. 화면 업데이트 (등급 텍스트 및 색상)
+        const gradeBadge = document.getElementById('gradeBadge');
+        gradeBadge.innerText = grade;
+        gradeBadge.style.color = color;
+    }
+
+    // 초기 로딩 시와 슬라이더 조작 시 이벤트 연결
+    document.addEventListener('DOMContentLoaded', function() {
+        const scoreInputs = document.querySelectorAll('input[name="scores"]');
+        
+        scoreInputs.forEach(input => {
+            // 슬라이더를 움직일 때마다 실시간 호출
+            input.addEventListener('input', function() {
+                // 개별 숫차 표시 업데이트 (기존 oninput 로직 보완)
+                const outputId = this.getAttribute('oninput').match(/'([^']+)'/)[1];
+                document.getElementById(outputId).innerText = this.value;
+                
+                // 전체 평균 및 등급 업데이트
+                updateEvaluation();
+            });
+        });
+
+        // 수정 모드일 경우 초기 값으로 한 번 계산 실행
+        updateEvaluation();
+    });
+</script>

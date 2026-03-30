@@ -1,15 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="com.hrms.auth.service.AuthService" %>
-<%@ page import="java.util.Map" %>
-<%
-    AuthService authService = new AuthService();
-    String msg = (String)request.getAttribute("msg");
-    if (msg == null) msg = request.getParameter("msg");
-    String prevUser = request.getParameter("prevUser");
-
-    Map<String, String> vd = authService.getLoginViewData(msg);
-    String systemNotice = vd.get("systemNotice");
-%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %> <%-- JSTL 사용을 위한 필수 선언 --%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -20,13 +10,13 @@
 </head>
 <body>
 
-    <%-- [기능 대체] alert() 대신 최상단에 고정 알림 바를 배치 --%>
-    <% if (!systemNotice.isEmpty()) { %>
+    <%-- 1. 상단 시스템 알림 바 (계정 잠김 또는 비밀번호 변경 성공 시) --%>
+    <c:if test="${not empty vd.systemNotice}">
         <div class="system-alert-bar" style="background: #E74C3C; color: white; text-align: center; padding: 15px; font-weight: bold; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999;">
-            <%= systemNotice %>
+            ${vd.systemNotice}
         </div>
         <div style="margin-top: 50px;"></div> <%-- 알림바 두께만큼 여백 --%>
-    <% } %>
+    </c:if>
 
     <div class="login-card" style="margin-top: 80px;">
         <div class="logo-area">
@@ -37,7 +27,8 @@
         <form action="${pageContext.request.contextPath}/auth/login.do" method="post">
             <div class="input-group">
                 <label class="input-label">아이디</label>
-                <input type="text" name="username" class="input-box" value="<%= (prevUser != null) ? prevUser : "" %>" required>
+                <%-- 2. 이전 입력 아이디 복구: param.prevUser(URL 파라미터) 사용 --%>
+                <input type="text" name="username" class="input-box" value="${not empty param.prevUser ? param.prevUser : ''}" required>
             </div>
 
             <div class="input-group">
@@ -46,24 +37,32 @@
             </div>
 
             <div class="alert-container">
-                <% if (msg != null && msg.startsWith("login_fail_")) { %>
-                    <div class="alert-box alert-warning" style="background:#fffaf0; border:1px solid #fbd38d; padding:12px; border-radius:6px; margin-bottom:20px;">
-                        <p style="color:#9c4221; font-size:13px; margin:0;">
-                            비밀번호 불일치 (현재 <strong><%= vd.get("failCount") %></strong> / 5회)
-                        </p>
-                    </div>
-                <% } else if (systemNotice.isEmpty()) { %>
-                    <div class="alert-box alert-default" style="background:#ebf8ff; border:1px solid #bee3f8; padding:12px; border-radius:6px; margin-bottom:20px;">
-                        <p style="color:#2a4365; font-size:13px; margin:0;">5회 연속 실패 시 계정이 잠깁니다.</p>
-                    </div>
-                <% } %>
+                <%-- 3. 메시지에 따른 조건부 렌더링 --%>
+                <c:choose>
+                    <%-- 비밀번호 실패 시 횟수 표시 --%>
+                    <c:when test="${not empty param.msg and param.msg.startsWith('login_fail_')}">
+                        <div class="alert-box alert-warning" style="background:#fffaf0; border:1px solid #fbd38d; padding:12px; border-radius:6px; margin-bottom:20px;">
+                            <p style="color:#9c4221; font-size:13px; margin:0;">
+                                비밀번호 불일치 (현재 <strong>${vd.failCount}</strong> / 5회)
+                            </p>
+                        </div>
+                    </c:when>
+                    
+                    <%-- 일반 상태일 때 안내 메시지 --%>
+                    <c:when test="${empty vd.systemNotice}">
+                        <div class="alert-box alert-default" style="background:#ebf8ff; border:1px solid #bee3f8; padding:12px; border-radius:6px; margin-bottom:20px;">
+                            <p style="color:#2a4365; font-size:13px; margin:0;">5회 연속 실패 시 계정이 잠깁니다.</p>
+                        </div>
+                    </c:when>
+                </c:choose>
             </div>
 
             <button type="submit" class="login-btn">로그인</button>
         </form>
 
         <div class="footer-info" style="margin-top:30px; text-align:center; border-top:1px solid #eee; padding-top:20px;">
-            <span style="font-size:14px; color:#777;">문의: <%= vd.get("adminPhone") %></span>
+            <%-- 4. 관리자 문의처 표시 --%>
+            <span style="font-size:14px; color:#777;">문의: ${vd.adminPhone}</span>
         </div>
     </div>
 </body>
