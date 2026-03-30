@@ -9,65 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HR ERP - 비밀번호 초기화</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
-    <style>
-        .pw-reset-wrap { max-width: 560px; }
-        .selected-emp-card {
-            background: var(--gray-50, #f9fafb);
-            padding: 14px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .emp-avatar {
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            background: var(--primary, #3b82f6);
-            color: #fff;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 15px; flex-shrink: 0;
-        }
-        .emp-info-name { font-size: 14px; font-weight: 600; }
-        .emp-info-sub  { font-size: 12px; color: var(--gray-400, #9ca3af); margin-top: 2px; }
-
-        .warn-box {
-            background: #fef3c7;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            color: #92400e;
-        }
-        .result-box {
-            background: #dcfce7;
-            padding: 14px;
-            border-radius: 6px;
-        }
-        .result-box .pw-value {
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: 3px;
-            color: #166534;
-        }
-        .result-box .pw-hint {
-            font-size: 11px;
-            color: var(--gray-500, #6b7280);
-            margin-top: 4px;
-        }
-        .error-box {
-            background: #fee2e2;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            color: #991b1b;
-        }
-        .search-result-table { width: 100%; border-collapse: collapse; }
-        .search-result-table th,
-        .search-result-table td { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 13px; text-align: left; }
-        .search-result-table th { background: #f8f9fa; font-weight: 600; }
-        .search-result-table tbody tr:hover { background: #f0f9ff; cursor: pointer; }
-        .btn-select { padding: 4px 12px; font-size: 12px; border: 1px solid var(--primary, #3b82f6); border-radius: 4px; background: #fff; color: var(--primary, #3b82f6); cursor: pointer; }
-        .btn-select:hover { background: var(--primary, #3b82f6); color: #fff; }
-    </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sys/password_reset.css">
 </head>
 <body>
 
@@ -206,10 +148,6 @@
     </div>
 
     <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
-    <script>
-        function confirmReset(empName) {
-            return confirm(empName + ' 직원의 비밀번호를 초기화하시겠습니까?\n\n초기화된 비밀번호는 화면에 1회만 표시됩니다.');
-        }
-    </script>
+<script src="${pageContext.request.contextPath}/js/sys/password_reset.js"></script>
 </body>
 </html>
