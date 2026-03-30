@@ -14,7 +14,7 @@ public class DatabaseConnection {
             
             // 필수 설정 (기존에 쓰던 mydb 정보 적용)
             config.setDriverClassName("com.mysql.cj.jdbc.Driver");
-            config.setJdbcUrl("jdbc:mysql://localhost:3306/mydb?characterEncoding=UTF-8&serverTimezone=UTC");
+            config.setJdbcUrl("jdbc:mysql://localhost:3306/hr_erp?characterEncoding=UTF-8&serverTimezone=UTC");
             config.setUsername("root");
             config.setPassword("1234");
 
