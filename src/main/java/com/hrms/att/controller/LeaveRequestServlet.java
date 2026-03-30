@@ -1,8 +1,10 @@
 package com.hrms.att.controller;
 
 import com.hrms.att.dao.LeaveDAO;
+import com.hrms.att.dto.AnnualLeaveDTO;
 import com.hrms.att.dto.LeaveDTO;
 import com.hrms.auth.dto.AccountDTO;
+import com.hrms.emp.dto.EmployeeDTO;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -23,7 +25,21 @@ public class LeaveRequestServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-    	request.getRequestDispatcher("/WEB-INF/jsp/att/leaveRequest.jsp").forward(request, response);
+        HttpSession session = request.getSession();
+        EmployeeDTO loginUser = (EmployeeDTO) session.getAttribute("loginUser");
+        int empId = (int) session.getAttribute("empId");
+
+        if (loginUser == null) {
+            response.sendRedirect(request.getContextPath() + "/auth/login.do");
+            return;
+        }
+
+        // 🔥 연차 정보 조회
+        AnnualLeaveDTO annual = leaveDAO.getAnnualLeave(empId);
+
+        request.setAttribute("annual", annual);
+
+        request.getRequestDispatcher("/WEB-INF/jsp/att/leaveRequest.jsp").forward(request, response);
     }
 
     // POST → 휴가 신청 처리

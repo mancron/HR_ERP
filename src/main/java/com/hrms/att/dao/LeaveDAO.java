@@ -1,5 +1,6 @@
 package com.hrms.att.dao;
 
+import com.hrms.att.dto.AnnualLeaveDTO;
 import com.hrms.att.dto.LeaveDTO;
 import com.hrms.common.db.DatabaseConnection;
 
@@ -165,5 +166,35 @@ public class LeaveDAO {
         }
 
         return false;
+    }
+    
+    //남은 휴가일수 조회
+    public AnnualLeaveDTO getAnnualLeave(int empId) {
+
+        String sql = "SELECT total_days, used_days, remain_days "
+                   + "FROM annual_leave "
+                   + "WHERE emp_id = ? AND leave_year = YEAR(NOW())";
+
+        AnnualLeaveDTO dto = null;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, empId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    dto = new AnnualLeaveDTO();
+                    dto.setTotalDays(rs.getDouble("total_days"));
+                    dto.setUsedDays(rs.getDouble("used_days"));
+                    dto.setRemainDays(rs.getDouble("remain_days"));
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return dto;
     }
 }
