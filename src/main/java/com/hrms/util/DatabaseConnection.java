@@ -18,7 +18,7 @@ public class DatabaseConnection {
             config.setUsername("root");
             config.setPassword("1234");
 
-            // 성능 최적화 옵션 (시니어 권장 설정)
+            // 성능 최적화 옵션 
             config.setMaximumPoolSize(10);         // 최대 커넥션 개수
             config.setConnectionTimeout(30000);    // 연결 대기 시간 (30초)
             config.setIdleTimeout(600000);         // 유휴 커넥션 유지 시간 (10분)
