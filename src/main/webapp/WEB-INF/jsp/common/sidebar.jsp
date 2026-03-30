@@ -63,7 +63,7 @@
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleAccordion(this)">인사 평가</div>
         <div class="nav-group-content">
-          <a href="/eval/write" class="nav-item">평가 작성·확정</a>
+          <a href="${pageContext.request.contextPath}/eval/write" class="nav-item">평가 작성·확정</a>
           <a href="/eval/status" class="nav-item">평가 현황</a>
         </div>
       </div>
