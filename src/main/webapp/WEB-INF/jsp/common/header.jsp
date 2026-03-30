@@ -1,22 +1,37 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="com.hrms.emp.dto.EmployeeDTO" %>
+<%@ page import="com.hrms.emp.dto.EmpDTO" %>
+<%@ page import="com.hrms.org.dao.DeptDAO" %> <%-- DeptDAO 임포트 추가 --%>
 <%
-	// 브라우저 캐시 방지
-	response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-	response.setHeader("Pragma", "no-cache");
-	response.setDateHeader("Expires", 0);
+    // 브라우저 캐시 방지
+    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    response.setHeader("Pragma", "no-cache");
+    response.setDateHeader("Expires", 0);
 
     // 1. 세션에서 정보 가져오기
     String userRole = (String) session.getAttribute("userRole");
-    // LoginServlet에서 세션에 담아준 EmployeeDTO 객체를 꺼냄
-    EmployeeDTO loginUser = (EmployeeDTO) session.getAttribute("loginUser");
+    EmpDTO loginUser = (EmpDTO) session.getAttribute("loginUser");
     
-    // 2. 표시할 데이터 결정 (loginUser가 있으면 실명 사용, 없으면 계정명 사용)
-    String displayRealName = (loginUser != null) ? loginUser.getEmpName() : (String)session.getAttribute("userName");
-    String displayDept = (loginUser != null && loginUser.getDeptName() != null) ? loginUser.getDeptName() : "소속 미지정";
-    
-    // 기본값 처리
+    // 2. 표시할 데이터 결정
+    // 실명 처리
+    String displayRealName = (loginUser != null) ? loginUser.getEmp_name() : (String)session.getAttribute("userName");
     if (displayRealName == null) displayRealName = "Guest";
+
+    // 부서명 처리 (수정 포인트)
+    String displayDept = "소속 미지정";
+    
+    if (loginUser != null) {
+        // 우선 DTO에 담긴 부서명이 있는지 확인
+        if (loginUser.getDept_name() != null && !loginUser.getDept_name().isEmpty()) {
+            displayDept = loginUser.getDept_name();
+        } 
+        // 부서 이름은 없지만 부서 ID가 있다면 DAO를 통해 DB에서 가져옴
+        else if (loginUser.getDept_id() > 0) {
+            DeptDAO deptDao = new DeptDAO();
+            displayDept = deptDao.getDeptNameById(loginUser.getDept_id());
+        }
+    }
+
+    // 권한 기본값 처리
     if (userRole == null) userRole = "USER";
 %>
 

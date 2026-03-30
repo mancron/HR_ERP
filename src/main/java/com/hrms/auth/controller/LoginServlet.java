@@ -2,8 +2,8 @@ package com.hrms.auth.controller;
 
 import com.hrms.auth.dto.AccountDTO;
 import com.hrms.auth.service.AuthService;
-import com.hrms.emp.dao.EmployeeDAO;
-import com.hrms.emp.dto.EmployeeDTO;
+import com.hrms.emp.dao.EmpDAO;
+import com.hrms.emp.dto.EmpDTO;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -34,8 +34,8 @@ public class LoginServlet extends HttpServlet {
                 session.setAttribute("userName", account.getUsername());
                 session.setAttribute("userRole", account.getRole());
 
-                EmployeeDAO empDao = new EmployeeDAO();
-                EmployeeDTO empInfo = empDao.getEmployeeById(account.getEmpId());
+                EmpDAO empDao = new EmpDAO();
+                EmpDTO empInfo = empDao.getEmployeeById(account.getEmpId());
                 session.setAttribute("loginUser", empInfo); 
 
                 response.sendRedirect(request.getContextPath() + "/index.jsp");

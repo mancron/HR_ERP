@@ -3,8 +3,10 @@ package com.hrms.emp.dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Vector;
 
+import com.hrms.common.db.DatabaseConnection;
 import com.hrms.emp.dto.EmpDTO;
 
 public class EmpDAO {
@@ -146,5 +148,47 @@ public class EmpDAO {
         dto.setDept_name(rs.getString("dept_name"));
         dto.setPosition_name(rs.getString("position_name"));
         return dto;
+    }
+    
+    /**
+     * 세션에 담을 상세 정보 조회 (부서명 포함)
+     * DB에서 사원 ID로 검색하여 모든 정보를 EmpDTO에 담아 반환합니다.
+     */
+    public EmpDTO getEmployeeById(int empId) {
+        EmpDTO emp = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        Connection conn = null;
+
+        // SQL 쿼리 문법 오류 수정 및 정렬
+        String sql = "SELECT e.*, d.dept_name, p.position_name " +
+                     "FROM employee e " +
+                     "LEFT JOIN department d ON e.dept_id = d.dept_id " +
+                     "LEFT JOIN job_position p ON e.position_id = p.position_id " +
+                     "WHERE e.emp_id = ?";
+
+        try {
+            conn = DatabaseConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, empId);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                // 이미 작성하신 mapRow 메서드를 호출하면 모든 필드가 자동으로 매핑됩니다.
+                emp = mapRow(rs);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // try-with-resources 대신 기존 finally 블록 스타일로 자원 해제
+            try {
+                if (rs != null) rs.close();
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return emp;
     }
 }
