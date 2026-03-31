@@ -1,5 +1,6 @@
 package com.hrms.auth.controller;
 
+import com.hrms.auth.dao.AccountDAO;
 import com.hrms.auth.dto.AccountDTO;
 import com.hrms.auth.service.AuthService;
 import com.hrms.emp.dao.EmpDAO;
@@ -25,10 +26,15 @@ public class LoginServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // 인코딩 설정 (한글 깨짐 방지)
+        request.setCharacterEncoding("UTF-8");
+        
         String user = request.getParameter("username");
         String pass = request.getParameter("password");
 
         try {
+            // [수정] 서비스 계층에서 login_attempts 기반으로 검증 수행
+            // 5회 이상 실패 시 "account_locked" 예외가 throw 됩니다.
             AccountDTO account = authService.login(user, pass);
             
             if (account != null) {
@@ -39,23 +45,20 @@ public class LoginServlet extends HttpServlet {
                 EmpDTO empInfo = empDao.getEmployeeById(account.getEmpId());
                 
                 if (empInfo != null) {
-                    // 2. [데이터 보강] 부서명과 직급명이 없다면 DAO를 통해 채워줌
-                    // (EmpDAO의 JOIN 쿼리가 완벽하지 않을 경우를 대비한 방어 코드)
+                    // 2. [데이터 보강] 부서명/직급명 방어 코드 (기존 로직 유지)
                     if (empInfo.getDept_name() == null || empInfo.getDept_name().isEmpty()) {
-                        DeptDAO deptDao = new DeptDAO();
-                        empInfo.setDept_name(deptDao.getDeptNameById(empInfo.getDept_id()));
+                        empInfo.setDept_name(new DeptDAO().getDeptNameById(empInfo.getDept_id()));
                     }
                     
                     if (empInfo.getPosition_name() == null || empInfo.getPosition_name().isEmpty()) {
-                        PosDAO posDao = new PosDAO();
-                        empInfo.setPosition_name(posDao.getPositionNameById(empInfo.getPosition_id()));
+                        empInfo.setPosition_name(new PosDAO().getPositionNameById(empInfo.getPosition_id()));
                     }
 
-                    // 3. 세션 저장 (JSP에서 EL 태그로 바로 사용 가능)
+                    // 3. 세션 저장
                     session.setAttribute("empId", account.getEmpId());
                     session.setAttribute("userName", account.getUsername());
                     session.setAttribute("userRole", account.getRole());
-                    session.setAttribute("loginUser", empInfo); // 모든 정보가 담긴 DTO
+                    session.setAttribute("loginUser", empInfo);
                 }
 
                 response.sendRedirect(request.getContextPath() + "/index.jsp");
@@ -65,8 +68,19 @@ public class LoginServlet extends HttpServlet {
             
         } catch (Exception e) {
             String errorCode = e.getMessage();
-            String encodedUser = (user != null) ? URLEncoder.encode(user, "UTF-8") : "";
-            response.sendRedirect(request.getContextPath() + "/auth/login?msg=" + errorCode + "&prevUser=" + encodedUser);
+            
+            // [추가] DB에서 관리자 연락처 동적으로 가져오기
+            AccountDAO accountDao = new AccountDAO();
+            String adminPhone = accountDao.getAdminContact(); 
+            
+            String encodedUser = (user != null) ? java.net.URLEncoder.encode(user, "UTF-8") : "";
+            String encodedPhone = java.net.URLEncoder.encode(adminPhone, "UTF-8");
+
+            // msg와 함께 adminPhone 파라미터도 추가해서 보냅니다.
+            response.sendRedirect(request.getContextPath() + 
+                "/auth/login?msg=" + errorCode + 
+                "&prevUser=" + encodedUser + 
+                "&adminPhone=" + encodedPhone);
         }
     }
 }

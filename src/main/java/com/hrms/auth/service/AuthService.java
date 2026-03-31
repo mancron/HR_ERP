@@ -40,10 +40,20 @@ public class AuthService {
     }
 
     public AccountDTO login(String username, String password) throws Exception {
+        // 1. 사용자 정보 로드
         AccountDTO account = accountDAO.getAccountByUsername(username);
-        if (account == null) throw new Exception("invalid_user");
-        if (account.getIsActive() == 0) throw new Exception("locked");
+        // 사용자가 존재하지 않는 경우
+        if (account == null) {
+            throw new Exception("invalid_user");
+        }
+        
+        // 2. [변경] is_active 대신 login_attempts 수치로 잠금 여부 판단
+        // DB에서 가져온 시도 횟수가 이미 5회 이상이라면 즉시 차단
+        if (account.getLoginAttempts() >= 5) {
+            throw new Exception("account_locked");
+        }
 
+        // 3. 비밀번호 검증 (BCrypt)
         if (BCrypt.checkpw(password, account.getPasswordHash())) {
             accountDAO.handleLoginSuccess(username);
             return account;
@@ -51,7 +61,9 @@ public class AuthService {
             accountDAO.handleLoginFailure(username);
             AccountDTO updated = accountDAO.getAccountByUsername(username);
             int currentAttempts = (updated != null) ? updated.getLoginAttempts() : 1;
-            if (updated != null && updated.getIsActive() == 0) throw new Exception("locked");
+            if (currentAttempts >= 5) {
+                throw new Exception("account_locked");
+            }
             throw new Exception("login_fail_" + currentAttempts);
         }
     }
