@@ -667,3 +667,81 @@ WHERE ev.eval_status != '최종확정'
   AND ev.eval_year = YEAR(NOW())
 ORDER BY ev.eval_year DESC, ev.eval_period DESC
 LIMIT 20;
+
+
+
+-- ================================================
+-- HR ERP AI 조회용 뷰
+-- ================================================
+-- AI 전용 계정 생성 (비밀번호는 원하는 대로 변경)
+CREATE USER 'ai_reader'@'%' IDENTIFIED BY '123456!';
+
+-- hr_erp DB에 대한 SELECT 권한만 부여
+GRANT SELECT ON hr_erp.* TO 'ai_reader'@'%';
+
+-- 권한 적용
+FLUSH PRIVILEGES;
+
+
+-- 1. 직원 전체 정보 뷰 (직원 + 부서 + 직급 통합)
+CREATE OR REPLACE VIEW v_employee_full AS
+SELECT
+    e.emp_id, e.emp_name, e.emp_no,
+    e.status, e.emp_type, e.base_salary,
+    e.hire_date, e.resign_date,
+    e.birth_date, e.gender, e.email, e.phone,
+    d.dept_name,
+    p.position_name, p.position_level
+FROM employee e
+JOIN department  d ON e.dept_id     = d.dept_id
+JOIN job_position p ON e.position_id = p.position_id;
+
+-- 2. 급여 요약 뷰 (직원 + 부서 + 급여 통합)
+CREATE OR REPLACE VIEW v_salary_summary AS
+SELECT
+    e.emp_id, e.emp_name, e.emp_no,
+    d.dept_name,
+    p.position_name,
+    s.salary_year, s.salary_month,
+    s.base_salary, s.gross_salary,
+    s.total_deduction, s.net_salary,
+    s.overtime_pay, s.status AS salary_status,
+    s.pay_date
+FROM salary s
+JOIN employee    e ON s.emp_id      = e.emp_id
+JOIN department  d ON e.dept_id     = d.dept_id
+JOIN job_position p ON e.position_id = p.position_id;
+
+-- 3. 휴가 현황 뷰 (직원 + 부서 + 휴가신청 + 연차현황 통합)
+CREATE OR REPLACE VIEW v_leave_status AS
+SELECT
+    e.emp_id, e.emp_name, e.emp_no,
+    d.dept_name,
+    p.position_name,
+    lr.leave_id, lr.leave_type, lr.half_type,
+    lr.start_date, lr.end_date, lr.days,
+    lr.reason, lr.status AS leave_status,
+    lr.approved_at, lr.reject_reason,
+    al.leave_year, al.total_days, al.used_days, al.remain_days
+FROM leave_request lr
+JOIN employee    e  ON lr.emp_id    = e.emp_id
+JOIN department  d  ON e.dept_id    = d.dept_id
+JOIN job_position p  ON e.position_id = p.position_id
+LEFT JOIN annual_leave al ON e.emp_id = al.emp_id
+    AND al.leave_year = YEAR(lr.start_date);
+
+-- 4. 평가 결과 뷰 (직원 + 부서 + 직급 + 평가결과 통합)
+CREATE OR REPLACE VIEW v_evaluation_result AS
+SELECT
+    e.emp_id, e.emp_name, e.emp_no,
+    d.dept_name,
+    p.position_name,
+    ev.eval_id, ev.eval_year, ev.eval_period, ev.eval_type,
+    ev.total_score, ev.grade, ev.eval_comment,
+    ev.eval_status, ev.confirmed_at,
+    evaluator.emp_name AS evaluator_name
+FROM evaluation ev
+JOIN employee    e         ON ev.emp_id       = e.emp_id
+JOIN department  d         ON e.dept_id       = d.dept_id
+JOIN job_position p         ON e.position_id   = p.position_id
+LEFT JOIN employee evaluator ON ev.evaluator_id = evaluator.emp_id;
