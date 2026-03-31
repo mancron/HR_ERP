@@ -191,4 +191,41 @@ public class EmpDAO {
         }
         return emp;
     }
+    
+    //직원 정보 수정
+    public int updateEmp(Connection con, EmpDTO dto) {
+    PreparedStatement pstmt = null;
+
+    String sql = "UPDATE employee SET " +
+                 "emp_name=?, gender=?, birth_date=?, phone=?, email=?, " +
+                 "emergency_contact=?, bank_account=?, address=?, " +
+                 "emp_type=?, base_salary=? " +
+                 "WHERE emp_id=?";
+    try {
+        pstmt = con.prepareStatement(sql);
+        pstmt.setString(1, dto.getEmp_name());
+        pstmt.setString(2, dto.getGender());
+        pstmt.setString(3, dto.getBirth_date());
+        pstmt.setString(4, dto.getPhone());
+        pstmt.setString(5, dto.getEmail());
+        pstmt.setString(6, dto.getEmergency_contact());
+        pstmt.setString(7, dto.getBank_account());
+        pstmt.setString(8, dto.getAddress());
+        pstmt.setString(9, dto.getEmp_type());
+        pstmt.setBigDecimal(10, dto.getBase_salary());
+        pstmt.setInt(11, dto.getEmp_id());
+
+        return pstmt.executeUpdate();
+    } catch (Exception e) {
+        e.printStackTrace();
+        return 0;
+    } finally {
+        try {
+            if (pstmt != null) pstmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+    
 }

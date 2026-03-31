@@ -9,32 +9,22 @@ body {
 }
 
 /* 헤더 */
-.detail-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
+.transfer-header {
+    margin-bottom: 16px;
+    display: block !important;
 }
 
-.detail-header h2 {
-    margin: 0;
+.transfer-header h2 {
+    margin: 0 0 6px 0;
     font-size: 17px;
     font-weight: 700;
     color: #1a1a1a;
 }
 
-/* 상태 배지 */
-.status-badge {
-    display: inline-block;
-    padding: 3px 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 700;
+.transfer-header .emp-info {
+    font-size: 13px;
+    color: #666;
 }
-
-.status-재직 { background: #e6f4ea; color: #2e7d32; }
-.status-휴직 { background: #fff8e1; color: #f57f17; }
-.status-퇴직 { background: #fce4ec; color: #c62828; }
 
 /* 섹션 타이틀 */
 h3 {
@@ -46,41 +36,39 @@ h3 {
     margin: 20px 0 10px;
 }
 
-/* 테이블 공통 */
-.detail-table {
+/* 폼 테이블 — detail-table과 동일 구조 */
+.transfer-table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 4px;
     table-layout: fixed;
 }
 
-.detail-table th,
-.detail-table td {
+.transfer-table th,
+.transfer-table td {
     padding: 8px 10px;
     border: 1px solid #ddd;
     text-align: left;
     vertical-align: middle;
 }
 
-/* 라벨: 4칸 중 좁게 (약 13%) */
-.detail-table th {
+.transfer-table th {
     background: #f5f7fa;
     color: #555;
     font-weight: 600;
-    width: 13%;
+    width: 8%;
     white-space: nowrap;
 }
 
-/* 값: 나머지 (약 24%) */
-.detail-table td {
-    width: 24%;
+.transfer-table td {
+    width: 28%;
 }
 
-/* 인풋 공통 */
-.detail-table input[type="text"],
-.detail-table input[type="email"],
-.detail-table input[type="date"],
-.detail-table select {
+/* 인풋/셀렉트/텍스트에어리어 공통 */
+.transfer-table input[type="text"],
+.transfer-table input[type="date"],
+.transfer-table select,
+.transfer-table textarea {
     width: 100%;
     padding: 5px 7px;
     border: 1px solid #ccc;
@@ -90,6 +78,18 @@ h3 {
     font-family: inherit;
 }
 
+.transfer-table textarea {
+    resize: none;
+    height: 72px;
+}
+
+/* 필수 표시 */
+.required {
+    color: #e53935;
+    margin-left: 3px;
+}
+
+/* 읽기 전용 */
 .readonly-input {
     background-color: #f1f3f5;
     color: #555;
@@ -99,10 +99,9 @@ h3 {
 /* 버튼 */
 .btn-area {
     display: flex;
+    justify-content: flex-end;
     gap: 8px;
     margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: flex-end; /*오른쪽에 위치*/
 }
 
 .btn-area button {
@@ -115,8 +114,5 @@ h3 {
     font-family: inherit;
 }
 
-.btn-edit 	  { background: #1976d2; color: #fff; }
-.btn-save     { background: #1976d2; color: #fff; }
-.btn-transfer { background: #f5f5f5; color: #333; border: 1px solid #ccc !important; }
-.btn-leave    { background: #f5f5f5; color: #333; border: 1px solid #ccc !important; }
-.btn-resign   { background: #e53935; color: #fff; }
+.btn-cancel { background: #f5f5f5; color: #333; border: 1px solid #ccc !important; }
+.btn-submit { background: #1976d2; color: #fff; }

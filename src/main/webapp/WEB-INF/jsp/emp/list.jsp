@@ -3,14 +3,15 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HR ERP - 직원 목록</title>
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/empList.css">
-  <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
-  <script src="${pageContext.request.contextPath}/js/emp/list.js"></script>
-
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>HR ERP - 직원 목록</title>
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/empList.css">
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+ 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
+	<script src="${pageContext.request.contextPath}/js/emp/list.js"></script>
 </head>
 <body data-context-path="${pageContext.request.contextPath}">
 
