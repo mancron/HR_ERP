@@ -7,9 +7,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HR ERP - 직원 목록</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/empList.css">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/empList.css">
+  <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const modal     = document.getElementById('empDetailModal');
+      const iframe    = document.getElementById('modalIframe');
+      const closeBtn  = document.getElementById('closeModalBtn');
+      const baseUrl   = '${pageContext.request.contextPath}/emp/detail?emp_no=';
+
+      // 상세 버튼 클릭 → 모달 열기
+      document.querySelectorAll('.btn-detail').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const empNo = this.getAttribute('data-empno');
+          iframe.src = baseUrl + empNo;
+          modal.classList.add('active');
+        });
+      });
+
+      // 모달 닫기
+      closeBtn.addEventListener('click', function () {
+        modal.classList.remove('active');
+        iframe.src = '';
+      });
+    });
+  </script>
 </head>
-<body>
+<body data-context-path="${pageContext.request.contextPath}">
 
   <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 
@@ -22,19 +46,15 @@
       <%-- ===== 검색 폼 ===== --%>
       <form action="${pageContext.request.contextPath}/emp/list" method="get">
         <div class="search-bar" >
-
-          <input type="text" name="keyword"
-                 value="${param.keyword}"
-                 placeholder="이름 또는 사번 검색"
-                >
+          <input type="text" name="keyword" value="${param.keyword}" placeholder="이름 또는 사번 검색" >
 
           <%-- 부서 드롭다운: selDeptId(String)와 dept_id(String)를 비교해 selected 유지 --%>
           <select name="dept_id">
             <option value="all" <c:if test="${selDeptId == 'all'}">selected</c:if>>전체 부서</option>
             <c:forEach var="dept" items="${deptList}">
               <option value="${dept.dept_id}"
-                      <c:if test="${selDeptId == String.valueOf(dept.dept_id)}">selected</c:if>>
-                ${dept.dept_name}
+                  <c:if test="${selDeptId == String.valueOf(dept.dept_id)}">selected</c:if>>
+                   ${dept.dept_name}
               </option>
             </c:forEach>
           </select>
@@ -114,6 +134,7 @@
         </table>
       </div>
 
+	  <!-- 페이지 버튼 -->
       <div class="pagination">
   		<jsp:include page="/WEB-INF/jsp/emp/page.jsp" />
 	  </div>
@@ -132,30 +153,6 @@
     </div>
   </div>
 
-  <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const modal     = document.getElementById('empDetailModal');
-      const iframe    = document.getElementById('modalIframe');
-      const closeBtn  = document.getElementById('closeModalBtn');
-      const baseUrl   = '${pageContext.request.contextPath}/emp/detail?emp_no=';
-
-      // 상세 버튼 클릭 → 모달 열기
-      document.querySelectorAll('.btn-detail').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          const empNo = this.getAttribute('data-empno');
-          iframe.src = baseUrl + empNo;
-          modal.classList.add('active');
-        });
-      });
-
-      // 모달 닫기
-      closeBtn.addEventListener('click', function () {
-        modal.classList.remove('active');
-        iframe.src = '';
-      });
-
-    });
-  </script>
+  
 </body>
 </html>

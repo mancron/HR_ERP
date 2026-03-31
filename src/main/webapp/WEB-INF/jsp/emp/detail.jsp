@@ -6,92 +6,10 @@
   <meta charset="UTF-8">
   <title>직원 상세</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
-  <style>
-    body { padding: 24px; font-family: sans-serif; font-size: 14px; background: #fff; }
-
-    .detail-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-    .detail-header h2 { margin: 0; font-size: 18px; }
-
-    .status-badge {
-      display: inline-block;
-      padding: 3px 12px;
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .status-재직  { background: #e6f4ea; color: #2e7d32; }
-    .status-휴직  { background: #fff8e1; color: #f57f17; }
-    .status-퇴직  { background: #fce4ec; color: #c62828; }
-
-    h3 {
-      font-size: 14px;
-      font-weight: 700;
-      color: #333;
-      border-left: 3px solid #1976d2;
-      padding-left: 8px;
-      margin: 24px 0 10px;
-    }
-
-    .detail-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-    .detail-table th, .detail-table td {
-      padding: 8px 12px;
-      border: 1px solid #ddd;
-      text-align: left;
-      vertical-align: middle;
-    }
-    .detail-table th {
-      background: #f5f7fa;
-      color: #555;
-      font-weight: 600;
-      width: 15%;
-      white-space: nowrap;
-    }
-    .detail-table td { width: 35%; }
-
-    .detail-table input[type="text"],
-    .detail-table input[type="email"],
-    .detail-table input[type="date"],
-    .detail-table select {
-      width: 100%;
-      padding: 5px 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-      font-size: 13px;
-    }
-    .readonly-input {
-      background-color: #f1f3f5;
-      color: #555;
-      cursor: default;
-    }
-
-    .btn-area {
-      display: flex;
-      gap: 8px;
-      margin-top: 24px;
-      flex-wrap: wrap;
-    }
-    .btn-area button {
-      padding: 8px 18px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .btn-save     { background: #1976d2; color: #fff; }
-    .btn-transfer { background: #f5f5f5; color: #333; border: 1px solid #ccc !important; }
-    .btn-leave    { background: #f5f5f5; color: #333; border: 1px solid #ccc !important; }
-    .btn-resign   { background: #e53935; color: #fff; }
-  </style>
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/detail.css">
+  
 </head>
 <body>
-
 <%-- 데이터가 없으면 오류 메시지 표시 --%>
 <c:if test="${empty empDetail}">
   <p style="color:red; text-align:center; margin-top: 40px;">직원 정보를 불러올 수 없습니다.</p>
@@ -207,7 +125,6 @@
       퇴직 처리
     </button>
   </div>
-
 </form>
 </c:if>
 
