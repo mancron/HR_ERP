@@ -64,8 +64,8 @@ public class AccountDAO {
         // 5회를 초과(> 5)하는 6회째 시도부터 잠금 처리되도록 부등호 수정
         String sql = "UPDATE account SET " +
                      "login_attempts = login_attempts + 1, " +
-                     "is_active = CASE WHEN login_attempts + 1 >= 5 THEN 0 ELSE is_active END, " +
-                     "locked_at = CASE WHEN login_attempts + 1 >= 5 THEN CURRENT_TIMESTAMP ELSE locked_at END " +
+                     "is_active = CASE WHEN login_attempts + 1 > 5 THEN 0 ELSE is_active END, " +
+                     "locked_at = CASE WHEN login_attempts + 1 > 5 THEN CURRENT_TIMESTAMP ELSE locked_at END " +
                      "WHERE username = ?";
                      
         try (Connection con = DatabaseConnection.getConnection();

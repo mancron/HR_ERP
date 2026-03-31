@@ -24,8 +24,8 @@
     <div class="nav-group">
       <div class="nav-group-header" onclick="toggleAccordion(this)">조직 관리</div>
       <div class="nav-group-content">
-        <a href="/org/dept" class="nav-item">부서 관리</a>
-        <a href="/org/position" class="nav-item">직급 관리</a>
+        <a href="${pageContext.request.contextPath}/org/dept" class="nav-item">부서 관리</a>
+        <a href="${pageContext.request.contextPath}/org/position" class="nav-item">직급 관리</a>
       </div>
     </div>
 
