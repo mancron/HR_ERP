@@ -32,9 +32,9 @@
     <div class="nav-group">
       <div class="nav-group-header" onclick="toggleAccordion(this)">직원 관리</div>
       <div class="nav-group-content">
-        <a href="/emp/list" class="nav-item">직원 목록</a>
-        <a href="/emp/reg" class="nav-item">직원 등록</a>
-        <a href="/emp/history" class="nav-item">인사발령 이력</a>
+        <a href="${pageContext.request.contextPath}/emp/list" class="nav-item">직원 목록</a>
+        <a href="${pageContext.request.contextPath}/emp/reg" class="nav-item">직원 등록</a>
+        <a href="${pageContext.request.contextPath}/emp/history" class="nav-item">인사발령 이력</a>
       </div>
     </div>
       <div class="nav-group">
