@@ -673,6 +673,15 @@ LIMIT 20;
 -- ================================================
 -- HR ERP AI 조회용 뷰
 -- ================================================
+-- AI 전용 계정 생성 (비밀번호는 원하는 대로 변경)
+CREATE USER 'ai_reader'@'%' IDENTIFIED BY '123456!';
+
+-- hr_erp DB에 대한 SELECT 권한만 부여
+GRANT SELECT ON hr_erp.* TO 'ai_reader'@'%';
+
+-- 권한 적용
+FLUSH PRIVILEGES;
+
 
 -- 1. 직원 전체 정보 뷰 (직원 + 부서 + 직급 통합)
 CREATE OR REPLACE VIEW v_employee_full AS
