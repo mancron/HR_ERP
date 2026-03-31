@@ -24,14 +24,8 @@ public class LeaveRequestServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
-		HttpSession session = request.getSession();
-		EmployeeDTO loginUser = (EmployeeDTO) session.getAttribute("loginUser");
-		int empId = (int) session.getAttribute("empId");
-
-		if (loginUser == null) {
-			response.sendRedirect(request.getContextPath() + "/auth/login.do");
-			return;
-		}
+		int empId = getLoginEmpId(request, response);
+    	if (empId == -1) return;
 
 		String monthParam = request.getParameter("month");
 
@@ -63,15 +57,8 @@ public class LeaveRequestServlet extends HttpServlet {
 
 		request.setCharacterEncoding("UTF-8");
 
-		HttpSession session = request.getSession();
-		EmployeeDTO loginUser = (EmployeeDTO) session.getAttribute("loginUser");
-
-		if (loginUser == null) {
-			response.sendRedirect(request.getContextPath() + "/auth/login.do");
-			return;
-		}
-
-		int empId = loginUser.getEmpId();
+		int empId = getLoginEmpId(request, response);
+    	if (empId == -1) return;
 
 		try {
 			// 1. 파라미터
@@ -109,4 +96,16 @@ public class LeaveRequestServlet extends HttpServlet {
 			response.sendRedirect(request.getContextPath() + "/att/leave/req?error=exception");
 		}
 	}
+	
+	private int getLoginEmpId(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HttpSession session = request.getSession();
+        EmployeeDTO loginUser = (EmployeeDTO) session.getAttribute("loginUser");
+
+        if (loginUser == null) {
+            response.sendRedirect(request.getContextPath() + "/auth/login.do");
+            return -1;
+        }
+
+        return loginUser.getEmpId();
+    }
 }
