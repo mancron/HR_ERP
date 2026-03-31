@@ -218,78 +218,95 @@ public class LeaveDAO {
 	}
 
 	// 대기 휴가 목록
-	public List<LeaveDTO> getPendingLeaves(String dept, String sort) {
+	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate) {
 
-		List<LeaveDTO> list = new ArrayList<>();
+	    List<LeaveDTO> list = new ArrayList<>();
 
-		StringBuilder sql = new StringBuilder();
+	    StringBuilder sql = new StringBuilder();
 
-		sql.append("SELECT lr.*, e.emp_name, jp.position_name, d.dept_name ");
-		sql.append("FROM leave_request lr ");
-		sql.append("JOIN employee e ON lr.emp_id = e.emp_id ");
-		sql.append("JOIN job_position jp ON e.position_id = jp.position_id ");
-		sql.append("JOIN department d ON e.dept_id = d.dept_id ");
-		sql.append("WHERE lr.status = '대기' ");
+	    sql.append("SELECT lr.*, e.emp_name, jp.position_name, d.dept_name ");
+	    sql.append("FROM leave_request lr ");
+	    sql.append("JOIN employee e ON lr.emp_id = e.emp_id ");
+	    sql.append("JOIN job_position jp ON e.position_id = jp.position_id ");
+	    sql.append("JOIN department d ON e.dept_id = d.dept_id ");
+	    sql.append("WHERE lr.status = '대기' ");
 
-		// 🔥 1. 부서 필터
-		if (dept != null && !dept.isEmpty()) {
-			sql.append("AND d.dept_name = ? ");
-		}
+	    // 🔥 1. 부서 필터
+	    if (dept != null && !dept.isEmpty()) {
+	        sql.append("AND d.dept_name = ? ");
+	    }
 
-		// 🔥 2. 정렬
-		if ("name_asc".equals(sort)) {
-			sql.append("ORDER BY e.emp_name ASC ");
-		} else if ("name_desc".equals(sort)) {
-			sql.append("ORDER BY e.emp_name DESC ");
-		} else if ("position_asc".equals(sort)) {
-			sql.append("ORDER BY jp.position_level ASC ");
-		} else if ("position_desc".equals(sort)) {
-			sql.append("ORDER BY jp.position_level DESC ");
-		} else {
-			sql.append("ORDER BY lr.created_at DESC ");
-		}
+	    // 🔥 2. 기간 필터 (겹침 기준)
+	    if (startDate != null && endDate != null &&
+	        !startDate.isEmpty() && !endDate.isEmpty()) {
 
-		try (Connection conn = DatabaseConnection.getConnection();
-				PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+	        sql.append("AND lr.start_date <= ? ");
+	        sql.append("AND lr.end_date >= ? ");
+	    }
 
-			// 🔥 3. 파라미터 세팅
-			if (dept != null && !dept.isEmpty()) {
-				pstmt.setString(1, dept);
-			}
+	    // 🔥 3. 정렬
+	    if ("name_asc".equals(sort)) {
+	        sql.append("ORDER BY e.emp_name ASC ");
+	    } else if ("name_desc".equals(sort)) {
+	        sql.append("ORDER BY e.emp_name DESC ");
+	    } else if ("position_asc".equals(sort)) {
+	        sql.append("ORDER BY jp.position_level ASC ");
+	    } else if ("position_desc".equals(sort)) {
+	        sql.append("ORDER BY jp.position_level DESC ");
+	    } else {
+	        sql.append("ORDER BY lr.created_at DESC ");
+	    }
 
-			ResultSet rs = pstmt.executeQuery();
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-			while (rs.next()) {
+	        int idx = 1;
 
-				LeaveDTO dto = new LeaveDTO();
+	        // 🔥 4. 파라미터 세팅 순서 중요
+	        if (dept != null && !dept.isEmpty()) {
+	            pstmt.setString(idx++, dept);
+	        }
 
-				dto.setLeaveId(rs.getInt("leave_id"));
-				dto.setEmpId(rs.getInt("emp_id"));
-				dto.setLeaveType(rs.getString("leave_type"));
-				dto.setHalfType(rs.getString("half_type"));
-				dto.setStartDate(rs.getDate("start_date"));
-				dto.setEndDate(rs.getDate("end_date"));
-				dto.setDays(rs.getDouble("days"));
-				dto.setReason(rs.getString("reason"));
-				dto.setStatus(rs.getString("status"));
+	        if (startDate != null && endDate != null &&
+	            !startDate.isEmpty() && !endDate.isEmpty()) {
 
-				dto.setApproverId((Integer) rs.getObject("approver_id"));
-				dto.setApprovedAt(rs.getTimestamp("approved_at"));
-				dto.setRejectReason(rs.getString("reject_reason"));
-				dto.setCreatedAt(rs.getTimestamp("created_at"));
+	            pstmt.setDate(idx++, Date.valueOf(endDate));   // <= endDate
+	            pstmt.setDate(idx++, Date.valueOf(startDate)); // >= startDate
+	        }
 
-				dto.setEmpName(rs.getString("emp_name"));
-				dto.setPosition(rs.getString("position_name"));
-				dto.setDeptName(rs.getString("dept_name"));
+	        ResultSet rs = pstmt.executeQuery();
 
-				list.add(dto);
-			}
+	        while (rs.next()) {
 
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	            LeaveDTO dto = new LeaveDTO();
 
-		return list;
+	            dto.setLeaveId(rs.getInt("leave_id"));
+	            dto.setEmpId(rs.getInt("emp_id"));
+	            dto.setLeaveType(rs.getString("leave_type"));
+	            dto.setHalfType(rs.getString("half_type"));
+	            dto.setStartDate(rs.getDate("start_date"));
+	            dto.setEndDate(rs.getDate("end_date"));
+	            dto.setDays(rs.getDouble("days"));
+	            dto.setReason(rs.getString("reason"));
+	            dto.setStatus(rs.getString("status"));
+
+	            dto.setApproverId((Integer) rs.getObject("approver_id"));
+	            dto.setApprovedAt(rs.getTimestamp("approved_at"));
+	            dto.setRejectReason(rs.getString("reject_reason"));
+	            dto.setCreatedAt(rs.getTimestamp("created_at"));
+
+	            dto.setEmpName(rs.getString("emp_name"));
+	            dto.setPosition(rs.getString("position_name"));
+	            dto.setDeptName(rs.getString("dept_name"));
+
+	            list.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return list;
 	}
 
 	// 6. 휴가 승인 / 반려 처리

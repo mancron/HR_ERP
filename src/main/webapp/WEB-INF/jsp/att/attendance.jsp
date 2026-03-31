@@ -126,5 +126,5 @@
 	</main>
 </div>
 
-<script src="${pageContext.request.contextPath}/js/attendance.js"></script>
+<script src="${pageContext.request.contextPath}/js/att/attendance.js"></script>
 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>

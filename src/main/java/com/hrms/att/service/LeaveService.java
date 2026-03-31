@@ -88,12 +88,12 @@ public class LeaveService {
     
     // 1. 기존 방식 (전체 조회 - 호환용)
     public List<LeaveDTO> getPendingLeaves() {
-        return leaveDAO.getPendingLeaves(null, null);
+        return leaveDAO.getPendingLeaves(null, null, null, null);
     }
 
     // 2. 필터 + 정렬 포함 (신규 기능)
-    public List<LeaveDTO> getPendingLeaves(String dept, String sort) {
-        return leaveDAO.getPendingLeaves(dept, sort);
+    public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate) {
+        return leaveDAO.getPendingLeaves(dept, sort, startDate, endDate);
     }
 
     // 3. 부서 목록 조회 (드롭다운용)

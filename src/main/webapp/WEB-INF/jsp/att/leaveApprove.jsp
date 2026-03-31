@@ -35,16 +35,20 @@
 					<c:if test="${sort eq 'name_asc'}">selected</c:if>>이름 가나다순</option>
 
 				<option value="name_desc"
-					<c:if test="${sort eq 'name_desc'}">selected</c:if>>이름 가나다 역순</option>
+					<c:if test="${sort eq 'name_desc'}">selected</c:if>>이름 가나다
+					역순</option>
 
 				<option value="position_asc"
-					<c:if test="${sort eq 'position_asc'}">selected</c:if>>
-					직급 오름차순</option>
+					<c:if test="${sort eq 'position_asc'}">selected</c:if>>직급
+					오름차순</option>
 
 				<option value="position_desc"
 					<c:if test="${sort eq 'position_desc'}">selected</c:if>>
 					직급 내림차순</option>
 			</select>
+			<!-- 기간 조회 -->
+			<input type="date" name="startDate" value="${startDate}"> ~ <input
+				type="date" name="endDate" value="${endDate}">
 
 			<button type="submit" class="btn approve-btn">조회</button>
 
@@ -148,3 +152,4 @@
 </script>
 
 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
+<script src="${pageContext.request.contextPath}/js/att/leave.js"></script>

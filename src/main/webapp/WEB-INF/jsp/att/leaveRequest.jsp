@@ -136,4 +136,4 @@
 </div>
 <script
 	src="<c:out value='${pageContext.request.contextPath}/js/sidebar.js'/>"></script>
-<script src="${pageContext.request.contextPath}/js/leave.js"></script>
+<script src="${pageContext.request.contextPath}/js/att/leave.js"></script>
