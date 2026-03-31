@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HR ERP - 계정 잠금 해제</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sys/account-unlock.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sys/account_unlock.css">
 </head>
 <body>
 
