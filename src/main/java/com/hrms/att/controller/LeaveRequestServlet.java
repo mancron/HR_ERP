@@ -38,14 +38,19 @@ public class LeaveRequestServlet extends HttpServlet {
 		    year = Integer.parseInt(parts[0]);
 		    month = Integer.parseInt(parts[1]);
 		}
-		// 🔥 연차 정보 조회
+
+		// 🔥 추가
+		String selectedMonth = year + "-" + String.format("%02d", month);
+
+		// 연차 정보 조회
 		AnnualLeaveDTO annual = leaveService.getAnnualLeave(empId);
+
 		// 리스트 조회
 		List<LeaveDTO> list = leaveService.getLeaveListByMonth(empId, year, month);
-		
+
 		request.setAttribute("annual", annual);
 		request.setAttribute("list", list);
-		request.setAttribute("month", monthParam);
+		request.setAttribute("month", selectedMonth); // 🔥 수정됨
 
 		request.getRequestDispatcher("/WEB-INF/jsp/att/leaveRequest.jsp").forward(request, response);
 	}

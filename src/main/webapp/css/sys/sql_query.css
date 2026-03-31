@@ -1,0 +1,78 @@
+@charset "UTF-8";
+.page-desc { font-size: 13px; color: var(--gray-500, #6b7280); margin-bottom: 20px; }
+
+.query-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.input-row { display: flex; gap: 10px; }
+
+.question-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.question-input:focus { outline: none; border-color: var(--primary, #3b82f6); }
+
+.example-wrap { margin-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.example-label { font-size: 12px; color: #6b7280; }
+.example-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background: #f9fafb;
+    cursor: pointer;
+}
+.example-btn:hover { background: #eff6ff; border-color: var(--primary, #3b82f6); color: var(--primary, #3b82f6); }
+
+.sql-box {
+    background: #1e1e1e;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.sql-label {
+    font-size: 11px;
+    color: #6b7280;
+    background: #374151;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    margin-top: 2px;
+}
+
+.sql-code { color: #86efac; font-family: monospace; font-size: 13px; word-break: break-all; }
+
+.result-header {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.result-count { font-size: 12px; font-weight: 400; color: #6b7280; }
+
+.table-wrap { overflow-x: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
+.data-table th { background: #f8f9fa; padding: 10px 14px; text-align: left; font-weight: 600; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+.data-table td { padding: 10px 14px; border-bottom: 1px solid #f3f4f6; }
+.data-table tbody tr:hover { background: #f9fafb; }
+.empty-row { text-align: center; padding: 30px !important; color: #9ca3af; }
+
+.alert { padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; }
+.alert-error { background: #fee2e2; color: #991b1b; }
