@@ -100,7 +100,9 @@ public class LeaveDAO {
         List<LeaveDTO> list = new ArrayList<>();
 
         String sql = "SELECT * FROM leave_request "
-                   + "WHERE emp_id = ? ORDER BY leave_id DESC";
+                + "WHERE emp_id = ? "
+                + "AND status != '취소' "
+                + "ORDER BY start_date DESC";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -190,10 +192,11 @@ public class LeaveDAO {
         List<LeaveDTO> list = new ArrayList<>();
 
         String sql = "SELECT * FROM leave_request "
-                   + "WHERE emp_id = ? "
-                   + "AND YEAR(start_date) = ? "
-                   + "AND MONTH(start_date) = ? "
-                   + "ORDER BY start_date DESC";
+                + "WHERE emp_id = ? "
+                + "AND status != '취소' "
+                + "AND YEAR(start_date) = ? "
+                + "AND MONTH(start_date) = ? "
+                + "ORDER BY start_date DESC";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {

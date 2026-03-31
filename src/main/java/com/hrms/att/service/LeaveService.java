@@ -80,4 +80,11 @@ public class LeaveService {
     public List<LeaveDTO> getLeaveListByMonth(int empId, int year, int month) {
         return leaveDAO.getLeaveListByMonth(empId, year, month);
     }
+    
+    //신청 취소
+    public boolean cancelLeave(int leaveId, int empId) {
+        return leaveDAO.cancelLeave(leaveId, empId);
+    }
+    
+    
 }
