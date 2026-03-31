@@ -1,11 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/evaluation.css">
+
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/eval/evaluation.css">
 
 <div class="eval-wrapper">
+    <%-- 왼쪽: 메인 평가 영역 --%>
     <div class="eval-main">
-        <%-- 수정 모드: 직원 이름 표시 / 신규 모드: "평가 작성" --%>
         <div class="section-title">
             <c:choose>
                 <c:when test="${not empty evalData}">
@@ -16,7 +17,6 @@
         </div>
 
         <form action="${pageContext.request.contextPath}/eval/write" method="post" id="evalForm">
-            <%-- 수정 모드일 때 evalId hidden 전송 --%>
             <c:if test="${not empty evalData}">
                 <input type="hidden" name="evalId" value="${evalData.evalId}">
             </c:if>
@@ -27,7 +27,6 @@
                     <select name="empId" required>
                         <option value="">대상자를 선택하세요</option>
                         <c:forEach var="emp" items="${targetList}">
-                            <%-- 수정 모드: 기존 직원 selected 처리 --%>
                             <option value="${emp.empId}"
                                 ${not empty evalData && evalData.empId == emp.empId ? 'selected' : ''}>
                                 ${emp.empName} (${emp.pos})
@@ -39,24 +38,10 @@
                 <div class="form-group">
                     <label>평가 연도 *</label>
                     <select name="evalYear">
-                        <%-- 연도 동적 생성: yearList가 있으면 사용, 없으면 현재 연도 기준 3년 --%>
-                        <c:choose>
-                            <c:when test="${not empty yearList}">
-                                <c:forEach var="y" items="${yearList}">
-                                    <option value="${y}"
-                                        ${not empty evalData && evalData.evalYear == y ? 'selected' : ''}>${y}년</option>
-                                </c:forEach>
-                            </c:when>
-                            <c:otherwise>
-                                <jsp:useBean id="now" class="java.util.Date" />
-                                <fmt:formatDate var="currentYear" value="${now}" pattern="yyyy"/>
-                                <c:forEach var="i" begin="0" end="2">
-                                    <fmt:parseNumber var="yr" value="${currentYear - i}" integerOnly="true"/>
-                                    <option value="${yr}"
-                                        ${not empty evalData && evalData.evalYear == yr ? 'selected' : ''}>${yr}년</option>
-                                </c:forEach>
-                            </c:otherwise>
-                        </c:choose>
+                        <c:forEach var="y" items="${yearList}">
+                            <option value="${y}"
+                                ${not empty evalData && evalData.evalYear == y ? 'selected' : ''}>${y}년</option>
+                        </c:forEach>
                     </select>
                 </div>
 
@@ -86,11 +71,15 @@
                     <div class="score-info"><span>${itemName}</span></div>
                     <div class="slider-container">
                         <input type="hidden" name="itemNames" value="${itemName}">
-                        <%-- 수정 모드: 기존 점수 복원 (itemScores: List<BigDecimal> 순서 일치) --%>
+                        
+                        <%-- 슬라이더 값은 정수로 변환 --%>
+                        <fmt:parseNumber var="intScore" value="${not empty itemScores ? itemScores[loop.index] : 80}" integerOnly="true" />
+                        
                         <input type="range" name="scores" min="0" max="100"
-                            value="${not empty itemScores ? itemScores[loop.index] : 80}"
-                            oninput="updateEval(this)">
-                        <span class="current-val">${not empty itemScores ? itemScores[loop.index] : 80}</span>
+                            value="${intScore}"
+                            oninput="document.getElementById('out${loop.index}').innerText = this.value">
+                        
+                        <span class="current-val" id="out${loop.index}">${intScore}</span>
                         <span class="max-val">/100</span>
                     </div>
                 </div>
@@ -110,11 +99,12 @@
                 </div>
                 <div style="text-align: right;">
                     <div style="font-size: 14px; color: #64748b;">등급</div>
-                    <div class="grade-badge" id="gradeBadge">${not empty evalData ? evalData.grade : 'A'}</div>
+                    <div class="grade-badge" id="gradeBadge" style="color: ${gradeColor};">
+                        ${not empty evalData ? evalData.grade : 'A'}
+                    </div>
                 </div>
             </div>
 
-            <%-- 확정일시: 수정 모드에서만 표시 --%>
             <c:if test="${not empty evalData && not empty evalData.confirmedAt}">
                 <div style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">
                     확정일시: <fmt:formatDate value="${evalData.confirmedAt}" pattern="yyyy-MM-dd HH:mm"/>
@@ -131,6 +121,7 @@
         </form>
     </div>
 
+    <%-- 오른쪽: 등급 기준표 사이드바 (부활!) --%>
     <div class="eval-side">
         <div class="section-title" style="font-size: 15px;">등급 기준표</div>
         <table class="grade-table">
@@ -153,26 +144,41 @@
 </div>
 
 <script>
-function updateEval(el) {
-    if (el) {
-        el.parentElement.querySelector('.current-val').innerText = el.value;
+    function updateEvaluation() {
+        const scores = document.getElementsByName('scores');
+        let total = 0;
+        let count = scores.length;
+        if (count === 0) return;
+
+        scores.forEach(input => {
+            total += parseInt(input.value || 0);
+        });
+
+        const avg = (total / count).toFixed(1); 
+        document.getElementById('avgScore').innerText = avg + "점";
+
+        let grade = 'D';
+        let color = '#ef4444';
+
+        if (avg >= 95) { grade = 'S'; color = '#8b5cf6'; }
+        else if (avg >= 85) { grade = 'A'; color = '#3b82f6'; }
+        else if (avg >= 75) { grade = 'B'; color = '#10b981'; }
+        else if (avg >= 60) { grade = 'C'; color = '#f59e0b'; }
+
+        const gradeBadge = document.getElementById('gradeBadge');
+        gradeBadge.innerText = grade;
+        gradeBadge.style.color = color;
     }
-    const sliders = document.querySelectorAll('input[type="range"]');
-    let sum = 0;
-    sliders.forEach(s => { sum += parseInt(s.value); });
-    const avg = sum / (sliders.length || 1);
-    document.getElementById('avgScore').innerText = avg.toFixed(1) + '점';
 
-    // 실시간 등급 판정 — EvaluationService.calculateGrade() 기준과 동일
-    let grade = 'D', color = '#94a3b8';
-    if      (avg >= 95) { grade = 'S'; color = '#ef4444'; }
-    else if (avg >= 85) { grade = 'A'; color = '#f59e0b'; }
-    else if (avg >= 75) { grade = 'B'; color = '#3b82f6'; }
-    else if (avg >= 60) { grade = 'C'; color = '#22c55e'; }
-
-    const badge = document.getElementById('gradeBadge');
-    badge.innerText = grade;
-    badge.style.color = color;
-}
-window.onload = () => updateEval();
+    document.addEventListener('DOMContentLoaded', function() {
+        const scoreInputs = document.querySelectorAll('input[name="scores"]');
+        scoreInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                const outputId = this.getAttribute('oninput').match(/'([^']+)'/)[1];
+                document.getElementById(outputId).innerText = this.value;
+                updateEvaluation();
+            });
+        });
+        updateEvaluation();
+    });
 </script>

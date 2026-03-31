@@ -6,11 +6,31 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.hrms.auth.dto.AccountDTO;
-import com.hrms.common.db.DatabaseConnection;
+import com.hrms.common.db.DatabaseConnection; // 수정된 패키지 경로 반영
 
 public class AccountDAO {
 
-    // 1. 사용자 정보 조회 (로그인 시 계정 객체 생성)
+    // [추가] 관리자(역할이 '관리자')인 사원의 연락처 가져오기
+    public String getAdminContact() {
+        String sql = "SELECT e.phone FROM employee e " +
+                     "JOIN account a ON e.emp_id = a.emp_id " +
+                     "WHERE a.role = '관리자' LIMIT 1";
+        
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = con.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            
+            if (rs.next()) {
+                String phone = rs.getString("phone");
+                return (phone != null && !phone.isEmpty()) ? phone : "051-890-0000";
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return "051-890-0000"; // DB 조회 실패 시 기본값
+    }
+
+    // 1. 사용자 정보 조회
     public AccountDTO getAccountByUsername(String username) {
         String sql = "SELECT * FROM account WHERE username = ?";
         
@@ -38,15 +58,16 @@ public class AccountDAO {
         return null;
     }
 
-    // 2. 로그인 실패 처리 (실패 횟수 증가 및 5회 시 잠금)
+    // 2. 로그인 실패 처리
     public void handleLoginFailure(String username) {
-        // login_attempts + 1 이 '5'를 넘어서는 순간(즉, 6회째 시도)에 잠그기
+        // [수정] 5회 시도까지는 활성화(is_active=1)를 유지하고, 
+        // 5회를 초과(> 5)하는 6회째 시도부터 잠금 처리되도록 부등호 수정
         String sql = "UPDATE account SET " +
                      "login_attempts = login_attempts + 1, " +
-                     "is_active = CASE WHEN login_attempts + 1 > 5 THEN 0 ELSE is_active END, " +
-                     "locked_at = CASE WHEN login_attempts + 1 > 5 THEN CURRENT_TIMESTAMP ELSE locked_at END " +
+                     "is_active = CASE WHEN login_attempts + 1 >= 5 THEN 0 ELSE is_active END, " +
+                     "locked_at = CASE WHEN login_attempts + 1 >= 5 THEN CURRENT_TIMESTAMP ELSE locked_at END " +
                      "WHERE username = ?";
-                         
+                     
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement pstmt = con.prepareStatement(sql)) {
             pstmt.setString(1, username);
@@ -56,7 +77,7 @@ public class AccountDAO {
         }
     }
     
-    // 3. 로그인 성공 처리 (실패 횟수 초기화 및 로그인 시간 기록)
+    // 3. 로그인 성공 처리
     public void handleLoginSuccess(String username) {
         String sql = "UPDATE account SET login_attempts = 0, last_login = CURRENT_TIMESTAMP WHERE username = ?";
         

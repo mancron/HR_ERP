@@ -27,7 +27,6 @@ public class EmpDTO {
 	private String dept_name; 	 //부서명
 	private String position_name; //직급명
 	
-	
 	public EmpDTO() {}
 	
 	
