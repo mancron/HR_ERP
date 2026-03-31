@@ -18,6 +18,13 @@ public class LeaveApprovePageServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
+		Integer approverId = (Integer) req.getSession().getAttribute("empId");
+
+		if (approverId == null) {
+			resp.sendRedirect(req.getContextPath() + "/login.jsp");
+			return;
+		}
+		
 		// 🔥 1. 파라미터 받기
 		String dept = req.getParameter("dept");
 		String sort = req.getParameter("sort");
@@ -56,7 +63,7 @@ public class LeaveApprovePageServlet extends HttpServlet {
 		}
 
 		// 🔥 2. 데이터 조회 (필터 + 정렬 적용)
-		List<LeaveDTO> list = service.getPendingLeaves(dept, sort, startDate, endDate);
+		List<LeaveDTO> list = service.getPendingLeaves(dept, sort, startDate, endDate, approverId);
 
 		// 🔥 3. 부서 목록 (드롭다운용)
 		List<String> deptList = service.getPendingDeptList();

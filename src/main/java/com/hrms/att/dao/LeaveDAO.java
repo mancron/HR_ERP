@@ -208,7 +208,7 @@ public class LeaveDAO {
 	}
 
 	// 대기 휴가 목록
-	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate) {
+	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int approverId) {
 
 	    List<LeaveDTO> list = new ArrayList<>();
 
@@ -220,6 +220,7 @@ public class LeaveDAO {
 	    sql.append("JOIN job_position jp ON e.position_id = jp.position_id ");
 	    sql.append("JOIN department d ON e.dept_id = d.dept_id ");
 	    sql.append("WHERE lr.status = '대기' ");
+	    sql.append("AND lr.emp_id != ? ");
 
 	    // 🔥 1. 부서 필터
 	    if (dept != null && !dept.isEmpty()) {
@@ -248,21 +249,25 @@ public class LeaveDAO {
 	    }
 
 	    try (Connection conn = DatabaseConnection.getConnection();
-	         PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+	        PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+	    	
+	    	int idx = 1;
 
-	        int idx = 1;
+	    	// 1. approverId 먼저 넣어야 함 (중요)
+	    	pstmt.setInt(idx++, approverId);
 
-	        // 🔥 4. 파라미터 세팅 순서 중요
-	        if (dept != null && !dept.isEmpty()) {
-	            pstmt.setString(idx++, dept);
-	        }
+	    	// 2. dept
+	    	if (dept != null && !dept.isEmpty()) {
+	    	    pstmt.setString(idx++, dept);
+	    	}
 
-	        if (startDate != null && endDate != null &&
-	            !startDate.isEmpty() && !endDate.isEmpty()) {
+	    	// 3. 날짜
+	    	if (startDate != null && endDate != null &&
+	    	    !startDate.isEmpty() && !endDate.isEmpty()) {
 
-	            pstmt.setDate(idx++, Date.valueOf(endDate));   // <= endDate
-	            pstmt.setDate(idx++, Date.valueOf(startDate)); // >= startDate
-	        }
+	    	    pstmt.setDate(idx++, Date.valueOf(endDate));
+	    	    pstmt.setDate(idx++, Date.valueOf(startDate));
+	    	}
 
 	        ResultSet rs = pstmt.executeQuery();
 

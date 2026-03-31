@@ -81,17 +81,12 @@ public class LeaveService {
 		return leaveDAO.cancelLeave(leaveId, empId);
 	}
 
-	// 1. 기존 방식 (전체 조회 - 호환용)
-	public List<LeaveDTO> getPendingLeaves() {
-		return leaveDAO.getPendingLeaves(null, null, null, null);
+	//필터 + 정렬 포함 (신규 기능)
+	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int approverId) {
+		return leaveDAO.getPendingLeaves(dept, sort, startDate, endDate, approverId);
 	}
 
-	// 2. 필터 + 정렬 포함 (신규 기능)
-	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate) {
-		return leaveDAO.getPendingLeaves(dept, sort, startDate, endDate);
-	}
-
-	// 3. 부서 목록 조회 (드롭다운용)
+	//부서 목록 조회 (드롭다운용)
 	public List<String> getPendingDeptList() {
 		return leaveDAO.getPendingDeptList();
 	}
@@ -107,6 +102,9 @@ public class LeaveService {
 			LeaveDTO leave = leaveDAO.getLeaveById(conn, leaveId);
 			if (leave == null) {
 				throw new Exception("휴가 정보 없음");
+			}
+			if (leave.getEmpId() == approverId) {
+				throw new Exception("자신의 휴가는 승인할 수 없습니다.");
 			}
 			int empId = leave.getEmpId();
 			// 휴가 일수 계산
