@@ -11,6 +11,7 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 @WebServlet("/att/leave/req")
@@ -32,12 +33,25 @@ public class LeaveRequestServlet extends HttpServlet {
 			return;
 		}
 
+		String monthParam = request.getParameter("month");
+
+		LocalDate now = LocalDate.now();
+		int year = now.getYear();
+		int month = now.getMonthValue();
+
+		if (monthParam != null && !monthParam.isEmpty()) {
+		    String[] parts = monthParam.split("-");
+		    year = Integer.parseInt(parts[0]);
+		    month = Integer.parseInt(parts[1]);
+		}
 		// 🔥 연차 정보 조회
 		AnnualLeaveDTO annual = leaveService.getAnnualLeave(empId);
-		List<LeaveDTO> list = leaveService.getLeaveList(empId);
+		// 리스트 조회
+		List<LeaveDTO> list = leaveService.getLeaveListByMonth(empId, year, month);
 		
 		request.setAttribute("annual", annual);
 		request.setAttribute("list", list);
+		request.setAttribute("month", monthParam);
 
 		request.getRequestDispatcher("/WEB-INF/jsp/att/leaveRequest.jsp").forward(request, response);
 	}

@@ -183,4 +183,45 @@ public class LeaveDAO {
 
         return dto;
     }
+    
+    //월별 휴가 사용 및 신청 내역
+    public List<LeaveDTO> getLeaveListByMonth(int empId, int year, int month) {
+
+        List<LeaveDTO> list = new ArrayList<>();
+
+        String sql = "SELECT * FROM leave_request "
+                   + "WHERE emp_id = ? "
+                   + "AND YEAR(start_date) = ? "
+                   + "AND MONTH(start_date) = ? "
+                   + "ORDER BY start_date DESC";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, empId);
+            pstmt.setInt(2, year);
+            pstmt.setInt(3, month);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    LeaveDTO dto = new LeaveDTO();
+
+                    dto.setLeaveId(rs.getInt("leave_id"));
+                    dto.setLeaveType(rs.getString("leave_type"));
+                    dto.setHalfType(rs.getString("half_type"));
+                    dto.setStartDate(rs.getDate("start_date"));
+                    dto.setEndDate(rs.getDate("end_date"));
+                    dto.setDays(rs.getDouble("days"));
+                    dto.setStatus(rs.getString("status"));
+
+                    list.add(dto);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
 }

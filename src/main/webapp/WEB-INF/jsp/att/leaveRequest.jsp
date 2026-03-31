@@ -118,7 +118,14 @@
 
 			<!-- 우측 -->
 			<div class="leave-right">
+				<form method="get"
+					action="${pageContext.request.contextPath}/att/leave/req"
+					style="margin-bottom: 10px;">
 
+					<input type="month" name="month" value="<c:out value='${month}'/>">
+
+					<button type="submit">조회</button>
+				</form>
 				<div class="leave-right-box">
 					<h3>신청 내역</h3>
 
@@ -135,11 +142,22 @@
 										value="${item.endDate}" /></td>
 
 								<td><c:out value="${item.leaveType}" /> <c:if
-										test="${item.halfType != null}">
-                (<c:out value="${item.halfType}" />)
-            </c:if></td>
+										test="${item.leaveType eq '반차'}">
+    - <c:out value="${item.halfType}" />
+									</c:if></td>
 
-								<td><c:out value="${item.status}" /></td>
+								<td><c:out value="${item.status}" /> <!-- 🔥 상태 옆에 버튼 -->
+									<c:if test="${item.status eq '대기'}">
+										<form
+											action="${pageContext.request.contextPath}/att/leave/cancel"
+											method="post" style="display: inline;">
+
+											<input type="hidden" name="leave_id"
+												value="<c:out value='${item.leaveId}'/>">
+
+											<button type="submit" class="cancel-btn">취소</button>
+										</form>
+									</c:if></td>
 							</tr>
 						</c:forEach>
 

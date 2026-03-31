@@ -75,4 +75,9 @@ public class LeaveService {
     public List<LeaveDTO> getLeaveList(int empId) {
         return leaveDAO.getLeaveList(empId);
     }
+    
+    //월별 휴가 리스트 출력
+    public List<LeaveDTO> getLeaveListByMonth(int empId, int year, int month) {
+        return leaveDAO.getLeaveListByMonth(empId, year, month);
+    }
 }
