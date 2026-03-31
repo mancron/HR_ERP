@@ -20,6 +20,7 @@ public class DatabaseConnection {
         	String dbUrl      = dotenv.get("DB_URL");
         	String dbUser     = dotenv.get("DB_USER");
         	String dbPassword = dotenv.get("DB_PASSWORD");
+          
             HikariConfig config = new HikariConfig();
             config.setDriverClassName("com.mysql.cj.jdbc.Driver");
             config.setJdbcUrl(dbUrl);
