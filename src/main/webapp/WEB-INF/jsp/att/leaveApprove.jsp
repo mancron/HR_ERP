@@ -12,7 +12,43 @@
 	<main class="app-content">
 
 		<h2 class="page-title">휴가 승인 관리</h2>
+		<form method="get"
+			action="${pageContext.request.contextPath}/att/leave/approve"
+			class="filter-box">
 
+			<!-- 🔹 부서 선택 -->
+			<select name="dept">
+				<option value="">전체 부서</option>
+
+				<c:forEach var="d" items="${deptList}">
+					<option value="${d}" <c:if test="${d eq dept}">selected</c:if>>
+						<c:out value="${d}" />
+					</option>
+				</c:forEach>
+			</select>
+
+			<!-- 🔹 정렬 선택 -->
+			<select name="sort">
+				<option value="">정렬 선택</option>
+
+				<option value="name_asc"
+					<c:if test="${sort eq 'name_asc'}">selected</c:if>>이름 가나다순</option>
+
+				<option value="name_desc"
+					<c:if test="${sort eq 'name_desc'}">selected</c:if>>이름 가나다 역순</option>
+
+				<option value="position_asc"
+					<c:if test="${sort eq 'position_asc'}">selected</c:if>>
+					직급 오름차순</option>
+
+				<option value="position_desc"
+					<c:if test="${sort eq 'position_desc'}">selected</c:if>>
+					직급 내림차순</option>
+			</select>
+
+			<button type="submit" class="btn approve-btn">조회</button>
+
+		</form>
 		<div class="leave-right-box">
 
 			<table class="att-table leave-approve-table">

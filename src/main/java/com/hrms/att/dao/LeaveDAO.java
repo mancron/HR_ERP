@@ -218,54 +218,78 @@ public class LeaveDAO {
 	}
 
 	// 대기 휴가 목록
-	public List<LeaveDTO> getPendingLeaves() {
+	public List<LeaveDTO> getPendingLeaves(String dept, String sort) {
 
-	    List<LeaveDTO> list = new ArrayList<>();
+		List<LeaveDTO> list = new ArrayList<>();
 
-	    String sql = "SELECT lr.*, e.emp_name, jp.position_name, d.dept_name " +
-	             "FROM leave_request lr " +
-	             "JOIN employee e ON lr.emp_id = e.emp_id " +
-	             "JOIN job_position jp ON e.position_id = jp.position_id " +
-	             "JOIN department d ON e.dept_id = d.dept_id " +
-	             "WHERE lr.status = '대기' " +
-	             "ORDER BY lr.created_at DESC";
+		StringBuilder sql = new StringBuilder();
 
-	    try (Connection conn = DatabaseConnection.getConnection();
-	         PreparedStatement pstmt = conn.prepareStatement(sql);
-	         ResultSet rs = pstmt.executeQuery()) {
+		sql.append("SELECT lr.*, e.emp_name, jp.position_name, d.dept_name ");
+		sql.append("FROM leave_request lr ");
+		sql.append("JOIN employee e ON lr.emp_id = e.emp_id ");
+		sql.append("JOIN job_position jp ON e.position_id = jp.position_id ");
+		sql.append("JOIN department d ON e.dept_id = d.dept_id ");
+		sql.append("WHERE lr.status = '대기' ");
 
-	        while (rs.next()) {
+		// 🔥 1. 부서 필터
+		if (dept != null && !dept.isEmpty()) {
+			sql.append("AND d.dept_name = ? ");
+		}
 
-	            LeaveDTO dto = new LeaveDTO();
+		// 🔥 2. 정렬
+		if ("name_asc".equals(sort)) {
+			sql.append("ORDER BY e.emp_name ASC ");
+		} else if ("name_desc".equals(sort)) {
+			sql.append("ORDER BY e.emp_name DESC ");
+		} else if ("position_asc".equals(sort)) {
+			sql.append("ORDER BY jp.position_level ASC ");
+		} else if ("position_desc".equals(sort)) {
+			sql.append("ORDER BY jp.position_level DESC ");
+		} else {
+			sql.append("ORDER BY lr.created_at DESC ");
+		}
 
-	            dto.setLeaveId(rs.getInt("leave_id"));
-	            dto.setEmpId(rs.getInt("emp_id"));
-	            dto.setLeaveType(rs.getString("leave_type"));
-	            dto.setHalfType(rs.getString("half_type"));
-	            dto.setStartDate(rs.getDate("start_date"));
-	            dto.setEndDate(rs.getDate("end_date"));
-	            dto.setDays(rs.getDouble("days"));
-	            dto.setReason(rs.getString("reason"));
-	            dto.setStatus(rs.getString("status"));
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-	            dto.setApproverId((Integer) rs.getObject("approver_id"));
-	            dto.setApprovedAt(rs.getTimestamp("approved_at"));
-	            dto.setRejectReason(rs.getString("reject_reason"));
-	            dto.setCreatedAt(rs.getTimestamp("created_at"));
+			// 🔥 3. 파라미터 세팅
+			if (dept != null && !dept.isEmpty()) {
+				pstmt.setString(1, dept);
+			}
 
-	            // 🔥 추가된 부분
-	            dto.setEmpName(rs.getString("emp_name"));
-	            dto.setPosition(rs.getString("position_name"));
-	            dto.setDeptName(rs.getString("dept_name"));
+			ResultSet rs = pstmt.executeQuery();
 
-	            list.add(dto);
-	        }
+			while (rs.next()) {
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
+				LeaveDTO dto = new LeaveDTO();
 
-	    return list;
+				dto.setLeaveId(rs.getInt("leave_id"));
+				dto.setEmpId(rs.getInt("emp_id"));
+				dto.setLeaveType(rs.getString("leave_type"));
+				dto.setHalfType(rs.getString("half_type"));
+				dto.setStartDate(rs.getDate("start_date"));
+				dto.setEndDate(rs.getDate("end_date"));
+				dto.setDays(rs.getDouble("days"));
+				dto.setReason(rs.getString("reason"));
+				dto.setStatus(rs.getString("status"));
+
+				dto.setApproverId((Integer) rs.getObject("approver_id"));
+				dto.setApprovedAt(rs.getTimestamp("approved_at"));
+				dto.setRejectReason(rs.getString("reject_reason"));
+				dto.setCreatedAt(rs.getTimestamp("created_at"));
+
+				dto.setEmpName(rs.getString("emp_name"));
+				dto.setPosition(rs.getString("position_name"));
+				dto.setDeptName(rs.getString("dept_name"));
+
+				list.add(dto);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return list;
 	}
 
 	// 6. 휴가 승인 / 반려 처리
@@ -295,5 +319,29 @@ public class LeaveDAO {
 		}
 
 		return false;
+	}
+
+	// 대기 휴가 목록 -> 부서명 추출
+	public List<String> getPendingDeptList() {
+
+		List<String> list = new ArrayList<>();
+
+		String sql = "SELECT DISTINCT d.dept_name " + "FROM leave_request lr "
+				+ "JOIN employee e ON lr.emp_id = e.emp_id " + "JOIN department d ON e.dept_id = d.dept_id "
+				+ "WHERE lr.status = '대기'";
+
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql);
+				ResultSet rs = pstmt.executeQuery()) {
+
+			while (rs.next()) {
+				list.add(rs.getString("dept_name"));
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return list;
 	}
 }
