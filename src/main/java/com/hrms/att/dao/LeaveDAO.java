@@ -220,46 +220,52 @@ public class LeaveDAO {
 	// 대기 휴가 목록
 	public List<LeaveDTO> getPendingLeaves() {
 
-		List<LeaveDTO> list = new ArrayList<>();
+	    List<LeaveDTO> list = new ArrayList<>();
 
-		String sql = "SELECT * FROM leave_request " + "WHERE status = '대기' " + "ORDER BY created_at DESC";
+	    String sql = "SELECT lr.*, e.emp_name, jp.position_name, d.dept_name " +
+	             "FROM leave_request lr " +
+	             "JOIN employee e ON lr.emp_id = e.emp_id " +
+	             "JOIN job_position jp ON e.position_id = jp.position_id " +
+	             "JOIN department d ON e.dept_id = d.dept_id " +
+	             "WHERE lr.status = '대기' " +
+	             "ORDER BY lr.created_at DESC";
 
-		try (Connection conn = DatabaseConnection.getConnection();
-				PreparedStatement pstmt = conn.prepareStatement(sql);
-				ResultSet rs = pstmt.executeQuery()) {
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql);
+	         ResultSet rs = pstmt.executeQuery()) {
 
-			while (rs.next()) {
+	        while (rs.next()) {
 
-				LeaveDTO dto = new LeaveDTO();
+	            LeaveDTO dto = new LeaveDTO();
 
-				dto.setLeaveId(rs.getInt("leave_id"));
-				dto.setEmpId(rs.getInt("emp_id"));
-				dto.setLeaveType(rs.getString("leave_type"));
-				dto.setHalfType(rs.getString("half_type"));
-				dto.setStartDate(rs.getDate("start_date"));
-				dto.setEndDate(rs.getDate("end_date"));
+	            dto.setLeaveId(rs.getInt("leave_id"));
+	            dto.setEmpId(rs.getInt("emp_id"));
+	            dto.setLeaveType(rs.getString("leave_type"));
+	            dto.setHalfType(rs.getString("half_type"));
+	            dto.setStartDate(rs.getDate("start_date"));
+	            dto.setEndDate(rs.getDate("end_date"));
+	            dto.setDays(rs.getDouble("days"));
+	            dto.setReason(rs.getString("reason"));
+	            dto.setStatus(rs.getString("status"));
 
-				// 🔥 double 타입
-				dto.setDays(rs.getDouble("days"));
+	            dto.setApproverId((Integer) rs.getObject("approver_id"));
+	            dto.setApprovedAt(rs.getTimestamp("approved_at"));
+	            dto.setRejectReason(rs.getString("reject_reason"));
+	            dto.setCreatedAt(rs.getTimestamp("created_at"));
 
-				dto.setReason(rs.getString("reason"));
-				dto.setStatus(rs.getString("status"));
+	            // 🔥 추가된 부분
+	            dto.setEmpName(rs.getString("emp_name"));
+	            dto.setPosition(rs.getString("position_name"));
+	            dto.setDeptName(rs.getString("dept_name"));
 
-				// 승인 관련 (null 가능)
-				dto.setApproverId((Integer) rs.getObject("approver_id"));
-				dto.setApprovedAt(rs.getTimestamp("approved_at"));
-				dto.setRejectReason(rs.getString("reject_reason"));
+	            list.add(dto);
+	        }
 
-				dto.setCreatedAt(rs.getTimestamp("created_at"));
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
 
-				list.add(dto);
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return list;
+	    return list;
 	}
 
 	// 6. 휴가 승인 / 반려 처리
