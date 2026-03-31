@@ -32,5 +32,20 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+	
+	const filterForm = document.querySelector(".filter-box");
+
+	if (filterForm) {
+	    filterForm.addEventListener("submit", function (e) {
+
+	        const start = document.querySelector("input[name='startDate']").value;
+	        const end = document.querySelector("input[name='endDate']").value;
+
+	        if (start && end && start > end) {
+	            alert("시작일은 종료일보다 늦을 수 없습니다.");
+	            e.preventDefault();
+	        }
+	    });
+	}
 
 });

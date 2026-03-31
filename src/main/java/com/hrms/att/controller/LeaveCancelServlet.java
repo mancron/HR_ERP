@@ -8,6 +8,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.time.LocalDate;
 
 @WebServlet("/att/leave/cancel")
 public class LeaveCancelServlet extends HttpServlet {
@@ -31,6 +32,9 @@ public class LeaveCancelServlet extends HttpServlet {
 
         int empId = loginUser.getEmp_id();
 
+        String year = request.getParameter("year");
+        String month = request.getParameter("month");
+        
         try {
             // 🔥 파라미터 받기
             int leaveId = Integer.parseInt(request.getParameter("leave_id"));
@@ -38,12 +42,20 @@ public class LeaveCancelServlet extends HttpServlet {
             // 🔥 Service 호출
             boolean result = leaveService.cancelLeave(leaveId, empId);
 
-            // 🔥 결과 처리
+            String redirectUrl = request.getContextPath() + "/att/leave/req";
+            
             if (result) {
-                response.sendRedirect(request.getContextPath() + "/att/leave/req?msg=cancel_success");
+                redirectUrl += "?msg=cancel_success";
             } else {
-                response.sendRedirect(request.getContextPath() + "/att/leave/req?error=cancel_fail");
+                redirectUrl += "?error=cancel_fail";
             }
+
+            // 🔥 month 유지
+            if (year != null && month != null) {
+                redirectUrl += "&year=" + year + "&month=" + month;
+            }
+
+            response.sendRedirect(redirectUrl);
 
         } catch (Exception e) {
             e.printStackTrace();

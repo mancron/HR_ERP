@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <link rel="stylesheet"
-	href="${pageContext.request.contextPath}/css/attendance.css">
+	href="${pageContext.request.contextPath}/css/att/attendance.css">
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 
@@ -126,5 +126,5 @@
 	</main>
 </div>
 
-<script src="${pageContext.request.contextPath}/js/attendance.js"></script>
+<script src="${pageContext.request.contextPath}/js/att/attendance.js"></script>
 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
