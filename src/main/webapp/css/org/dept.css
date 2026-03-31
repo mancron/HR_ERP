@@ -1,0 +1,313 @@
+/* =============================================
+   부서 관리 전용 스타일 (dept.css)
+   ============================================= */
+
+.dept-container {
+    display: flex;
+    gap: 20px;
+    padding: 24px 28px;
+    background-color: #f8f9fc;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* ── 에러 토스트 ── */
+.error-toast {
+    margin: 0 28px 16px;
+    padding: 12px 18px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ── 좌측: 조직도 패널 ── */
+.dept-tree-panel {
+    flex: 0 0 270px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    height: fit-content;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.panel-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-add-dept {
+    padding: 6px 13px;
+    background-color: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+.btn-add-dept:hover { background-color: #2563eb; }
+
+/* 트리 */
+.org-tree, .tree-group, .tree-team-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tree-group    { padding-left: 16px; margin-top: 4px; }
+.tree-team-list { padding-left: 20px; margin-top: 2px; }
+
+.tree-company {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.tree-dept-row,
+.tree-team-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.12s;
+    color: #334155;
+}
+
+.tree-dept-row { font-weight: 600; }
+.tree-dept-row:hover, .tree-team-row:hover { background: #f1f5f9; }
+
+.tree-dept-row.active,
+.tree-team-row.active {
+    background: #eff6ff;
+    color: #2563eb;
+    font-weight: 600;
+}
+
+.manager-name {
+    margin-left: 2px;
+    font-size: 11px;
+    color: #94a3b8;
+}
+.tree-team-row.active .manager-name { color: #93c5fd; }
+
+.icon-company { color: #6366f1; }
+.icon-folder  { color: #f59e0b; }
+.icon-team    { color: #3b82f6; }
+
+/* ── 우측: 상세 패널 ── */
+.dept-detail-panel {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.dept-info-card,
+.dept-member-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px 28px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* 폼 그리드 */
+.dept-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+    margin-bottom: 24px;
+}
+
+.dept-form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.dept-form-group .required { color: #ef4444; margin-left: 2px; }
+
+.dept-form-group input[type="text"],
+.dept-form-group input[type="number"],
+.dept-form-group select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    font-size: 13px;
+    color: #334155;
+    background: #fff;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+
+.dept-form-group input:focus,
+.dept-form-group select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+/* [추가 및 수정] 비활성화(disabled) 및 읽기전용(readonly) 처리 */
+.dept-form-group input:disabled, 
+.dept-form-group select:disabled,
+.dept-form-group input[readonly] {
+    background-color: #f8fafc; /* 더 연한 배경색 */
+    color: #94a3b8;           /* 흐릿한 글자색 */
+    cursor: not-allowed;      /* 금지 아이콘 커서 */
+    border-color: #e2e8f0;
+}
+
+/* 버튼 */
+.dept-btn-area {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-dept-delete {
+    padding: 9px 20px;
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-dept-delete:hover { background: #dc2626; }
+
+.btn-dept-cancel {
+    padding: 9px 20px;
+    background: #fff;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-dept-cancel:hover { background: #f1f5f9; }
+
+.btn-dept-save {
+    padding: 9px 24px;
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-dept-save:hover { background: #2563eb; }
+
+/* ── 소속 직원 테이블 ── */
+.member-count {
+    font-size: 14px;
+    font-weight: 400;
+    color: #64748b;
+}
+
+.member-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.member-table thead tr { border-bottom: 1px solid #e2e8f0; }
+
+.member-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.member-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.12s;
+}
+.member-table tbody tr:last-child { border-bottom: none; }
+.member-table tbody tr:hover      { background: #f8fafc; }
+
+.member-table td {
+    padding: 12px 14px;
+    color: #334155;
+}
+
+.badge-active {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #dcfce7;
+    color: #16a34a;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-leave {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #fef9c3;
+    color: #ca8a04;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-inactive {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #f1f5f9;
+    color: #94a3b8;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 0;
+    color: #94a3b8;
+    font-size: 13px;
+}
