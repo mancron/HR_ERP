@@ -10,9 +10,7 @@ import java.util.List;
 
 public class LeaveDAO {
 
-	// =========================================================
 	// 1. 휴가 신청 (INSERT)
-	// =========================================================
 	public boolean insertLeave(LeaveDTO dto) {
 		String sql = "INSERT INTO leave_request "
 				+ "(emp_id, leave_type, half_type, start_date, end_date, days, reason, status) "
@@ -38,9 +36,7 @@ public class LeaveDAO {
 		return false;
 	}
 
-	// =========================================================
 	// 2. 기간 중복 체크
-	// =========================================================
 	public boolean isOverlapping(int empId, Date start, Date end) {
 		String sql = "SELECT COUNT(*) " + "FROM leave_request " + "WHERE emp_id = ? " + "AND status IN ('대기', '승인') "
 				+ "AND (start_date <= ? AND end_date >= ?)";
@@ -65,11 +61,9 @@ public class LeaveDAO {
 		return false;
 	}
 
-	// =========================================================
 	// 3. 잔여 연차 조회
-	// =========================================================
 	public double getRemainDays(int empId) {
-		String sql = "SELECT remain_days FROM annual_leave WHERE emp_id = ?";
+		String sql = "SELECT remain_days FROM annual_leave WHERE emp_id = ? AND leave_year = YEAR(NOW())";
 
 		try (Connection conn = DatabaseConnection.getConnection();
 				PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -89,9 +83,7 @@ public class LeaveDAO {
 		return 0;
 	}
 
-	// =========================================================
 	// 4. 내 휴가 목록 조회
-	// =========================================================
 	public List<LeaveDTO> getLeaveList(int empId) {
 
 		List<LeaveDTO> list = new ArrayList<>();
@@ -128,9 +120,7 @@ public class LeaveDAO {
 		return list;
 	}
 
-	// =========================================================
 	// 5. 휴가 취소 (대기 상태만)
-	// =========================================================
 	public boolean cancelLeave(int leaveId, int empId) {
 		String sql = "UPDATE leave_request " + "SET status = '취소' "
 				+ "WHERE leave_id = ? AND emp_id = ? AND status = '대기'";
@@ -310,32 +300,30 @@ public class LeaveDAO {
 	}
 
 	// 6. 휴가 승인 / 반려 처리
-	public boolean updateLeaveStatus(int leaveId, int approverId, String status, String reason) {
+	public boolean updateLeaveStatus(Connection conn, int leaveId, int approverId, String status, String reason) throws Exception {
 
-		String sql = "UPDATE leave_request " + "SET status = ?, " + "    approver_id = ?, "
-				+ "    approved_at = NOW(), " + "    reject_reason = ? " + "WHERE leave_id = ?";
+	    String sql = "UPDATE leave_request " +
+	                 "SET status = ?, " +
+	                 "    approver_id = ?, " +
+	                 "    approved_at = NOW(), " +
+	                 "    reject_reason = ? " +
+	                 "WHERE leave_id = ?";
 
-		try (Connection conn = DatabaseConnection.getConnection();
-				PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-			pstmt.setString(1, status);
-			pstmt.setInt(2, approverId);
+	        pstmt.setString(1, status);
+	        pstmt.setInt(2, approverId);
 
-			if ("반려".equals(status)) {
-				pstmt.setString(3, reason);
-			} else {
-				pstmt.setNull(3, Types.VARCHAR);
-			}
+	        if ("반려".equals(status)) {
+	            pstmt.setString(3, reason);
+	        } else {
+	            pstmt.setNull(3, Types.VARCHAR);
+	        }
 
-			pstmt.setInt(4, leaveId);
+	        pstmt.setInt(4, leaveId);
 
-			return pstmt.executeUpdate() > 0;
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return false;
+	        return pstmt.executeUpdate() > 0;
+	    }
 	}
 
 	// 대기 휴가 목록 -> 부서명 추출
@@ -360,5 +348,51 @@ public class LeaveDAO {
 		}
 
 		return list;
+	}
+	
+	//잔여 연차 값 업데이트
+	public void updateAnnualLeave(Connection conn, int empId, double days) throws Exception {
+		String sql = "UPDATE annual_leave SET "
+		           + "used_days = used_days + ?, "
+		           + "remain_days = remain_days - ? "
+		           + "WHERE emp_id = ? "
+		           + "AND leave_year = YEAR(NOW())";
+
+	    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setDouble(1, days);
+	        ps.setDouble(2, days);
+	        ps.setInt(3, empId);
+
+	        int result = ps.executeUpdate();
+
+	        if (result == 0) {
+	            throw new Exception("연차 정보 없음");
+	        }
+	    }
+	}
+	
+	//휴가 상세 정보 가져오기
+	public LeaveDTO getLeaveById(Connection conn, int leaveId) throws Exception {
+
+	    String sql = "SELECT emp_id, start_date, end_date, leave_type " +
+	                 "FROM leave_request WHERE leave_id = ?";
+
+	    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, leaveId);
+	        ResultSet rs = ps.executeQuery();
+
+	        if (rs.next()) {
+	            LeaveDTO dto = new LeaveDTO();
+	            dto.setEmpId(rs.getInt("emp_id"));
+	            dto.setStartDate(rs.getDate("start_date"));
+	            dto.setEndDate(rs.getDate("end_date"));
+	            dto.setLeaveType(rs.getString("leave_type"));
+	            return dto;
+	        }
+	    }
+
+	    return null;
 	}
 }

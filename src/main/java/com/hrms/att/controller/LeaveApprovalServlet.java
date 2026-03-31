@@ -23,7 +23,6 @@ public class LeaveApprovalServlet extends HttpServlet {
         String status = req.getParameter("status");
         String reason = req.getParameter("reason");
 
-        // 🔥 로그인 관리자 ID
         Integer approverId = (Integer) req.getSession().getAttribute("empId");
 
         if (approverId == null) {
@@ -31,9 +30,23 @@ public class LeaveApprovalServlet extends HttpServlet {
             return;
         }
 
-        service.updateLeaveStatus(leaveId, approverId, status, reason);
+        try {
+            // 🔥 핵심 변경
+            boolean result = service.approveLeave(leaveId, approverId, status, reason);
 
-        // 다시 목록으로
+            if (!result) {
+                throw new Exception("승인/반려 처리 실패");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            req.setAttribute("errorMsg", e.getMessage());
+            req.getRequestDispatcher("/error.jsp").forward(req, resp);
+            return;
+        }
+
+        // 성공 시 목록 이동
         resp.sendRedirect(req.getContextPath() + "/att/leave/approve");
     }
 }
