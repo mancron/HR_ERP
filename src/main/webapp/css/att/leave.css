@@ -1,0 +1,186 @@
+@charset "UTF-8";
+
+/* =========================
+   레이아웃
+========================= */
+.leave-container {
+    display: flex;
+    gap: 20px;
+}
+
+.leave-left { flex: 3; }
+.leave-right { flex: 1; }
+
+.leave-row {
+    display: flex;
+    gap: 10px;
+}
+
+.leave-row input {
+    flex: 1;
+}
+
+/* =========================
+   연차 요약
+========================= */
+.leave-summary {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.summary-box {
+    flex: 1;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.summary-total { background: #dbe2ef; }
+.summary-remain { background: #d4edda; }
+.summary-used { background: #fff3cd; }
+
+/* =========================
+   카드 (신청폼)
+========================= */
+.leave-card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-top: 15px;
+}
+
+.leave-card input,
+.leave-card select,
+.leave-card textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.leave-card textarea {
+    resize: none;
+}
+
+/* =========================
+   우측 박스
+========================= */
+.leave-right-box {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+/* =========================
+   페이지 제목
+========================= */
+.page-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+/* =========================
+   테이블 (공통)
+========================= */
+.att-table th:nth-child(2),
+.att-table td:nth-child(2) {
+    width: 150px;
+    white-space: nowrap;
+}
+
+/* =========================
+   승인 테이블
+========================= */
+.leave-approve-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* 헤더 */
+.leave-approve-table th {
+    background-color: #f4f6f9;
+    padding: 12px;
+    font-weight: bold;
+}
+
+/* 셀 */
+.leave-approve-table th,
+.leave-approve-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+
+    /* 🔥 핵심: 가운데 정렬 */
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* hover */
+.leave-approve-table tbody tr:hover {
+    background-color: #fafafa;
+}
+
+/* =========================
+   상태 표시
+========================= */
+.status.pending {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+/* =========================
+   버튼
+========================= */
+.btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 2px;
+}
+
+.approve-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.reject-btn,
+.cancel-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+/* =========================
+   셀 스타일
+========================= */
+.reason-cell {
+    max-width: 200px;
+    word-break: break-word;
+    text-align: center;
+}
+
+/* 버튼 영역 */
+.action-cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+/* =========================
+   기타
+========================= */
+.empty-row {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+}

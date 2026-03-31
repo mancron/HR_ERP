@@ -86,5 +86,14 @@ public class LeaveService {
         return leaveDAO.cancelLeave(leaveId, empId);
     }
     
+    //승인 대기 목록 조회
+    public List<LeaveDTO> getPendingLeaves() {
+        return leaveDAO.getPendingLeaves();
+    }
+    
+    //휴가 승인 및 반려
+    public boolean updateLeaveStatus(int leaveId, int approverId, String status, String reason) {
+        return leaveDAO.updateLeaveStatus(leaveId, approverId, status, reason);
+    }
     
 }

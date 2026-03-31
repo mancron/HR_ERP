@@ -10,221 +10,284 @@ import java.util.List;
 
 public class LeaveDAO {
 
-    // =========================================================
-    // 1. 휴가 신청 (INSERT)
-    // =========================================================
+	// =========================================================
+	// 1. 휴가 신청 (INSERT)
+	// =========================================================
 	public boolean insertLeave(LeaveDTO dto) {
-	    String sql = "INSERT INTO leave_request "
-	            + "(emp_id, leave_type, half_type, start_date, end_date, days, reason, status) "
-	            + "VALUES (?, ?, ?, ?, ?, ?, ?, '대기')";
+		String sql = "INSERT INTO leave_request "
+				+ "(emp_id, leave_type, half_type, start_date, end_date, days, reason, status) "
+				+ "VALUES (?, ?, ?, ?, ?, ?, ?, '대기')";
 
-	    try (Connection conn = DatabaseConnection.getConnection();
-	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-	        pstmt.setInt(1, dto.getEmpId());
-	        pstmt.setString(2, dto.getLeaveType());
-	        pstmt.setString(3, dto.getHalfType());
-	        pstmt.setDate(4, dto.getStartDate());
-	        pstmt.setDate(5, dto.getEndDate());
-	        pstmt.setDouble(6, dto.getDays());
-	        pstmt.setString(7, dto.getReason());
+			pstmt.setInt(1, dto.getEmpId());
+			pstmt.setString(2, dto.getLeaveType());
+			pstmt.setString(3, dto.getHalfType());
+			pstmt.setDate(4, dto.getStartDate());
+			pstmt.setDate(5, dto.getEndDate());
+			pstmt.setDouble(6, dto.getDays());
+			pstmt.setString(7, dto.getReason());
 
-	        return pstmt.executeUpdate() > 0;
+			return pstmt.executeUpdate() > 0;
 
-	    } catch (Exception e) {
-	        e.printStackTrace(); // 🔥 콘솔 꼭 확인
-	    }
+		} catch (Exception e) {
+			e.printStackTrace(); // 🔥 콘솔 꼭 확인
+		}
 
-	    return false;
+		return false;
 	}
 
-    // =========================================================
-    // 2. 기간 중복 체크
-    // =========================================================
-    public boolean isOverlapping(int empId, Date start, Date end) {
-        String sql = "SELECT COUNT(*) "
-                + "FROM leave_request "
-                + "WHERE emp_id = ? "
-                + "AND status IN ('대기', '승인') "
-                + "AND (start_date <= ? AND end_date >= ?)";
+	// =========================================================
+	// 2. 기간 중복 체크
+	// =========================================================
+	public boolean isOverlapping(int empId, Date start, Date end) {
+		String sql = "SELECT COUNT(*) " + "FROM leave_request " + "WHERE emp_id = ? " + "AND status IN ('대기', '승인') "
+				+ "AND (start_date <= ? AND end_date >= ?)";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, empId);
-            pstmt.setDate(2, end);
-            pstmt.setDate(3, start);
+			pstmt.setInt(1, empId);
+			pstmt.setDate(2, end);
+			pstmt.setDate(3, start);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
-                }
-            }
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					return rs.getInt(1) > 0;
+				}
+			}
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-        return false;
-    }
+		return false;
+	}
 
-    // =========================================================
-    // 3. 잔여 연차 조회
-    // =========================================================
-    public double getRemainDays(int empId) {
-        String sql = "SELECT remain_days FROM annual_leave WHERE emp_id = ?";
+	// =========================================================
+	// 3. 잔여 연차 조회
+	// =========================================================
+	public double getRemainDays(int empId) {
+		String sql = "SELECT remain_days FROM annual_leave WHERE emp_id = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, empId);
+			pstmt.setInt(1, empId);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getDouble("remain_days");
-                }
-            }
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					return rs.getDouble("remain_days");
+				}
+			}
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-        return 0;
-    }
+		return 0;
+	}
 
-    // =========================================================
-    // 4. 내 휴가 목록 조회
-    // =========================================================
-    public List<LeaveDTO> getLeaveList(int empId) {
+	// =========================================================
+	// 4. 내 휴가 목록 조회
+	// =========================================================
+	public List<LeaveDTO> getLeaveList(int empId) {
 
-        List<LeaveDTO> list = new ArrayList<>();
+		List<LeaveDTO> list = new ArrayList<>();
 
-        String sql = "SELECT * FROM leave_request "
-                + "WHERE emp_id = ? "
-                + "AND status != '취소' "
-                + "ORDER BY start_date DESC";
+		String sql = "SELECT * FROM leave_request " + "WHERE emp_id = ? " + "AND status != '취소' "
+				+ "ORDER BY start_date DESC";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, empId);
+			pstmt.setInt(1, empId);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
+			try (ResultSet rs = pstmt.executeQuery()) {
+				while (rs.next()) {
 
-                    LeaveDTO dto = new LeaveDTO();
-                    dto.setLeaveId(rs.getInt("leave_id"));
-                    dto.setEmpId(rs.getInt("emp_id"));
-                    dto.setLeaveType(rs.getString("leave_type"));
-                    dto.setHalfType(rs.getString("half_type"));
-                    dto.setStartDate(rs.getDate("start_date"));
-                    dto.setEndDate(rs.getDate("end_date"));
-                    dto.setDays(rs.getDouble("days"));
-                    dto.setStatus(rs.getString("status"));
+					LeaveDTO dto = new LeaveDTO();
+					dto.setLeaveId(rs.getInt("leave_id"));
+					dto.setEmpId(rs.getInt("emp_id"));
+					dto.setLeaveType(rs.getString("leave_type"));
+					dto.setHalfType(rs.getString("half_type"));
+					dto.setStartDate(rs.getDate("start_date"));
+					dto.setEndDate(rs.getDate("end_date"));
+					dto.setDays(rs.getDouble("days"));
+					dto.setStatus(rs.getString("status"));
 
-                    list.add(dto);
-                }
-            }
+					list.add(dto);
+				}
+			}
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-        return list;
-    }
+		return list;
+	}
 
-    // =========================================================
-    // 5. 휴가 취소 (대기 상태만)
-    // =========================================================
-    public boolean cancelLeave(int leaveId, int empId) {
-        String sql = "UPDATE leave_request "
-                + "SET status = '취소' "
-                + "WHERE leave_id = ? AND emp_id = ? AND status = '대기'";
+	// =========================================================
+	// 5. 휴가 취소 (대기 상태만)
+	// =========================================================
+	public boolean cancelLeave(int leaveId, int empId) {
+		String sql = "UPDATE leave_request " + "SET status = '취소' "
+				+ "WHERE leave_id = ? AND emp_id = ? AND status = '대기'";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, leaveId);
-            pstmt.setInt(2, empId);
+			pstmt.setInt(1, leaveId);
+			pstmt.setInt(2, empId);
 
-            return pstmt.executeUpdate() > 0;
+			return pstmt.executeUpdate() > 0;
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-        return false;
-    }
-    
-    //남은 휴가일수 조회
-    public AnnualLeaveDTO getAnnualLeave(int empId) {
+		return false;
+	}
 
-        String sql = "SELECT total_days, used_days, remain_days "
-                   + "FROM annual_leave "
-                   + "WHERE emp_id = ? AND leave_year = YEAR(NOW())";
+	// 남은 휴가일수 조회
+	public AnnualLeaveDTO getAnnualLeave(int empId) {
 
-        AnnualLeaveDTO dto = null;
+		String sql = "SELECT total_days, used_days, remain_days " + "FROM annual_leave "
+				+ "WHERE emp_id = ? AND leave_year = YEAR(NOW())";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		AnnualLeaveDTO dto = null;
 
-            pstmt.setInt(1, empId);
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    dto = new AnnualLeaveDTO();
-                    dto.setTotalDays(rs.getDouble("total_days"));
-                    dto.setUsedDays(rs.getDouble("used_days"));
-                    dto.setRemainDays(rs.getDouble("remain_days"));
-                }
-            }
+			pstmt.setInt(1, empId);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					dto = new AnnualLeaveDTO();
+					dto.setTotalDays(rs.getDouble("total_days"));
+					dto.setUsedDays(rs.getDouble("used_days"));
+					dto.setRemainDays(rs.getDouble("remain_days"));
+				}
+			}
 
-        return dto;
-    }
-    
-    //월별 휴가 사용 및 신청 내역
-    public List<LeaveDTO> getLeaveListByMonth(int empId, int year, int month) {
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-        List<LeaveDTO> list = new ArrayList<>();
+		return dto;
+	}
 
-        String sql = "SELECT * FROM leave_request "
-                + "WHERE emp_id = ? "
-                + "AND status != '취소' "
-                + "AND YEAR(start_date) = ? "
-                + "AND MONTH(start_date) = ? "
-                + "ORDER BY start_date DESC";
+	// 월별 휴가 사용 및 신청 내역
+	public List<LeaveDTO> getLeaveListByMonth(int empId, int year, int month) {
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		List<LeaveDTO> list = new ArrayList<>();
 
-            pstmt.setInt(1, empId);
-            pstmt.setInt(2, year);
-            pstmt.setInt(3, month);
+		String sql = "SELECT * FROM leave_request " + "WHERE emp_id = ? " + "AND status != '취소' "
+				+ "AND YEAR(start_date) = ? " + "AND MONTH(start_date) = ? " + "ORDER BY start_date DESC";
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    LeaveDTO dto = new LeaveDTO();
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-                    dto.setLeaveId(rs.getInt("leave_id"));
-                    dto.setLeaveType(rs.getString("leave_type"));
-                    dto.setHalfType(rs.getString("half_type"));
-                    dto.setStartDate(rs.getDate("start_date"));
-                    dto.setEndDate(rs.getDate("end_date"));
-                    dto.setDays(rs.getDouble("days"));
-                    dto.setStatus(rs.getString("status"));
+			pstmt.setInt(1, empId);
+			pstmt.setInt(2, year);
+			pstmt.setInt(3, month);
 
-                    list.add(dto);
-                }
-            }
+			try (ResultSet rs = pstmt.executeQuery()) {
+				while (rs.next()) {
+					LeaveDTO dto = new LeaveDTO();
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+					dto.setLeaveId(rs.getInt("leave_id"));
+					dto.setLeaveType(rs.getString("leave_type"));
+					dto.setHalfType(rs.getString("half_type"));
+					dto.setStartDate(rs.getDate("start_date"));
+					dto.setEndDate(rs.getDate("end_date"));
+					dto.setDays(rs.getDouble("days"));
+					dto.setStatus(rs.getString("status"));
 
-        return list;
-    }
+					list.add(dto);
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return list;
+	}
+
+	// 대기 휴가 목록
+	public List<LeaveDTO> getPendingLeaves() {
+
+		List<LeaveDTO> list = new ArrayList<>();
+
+		String sql = "SELECT * FROM leave_request " + "WHERE status = '대기' " + "ORDER BY created_at DESC";
+
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql);
+				ResultSet rs = pstmt.executeQuery()) {
+
+			while (rs.next()) {
+
+				LeaveDTO dto = new LeaveDTO();
+
+				dto.setLeaveId(rs.getInt("leave_id"));
+				dto.setEmpId(rs.getInt("emp_id"));
+				dto.setLeaveType(rs.getString("leave_type"));
+				dto.setHalfType(rs.getString("half_type"));
+				dto.setStartDate(rs.getDate("start_date"));
+				dto.setEndDate(rs.getDate("end_date"));
+
+				// 🔥 double 타입
+				dto.setDays(rs.getDouble("days"));
+
+				dto.setReason(rs.getString("reason"));
+				dto.setStatus(rs.getString("status"));
+
+				// 승인 관련 (null 가능)
+				dto.setApproverId((Integer) rs.getObject("approver_id"));
+				dto.setApprovedAt(rs.getTimestamp("approved_at"));
+				dto.setRejectReason(rs.getString("reject_reason"));
+
+				dto.setCreatedAt(rs.getTimestamp("created_at"));
+
+				list.add(dto);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return list;
+	}
+
+	// 6. 휴가 승인 / 반려 처리
+	public boolean updateLeaveStatus(int leaveId, int approverId, String status, String reason) {
+
+		String sql = "UPDATE leave_request " + "SET status = ?, " + "    approver_id = ?, "
+				+ "    approved_at = NOW(), " + "    reject_reason = ? " + "WHERE leave_id = ?";
+
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			pstmt.setString(1, status);
+			pstmt.setInt(2, approverId);
+
+			if ("반려".equals(status)) {
+				pstmt.setString(3, reason);
+			} else {
+				pstmt.setNull(3, Types.VARCHAR);
+			}
+
+			pstmt.setInt(4, leaveId);
+
+			return pstmt.executeUpdate() > 0;
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
 }
