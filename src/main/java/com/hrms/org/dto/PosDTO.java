@@ -13,6 +13,7 @@ public class PosDTO {
 	private int position_allowance;
 	private int is_active;
 	private String created_at;
+	private int emp_count;
 	
 	public PosDTO() {}
 	
@@ -70,4 +71,10 @@ public class PosDTO {
 	public void setCreated_at(String created_at) {
 		this.created_at = created_at;
 	}
+	public int getEmp_count() {
+        return emp_count;
+    }
+    public void setEmp_count(int emp_count) {
+        this.emp_count = emp_count;
+    }
 }

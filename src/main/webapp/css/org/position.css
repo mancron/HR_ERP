@@ -1,0 +1,132 @@
+/* [1] 기본 컨테이너 및 헤더 (Pretendard 폰트 적용) */
+.pos-container { 
+    padding: 30px; 
+    background-color: #f8fafc; 
+    min-height: 100vh; 
+    font-family: 'Pretendard', -apple-system, sans-serif; 
+}
+
+.pos-header { margin-bottom: 25px; }
+.pos-header h2 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0; }
+.pos-header p { color: #64748b; font-size: 0.875rem; margin-top: 5px; }
+
+/* [2] 카드 스타일 (둥근 모서리, 그림자) */
+.pos-card {
+    background: white; border-radius: 12px; padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+}
+
+/* [3] 테이블 스타일 (중앙 정렬 완벽 보장) */
+.pos-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.pos-table th { 
+    background-color: #f1f5f9; color: #475569; padding: 14px; 
+    font-size: 0.85rem; text-align: center; border-bottom: 1px solid #e2e8f0; 
+}
+.pos-table td { 
+    padding: 16px; border-bottom: 1px solid #f1f5f9; 
+    text-align: center; vertical-align: middle; color: #334155; 
+}
+
+/* [4] 버튼 디자인 (구형 스타일 완전 제거, 모던화) */
+.btn-edit {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 8px 16px; 
+    border: 1px solid #e2e8f0; 
+    background-color: #ffffff;
+    color: #475569;
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.btn-edit:hover { background-color: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+
+.btn-toggle-inactive {
+    background: none; border: none; color: #64748b; 
+    font-size: 0.875rem; cursor: pointer; font-weight: 500;
+    display: flex; align-items: center; gap: 5px;
+}
+
+/* [5] 상태 배지 및 하단 안내 문구 (관리자/HR용) */
+.status-badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; background: #f1f5f9; color: #64748b; display: inline-block; }
+.status-active { background-color: #dcfce7; color: #166534; }
+
+.pos-footer-notice {
+    background-color: #f8fafc; padding: 16px; border-radius: 8px;
+    margin-top: 20px; color: #64748b; font-size: 0.85rem;
+    display: flex; align-items: center; gap: 10px; border: 1px solid #f1f5f9;
+}
+
+/* [6] 모달 레이아웃 (정중앙 고정 및 배경 블러) */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.5);
+    display: none; justify-content: center; align-items: center;
+    z-index: 10000; backdrop-filter: blur(2px);
+}
+
+.modal-content {
+    background: white; width: 520px; border-radius: 12px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
+    
+    /* 핵심 수정: overflow를 visible로 바꿔야 내부 iframe이 잘리지 않습니다. */
+    overflow: visible; 
+}
+
+/* [7] 모달 헤더 (X 버튼 오른쪽 끝 정렬 완벽 유지) */
+.modal-header {
+    padding: 18px 24px;
+    display: flex;            /* 가로 배치 */
+    justify-content: space-between; /* 제목 왼쪽, 버튼 오른쪽 끝 */
+    align-items: center;      /* 세로 중앙 정렬 */
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.close-btn {
+    appearance: none;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 6px;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #64748b; font-size: 20px;
+    transition: all 0.2s;
+    margin: 0;
+}
+.close-btn:hover { background: #fee2e2; color: #ef4444; }
+
+/* [8] iframe 높이 설정 (잘림 방지 핵심) */
+/* image_7.png에서 절반만 보이던 문제를 해결합니다. */
+#editFrame {
+    width: 100%;
+    height: 520px; /* 인풋 5개+라벨+버튼 영역을 고려한 넉넉한 높이 */
+    border: none;
+    display: block;
+}
+
+/* [9] iframe 내부 폼 요소 (iframe 내부에도 이 CSS가 링크되어야 합니다) */
+.modal-form-container { padding: 24px; background-color: white; }
+
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-size: 0.875rem; font-weight: 600; color: #475569; margin-bottom: 8px; }
+
+.form-control {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    padding: 12px;
+    font-size: 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #1e293b;
+    box-sizing: border-box; /* 패딩이 너비를 넘지 않도록 고정 */
+}
+
+.form-control:focus {
+    outline: none; border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
