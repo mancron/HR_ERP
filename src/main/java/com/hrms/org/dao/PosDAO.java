@@ -45,5 +45,38 @@ public class PosDAO {
         }
         return vlist;
 }
-	
+	/**
+     * 특정 직급 ID로 직급명을 조회하는 메서드
+     */
+    public String getPositionNameById(int positionId) {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        String positionName = "일반"; // 기본값 설정
+
+        try {
+            con = DatabaseConnection.getConnection();
+            // 직급 ID에 해당하는 직급명을 가져오는 쿼리
+            String sql = "SELECT position_name FROM job_position WHERE position_id = ?";
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, positionId);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                positionName = rs.getString("position_name");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 자원 해제
+            try {
+                if (rs != null) rs.close();
+                if (pstmt != null) pstmt.close();
+                if (con != null) con.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return positionName;
+    }
 }

@@ -1,0 +1,65 @@
+@charset "UTF-8";
+
+/* 기본 폰트 및 배경 설정 */
+body {
+    background-color: #f4f7f6; /* 약간의 회색빛이 도는 배경으로 카드를 돋보이게 함 */
+    font-family: 'Noto Sans KR', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* 비밀번호 변경 컨테이너 */
+.pw-change-container {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-width: 500px;
+    margin: 50px auto; /* 상단 여유를 좀 더 줌 */
+}
+
+.pw-change-container h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 1.5rem;
+}
+
+/* 폼 요소 스타일 */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #666;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box; /* 패딩 때문에 너비가 넘치지 않게 함 */
+}
+
+/* 버튼 스타일 */
+.submit-btn {
+    background: #2151A2;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    border-radius: 4px;
+    width: 100%;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 10px;
+    transition: background 0.3s;
+}
+
+.submit-btn:hover {
+    background: #1a3f7d;
+}

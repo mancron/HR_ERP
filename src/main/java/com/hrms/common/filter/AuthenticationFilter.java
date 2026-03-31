@@ -35,34 +35,32 @@ public class AuthenticationFilter implements Filter {
         // Context Path를 제외한 실제 요청 경로 추출
         String path = requestURI.substring(contextPath.length());
 
-        // 1. 검증 예외 경로 (Bypass)
-        // 로그인 화면, 로그인 처리 서블릿, 정적 리소스는 무조건 통과시킨다.
-        // 주의: 이 경로가 실제 프로젝트와 다르면 무한 리다이렉트에 빠지니 정확히 맞춰라.
+     // 1. [핵심 수정] 검증 예외 경로 (Bypass)
+        // 로그인 화면 진입(/auth/login), 실제 로그인 처리(.do), 정적 리소스는 무조건 통과
         if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
-                || path.equals("/login.jsp") || path.equals("/auth/login.do")) {
+                || path.equals("/auth/login")    // 로그인 페이지 서블릿 주소 추가
+                || path.equals("/auth/login.do") // 로그인 처리 서블릿 주소
+                || path.contains("login.jsp")) { // JSP 파일 직접 접근(권장하진 않지만 예외처리)
+            
             chain.doFilter(request, response);
             return;
         }
 
-        // 2. 인증 검증 (Authentication)
-        // false 옵션: 세션이 없으면 새로 생성하지 않고 null을 반환한다.
+        // 2. 인증 검증
         HttpSession session = req.getSession(false);
         boolean isLoggedIn = (session != null && session.getAttribute("userRole") != null);
 
         if (!isLoggedIn) {
-            // 미인증 사용자는 로그인 페이지로 강제 이동
-        	res.sendRedirect(contextPath + "/auth/login.do");
+            // [중요] 리다이렉트 경로가 위 예외 경로(1번)에 반드시 포함되어야 함!
+            res.sendRedirect(contextPath + "/auth/login"); 
             return;
         }
 
-        // 3. 인가 검증 (Authorization)
-        // 시스템 관리 영역(/sys/) 접근 시 권한을 확인한다.
+        // 3. 인가 검증 (/sys/ 관리자 체크)
         if (path.startsWith("/sys/")) {
             String role = (String) session.getAttribute("userRole");
             if (!"관리자".equals(role)) {
-                // 관리자가 아닐 경우 403 Forbidden 에러 반환 (해킹/비정상 접근 시도 차단)
-                // 필요하다면 res.sendRedirect(contextPath + "/main") 으로 메인으로 튕겨내도 된다.
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "시스템 관리자만 접근할 수 있는 메뉴입니다.");
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "관리자 권한이 필요합니다.");
                 return;
             }
         }

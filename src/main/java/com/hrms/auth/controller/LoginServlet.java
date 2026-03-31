@@ -2,7 +2,10 @@ package com.hrms.auth.controller;
 
 import com.hrms.auth.dto.AccountDTO;
 import com.hrms.auth.service.AuthService;
-import com.hrms.emp.dto.EmployeeDTO;
+import com.hrms.emp.dao.EmpDAO;
+import com.hrms.emp.dto.EmpDTO;
+import com.hrms.org.dao.DeptDAO; // 추가
+import com.hrms.org.dao.PosDAO;  // 추가
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -12,46 +15,57 @@ import java.net.URLEncoder;
 
 @WebServlet("/auth/login.do")
 public class LoginServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
     private AuthService authService = new AuthService();
 
-    // 1. 화면을 보여주는 GET 방식 추가 (필터가 튕겨내면 일로 들어온다)
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // WEB-INF 내부에 있는 실제 로그인 JSP 파일로 포워딩
-        request.getRequestDispatcher("/WEB-INF/jsp/auth/login.jsp").forward(request, response);
+        response.sendRedirect(request.getContextPath() + "/auth/login");
     }
 
-    // 2. 로그인을 처리하는 POST 방식
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String user = request.getParameter("username");
         String pass = request.getParameter("password");
 
         try {
-            // [수정] authService.login이 이제 Exception을 던집니다.
             AccountDTO account = authService.login(user, pass);
-            // 1. 로그인 성공 시 로직
+            
             if (account != null) {
                 HttpSession session = request.getSession();
                 
-                session.setAttribute("empId", account.getEmpId());
-                session.setAttribute("userName", account.getUsername());
-                session.setAttribute("userRole", account.getRole());
+                // 1. 사원 기본 정보 조회
+                EmpDAO empDao = new EmpDAO();
+                EmpDTO empInfo = empDao.getEmployeeById(account.getEmpId());
+                
+                if (empInfo != null) {
+                    // 2. [데이터 보강] 부서명과 직급명이 없다면 DAO를 통해 채워줌
+                    // (EmpDAO의 JOIN 쿼리가 완벽하지 않을 경우를 대비한 방어 코드)
+                    if (empInfo.getDept_name() == null || empInfo.getDept_name().isEmpty()) {
+                        DeptDAO deptDao = new DeptDAO();
+                        empInfo.setDept_name(deptDao.getDeptNameById(empInfo.getDept_id()));
+                    }
+                    
+                    if (empInfo.getPosition_name() == null || empInfo.getPosition_name().isEmpty()) {
+                        PosDAO posDao = new PosDAO();
+                        empInfo.setPosition_name(posDao.getPositionNameById(empInfo.getPosition_id()));
+                    }
 
-                // 사원 정보 상세 연동
-                com.hrms.emp.dao.EmployeeDAO empDao = new com.hrms.emp.dao.EmployeeDAO();
-                com.hrms.emp.dto.EmployeeDTO empInfo = empDao.getEmployeeById(account.getEmpId());
-                session.setAttribute("loginUser", empInfo); 
+                    // 3. 세션 저장 (JSP에서 EL 태그로 바로 사용 가능)
+                    session.setAttribute("empId", account.getEmpId());
+                    session.setAttribute("userName", account.getUsername());
+                    session.setAttribute("userRole", account.getRole());
+                    session.setAttribute("loginUser", empInfo); // 모든 정보가 담긴 DTO
+                }
 
                 response.sendRedirect(request.getContextPath() + "/index.jsp");
+            } else {
+                throw new Exception("invalid_user");
             }
-
-        } catch (Exception e) {
-            String errorCode = e.getMessage(); // "locked" 혹은 "login_fail_1"
-            String encodedUser = URLEncoder.encode(user, "UTF-8");
             
-            // [중요] 주소창에 찍히는 실제 경로(/auth/login)로 보내야 합니다. 
-            // 만약 이동 후에도 흰 창이라면 이 경로가 실제 로그인 폼 주소인지 확인하세요.
+        } catch (Exception e) {
+            String errorCode = e.getMessage();
+            String encodedUser = (user != null) ? URLEncoder.encode(user, "UTF-8") : "";
             response.sendRedirect(request.getContextPath() + "/auth/login?msg=" + errorCode + "&prevUser=" + encodedUser);
         }
     }
