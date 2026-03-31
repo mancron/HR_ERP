@@ -1,16 +1,19 @@
 package com.hrms.att.controller;
 
+import java.io.IOException;
+import java.util.List;
+
 import com.hrms.att.dto.AttendanceDTO;
 import com.hrms.att.dto.AttendanceSummaryDTO;
 import com.hrms.att.service.AttendanceService;
-import com.hrms.emp.dto.EmployeeDTO;
+import com.hrms.emp.dto.EmpDTO;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
-
-import java.io.IOException;
-import java.util.List;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/att/record")
 public class AttendanceServlet extends HttpServlet {
@@ -77,13 +80,13 @@ public class AttendanceServlet extends HttpServlet {
     
     private int getLoginEmpId(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession();
-        EmployeeDTO loginUser = (EmployeeDTO) session.getAttribute("loginUser");
+        EmpDTO loginUser = (EmpDTO) session.getAttribute("loginUser");
 
         if (loginUser == null) {
             response.sendRedirect(request.getContextPath() + "/auth/login.do");
             return -1;
         }
 
-        return loginUser.getEmpId();
+        return loginUser.getEmp_id();
     }
 }

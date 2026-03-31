@@ -1,7 +1,7 @@
 package com.hrms.att.controller;
 
 import com.hrms.att.service.LeaveService;
-import com.hrms.emp.dto.EmployeeDTO;
+import com.hrms.emp.dto.EmpDTO;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -21,7 +21,7 @@ public class LeaveCancelServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
 
         HttpSession session = request.getSession();
-        EmployeeDTO loginUser = (EmployeeDTO) session.getAttribute("loginUser");
+        EmpDTO loginUser = (EmpDTO) session.getAttribute("loginUser");
 
         // 🔒 로그인 체크
         if (loginUser == null) {
@@ -29,7 +29,7 @@ public class LeaveCancelServlet extends HttpServlet {
             return;
         }
 
-        int empId = loginUser.getEmpId();
+        int empId = loginUser.getEmp_id();
 
         try {
             // 🔥 파라미터 받기

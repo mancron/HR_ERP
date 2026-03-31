@@ -3,7 +3,7 @@ package com.hrms.att.controller;
 import com.hrms.att.dto.AnnualLeaveDTO;
 import com.hrms.att.dto.LeaveDTO;
 import com.hrms.att.service.LeaveService;
-import com.hrms.emp.dto.EmployeeDTO;
+import com.hrms.emp.dto.EmpDTO;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -99,13 +99,13 @@ public class LeaveRequestServlet extends HttpServlet {
 	
 	private int getLoginEmpId(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession();
-        EmployeeDTO loginUser = (EmployeeDTO) session.getAttribute("loginUser");
+        EmpDTO loginUser = (EmpDTO) session.getAttribute("loginUser");
 
         if (loginUser == null) {
             response.sendRedirect(request.getContextPath() + "/auth/login.do");
             return -1;
         }
 
-        return loginUser.getEmpId();
+        return loginUser.getEmp_id();
     }
 }
