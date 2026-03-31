@@ -7,33 +7,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HR ERP - 직원 목록</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
-  <style>
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-    .modal-overlay.active {
-      display: flex;
-    }
-    .modal-content {
-      background-color: #fff;
-      width: 80%;
-      max-width: 1200px;
-      height: 80vh;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-  </style>
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/empList.css">
+  <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
+  <script src="${pageContext.request.contextPath}/js/emp/list.js"></script>
+
 </head>
-<body>
+<body data-context-path="${pageContext.request.contextPath}">
 
   <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 
@@ -41,30 +20,26 @@
     <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
     <main class="app-content">
 
-      <h1 style="font-size: 20px; font-weight: 700;">직원 목록</h1>
+      <h1>직원 목록</h1><br>
 
       <%-- ===== 검색 폼 ===== --%>
       <form action="${pageContext.request.contextPath}/emp/list" method="get">
-        <div class="search-bar" style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
-
-          <input type="text" name="keyword"
-                 value="${param.keyword}"
-                 placeholder="이름 또는 사번 검색"
-                 style="padding: 5px;">
+        <div class="search-bar" >
+          <input type="text" name="keyword" value="${param.keyword}" placeholder="이름 또는 사번 검색" >
 
           <%-- 부서 드롭다운: selDeptId(String)와 dept_id(String)를 비교해 selected 유지 --%>
-          <select name="dept_id" style="padding: 5px;">
+          <select name="dept_id">
             <option value="all" <c:if test="${selDeptId == 'all'}">selected</c:if>>전체 부서</option>
             <c:forEach var="dept" items="${deptList}">
               <option value="${dept.dept_id}"
-                      <c:if test="${selDeptId == String.valueOf(dept.dept_id)}">selected</c:if>>
-                ${dept.dept_name}
+                  <c:if test="${selDeptId == String.valueOf(dept.dept_id)}">selected</c:if>>
+                   ${dept.dept_name}
               </option>
             </c:forEach>
           </select>
 
           <%-- 직급 드롭다운 --%>
-          <select name="position_id" style="padding: 5px;">
+          <select name="position_id" >
             <option value="all" <c:if test="${selPosId == 'all'}">selected</c:if>>전체 직급</option>
             <c:forEach var="pos" items="${posList}">
               <option value="${pos.position_id}"
@@ -75,7 +50,7 @@
           </select>
 
           <%-- 재직 상태 드롭다운 --%>
-          <select name="status" style="padding: 5px;">
+          <select name="status" >
             
             <option value="재직"  <c:if test="${selStatus == '재직'}">selected</c:if>>재직</option>
             <option value="휴직"  <c:if test="${selStatus == '휴직'}">selected</c:if>>휴직</option>
@@ -83,17 +58,18 @@
             <option value="all"  <c:if test="${selStatus == 'all'}">selected</c:if>>전체 상태</option>
           </select>
 
-          <button type="submit" style="padding: 5px 15px; cursor: pointer;">검색</button>
+          <button type="submit" >검색</button>
+          <a href="${pageContext.request.contextPath}/emp/reg" class="btn-register">+ 직원 등록</a>
         </div>
       </form>
 
       <%-- 검색 결과 건수 --%>
-      <p style="margin: 8px 0; font-size: 14px; color: #555;">
-        총 <strong>${empList.size()}</strong>명
+      <p>
+        총 <strong>${totalCount}</strong>명
       </p>
 
       <%-- ===== 직원 테이블 ===== --%>
-      <div class="card" style="padding: 0;">
+      <div class="card" >
         <table>
           <thead>
             <tr>
@@ -111,7 +87,7 @@
             <c:choose>
               <c:when test="${empty empList}">
                 <tr>
-                  <td colspan="8" style="text-align:center; padding:20px; color:#888;">
+                  <td colspan="8">
                     검색 결과가 없습니다.
                   </td>
                 </tr>
@@ -137,9 +113,10 @@
         </table>
       </div>
 
+	  <!-- 페이지 버튼 -->
       <div class="pagination">
-        <%-- 페이지 버튼 (추후 구현) --%>
-      </div>
+  		<jsp:include page="/WEB-INF/jsp/emp/page.jsp" />
+	  </div>
 
     </main>
   </div>
@@ -147,46 +124,14 @@
   <%-- ===== 직원 상세 모달 ===== --%>
   <div id="empDetailModal" class="modal-overlay">
     <div class="modal-content">
-      <div class="modal-header"
-           style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid #ddd;">
-        <h2 style="margin:0; font-size:18px;">직원 상세 정보</h2>
+      <div class="modal-header">
+        <h2>직원 상세 정보</h2>
         <button type="button" id="closeModalBtn" style="cursor:pointer;">✕</button>
       </div>
-      <iframe id="modalIframe" src="" style="width:100%; height:100%; border:none; flex-grow:1;"></iframe>
+      <iframe id="modalIframe" src=""></iframe>
     </div>
   </div>
 
-  <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const modal     = document.getElementById('empDetailModal');
-      const iframe    = document.getElementById('modalIframe');
-      const closeBtn  = document.getElementById('closeModalBtn');
-      const baseUrl   = '${pageContext.request.contextPath}/emp/detail?emp_no=';
-
-      // 상세 버튼 클릭 → 모달 열기
-      document.querySelectorAll('.btn-detail').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          const empNo = this.getAttribute('data-empno');
-          iframe.src = baseUrl + empNo;
-          modal.classList.add('active');
-        });
-      });
-
-      // 모달 닫기
-      closeBtn.addEventListener('click', function () {
-        modal.classList.remove('active');
-        iframe.src = '';
-      });
-
-      // 배경 클릭으로 닫기
-      modal.addEventListener('click', function (e) {
-        if (e.target === modal) {
-          modal.classList.remove('active');
-          iframe.src = '';
-        }
-      });
-    });
-  </script>
+  
 </body>
 </html>

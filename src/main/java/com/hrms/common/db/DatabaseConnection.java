@@ -13,16 +13,14 @@ public class DatabaseConnection {
     static {
         try {
             // .env 로드 (못 찾아도 예외 안 던짐)
-            Dotenv dotenv = Dotenv.configure()
-                    .directory(System.getProperty("user.home") + "/git/hr_erp")
-                    .filename(".env")
-                    .ignoreIfMissing()
-                    .load();
+        	Dotenv dotenv = Dotenv.configure()
+        	        .ignoreIfMissing() 
+        	        .load();
 
-            String dbUrl      = dotenv.get("DB_URL");
-            String dbUser     = dotenv.get("DB_USER");
-            String dbPassword = dotenv.get("DB_PASSWORD");
-
+        	String dbUrl      = dotenv.get("DB_URL");
+        	String dbUser     = dotenv.get("DB_USER");
+        	String dbPassword = dotenv.get("DB_PASSWORD");
+          
             HikariConfig config = new HikariConfig();
             config.setDriverClassName("com.mysql.cj.jdbc.Driver");
             config.setJdbcUrl(dbUrl);
