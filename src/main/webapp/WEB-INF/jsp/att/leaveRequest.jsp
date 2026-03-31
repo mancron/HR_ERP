@@ -122,7 +122,9 @@
 											action="${pageContext.request.contextPath}/att/leave/cancel"
 											method="post" style="display: inline;">
 											<input type="hidden" name="leave_id"
-												value="<c:out value='${item.leaveId}'/>">
+												value="<c:out value='${item.leaveId}'/>"> <input
+												type="hidden" name="year" value="${param.year}"> <input
+												type="hidden" name="month" value="${param.month}">
 											<button type="submit" class="cancel-btn">취소</button>
 										</form>
 									</c:if></td>
