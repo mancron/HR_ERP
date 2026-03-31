@@ -26,7 +26,6 @@ public class TransferServlet extends HttpServlet {
             throws ServletException, IOException {
         
         String empNo = request.getParameter("emp_no");
-        
         if (empNo == null || empNo.isEmpty()) {
             response.sendRedirect(request.getContextPath() + "/emp/list");
             return;
@@ -34,7 +33,19 @@ public class TransferServlet extends HttpServlet {
 
         // 객체 변수명(empService)으로 호출하여 상세 정보를 가져옵니다.
         EmpDTO empDetail = empService.getEmployeeDetail(empNo);
+        if (empDetail == null) {
+            response.sendRedirect(request.getContextPath() + "/emp/list");
+            return;
+        }
+        
+        // 부서/직급 목록 조회 (TransferService에 추가할 메서드)
+        List<DeptDTO> deptList = transferService.getDeptList();
+        List<PositionDTO> positionList = transferService.getPositionList();
+        
         request.setAttribute("empDetail", empDetail);
+        request.setAttribute("deptList", deptList);
+        request.setAttribute("positionList", positionList);
+        request.setAttribute("tomorrow", tomorrow.toString()); // "2026-04-01" 형식
         
         // 발령 페이지로 이동
         request.getRequestDispatcher("/WEB-INF/jsp/emp/transfer.jsp").forward(request, response);
@@ -43,6 +54,8 @@ public class TransferServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
+    	
+    	
         // 1. 폼 데이터 받기
         String empNo = request.getParameter("emp_no");
         String transferType = request.getParameter("transfer_type");
