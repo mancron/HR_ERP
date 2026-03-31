@@ -3,6 +3,7 @@ package com.hrms.att.controller;
 import com.hrms.att.dto.AttendanceDTO;
 import com.hrms.att.dto.AttendanceSummaryDTO;
 import com.hrms.att.service.AttendanceService;
+import com.hrms.emp.dto.EmployeeDTO;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -23,7 +24,8 @@ public class AttendanceServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        int empId = 1; // 테스트용
+    	int empId = getLoginEmpId(request, response);
+    	if (empId == -1) return;
 
         // 오늘 데이터
         AttendanceDTO dto = service.getTodayAttendance(empId);
@@ -57,7 +59,9 @@ public class AttendanceServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        int empId = 1; // ⚠️ 테스트용
+    	int empId = getLoginEmpId(request, response);
+    	if (empId == -1) return;
+		
         String action = request.getParameter("action");
 
         if ("checkin".equals(action)) {
@@ -69,5 +73,17 @@ public class AttendanceServlet extends HttpServlet {
 
         // 처리 후 다시 화면으로 이동
         response.sendRedirect(request.getContextPath() + "/att/record");
+    }
+    
+    private int getLoginEmpId(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HttpSession session = request.getSession();
+        EmployeeDTO loginUser = (EmployeeDTO) session.getAttribute("loginUser");
+
+        if (loginUser == null) {
+            response.sendRedirect(request.getContextPath() + "/auth/login.do");
+            return -1;
+        }
+
+        return loginUser.getEmpId();
     }
 }

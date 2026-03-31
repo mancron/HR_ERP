@@ -41,7 +41,7 @@
         <div class="nav-group-header" onclick="toggleAccordion(this)">근태 관리</div>
         <div class="nav-group-content">
           <a href="${pageContext.request.contextPath}/att/record" class="nav-item">출퇴근</a>
-          <a href="/att/leave/req" class="nav-item">휴가 신청</a>
+          <a href="${pageContext.request.contextPath}/att/leave/req" class="nav-item">휴가 신청</a>
           <a href="/att/leave/approve" class="nav-item">휴가 승인</a>
           <a href="/att/overtime" class="nav-item">초과근무</a>
           <a href="/att/status" class="nav-item">근태 현황·보정</a>
