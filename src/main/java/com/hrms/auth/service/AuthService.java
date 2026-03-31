@@ -3,44 +3,79 @@ package com.hrms.auth.service;
 import com.hrms.auth.dao.AccountDAO;
 import com.hrms.auth.dto.AccountDTO;
 import org.mindrot.jbcrypt.BCrypt;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AuthService {
     private AccountDAO accountDAO = new AccountDAO();
 
-    public AccountDTO login(String username, String password) {
-        // 1. DB에서 해당 username의 계정 정보를 가져옴
-        AccountDTO account = accountDAO.getAccountByUsername(username);
+    /**
+     * [리팩토링] JSP의 스크립틀릿과 <script> 로직을 서비스로 통합
+     */
+    public Map<String, String> getLoginViewData(String msg) {
+        Map<String, String> data = new HashMap<>();
+        
+        // 1. 관리자 연락처
+        String adminPhone = accountDAO.getAdminContact();
+        if (adminPhone == null || adminPhone.isEmpty()) adminPhone = "인사팀 문의";
+        data.put("adminPhone", adminPhone);
 
-        // 2. 계정이 존재하고 활성화(1) 상태인지 확인
-        if (account != null && account.getIsActive() == 1) {
-            
-            /* * [BCrypt 암호화 체크]
-             * password: 사용자가 화면에서 입력한 평문 비번
-             * account.getPasswordHash(): DB에 저장된 $2a$10$... 형태의 암호화된 비번
-             */
-            if (BCrypt.checkpw(password, account.getPasswordHash())) {
-                return account; // 인증 성공
-            }
+        // 2. 실패 횟수 (substring 로직)
+        String failCount = "0";
+        if (msg != null && msg.startsWith("login_fail_")) {
+            failCount = msg.substring(msg.lastIndexOf("_") + 1);
         }
-        return null; // 인증 실패
+        data.put("failCount", failCount);
+
+        // 3. [중요] <script> alert 대신 화면 상단에 띄울 강조 메시지
+        String systemNotice = "";
+        if ("locked".equals(msg)) {
+            systemNotice = "⚠️ 계정 잠김: 보안을 위해 차단되었습니다. 담당자(" + adminPhone + ")에게 문의하세요.";
+        } else if ("pw_success".equals(msg)) {
+            systemNotice = "✅ 비밀번호 변경 완료: 새로운 비밀번호로 로그인해주세요.";
+        }
+        data.put("systemNotice", systemNotice);
+
+        return data;
+    }
+
+    public AccountDTO login(String username, String password) throws Exception {
+        AccountDTO account = accountDAO.getAccountByUsername(username);
+        if (account == null) throw new Exception("invalid_user");
+        if (account.getIsActive() == 0) throw new Exception("locked");
+
+        if (BCrypt.checkpw(password, account.getPasswordHash())) {
+            accountDAO.handleLoginSuccess(username);
+            return account;
+        } else {
+            accountDAO.handleLoginFailure(username);
+            AccountDTO updated = accountDAO.getAccountByUsername(username);
+            int currentAttempts = (updated != null) ? updated.getLoginAttempts() : 1;
+            if (updated != null && updated.getIsActive() == 0) throw new Exception("locked");
+            throw new Exception("login_fail_" + currentAttempts);
+        }
+    }
+
+    public Map<String, String> getPwChangeViewData(String error) {
+        Map<String, String> data = new HashMap<>();
+        String errorMsg = "";
+
+        if ("mismatch".equals(error)) {
+            errorMsg = "❌ 새 비밀번호와 확인 비밀번호가 일치하지 않습니다.";
+        } else if ("fail".equals(error)) {
+            errorMsg = "❌ 현재 비밀번호가 일치하지 않거나 변경에 실패했습니다.";
+        }
+
+        data.put("errorMsg", errorMsg);
+        return data;
     }
     
     public boolean changePassword(String userId, String currentPw, String newPw) {
-        // 1. DB에서 해당 사용자의 현재 암호화된 비밀번호 조회 (AccountDAO 사용)
-        String hashedPwInDB = accountDAO.getPasswordByUserId(userId);
-
-        if (hashedPwInDB != null) {
-            // 2. 사용자가 입력한 현재 비밀번호와 DB의 해시값 비교
-            if (BCrypt.checkpw(currentPw, hashedPwInDB)) {
-                
-                // 3. 일치하면 새 비밀번호를 BCrypt로 암호화(Hashing)
-                String newHashedPw = BCrypt.hashpw(newPw, BCrypt.gensalt());
-                
-                // 4. 암호화된 새 비밀번호를 DB에 업데이트 요청
-                return accountDAO.updatePassword(userId, newHashedPw);
-            }
+        AccountDTO account = accountDAO.getAccountByUsername(userId);
+        if (account != null && BCrypt.checkpw(currentPw, account.getPasswordHash())) {
+            String newHashedPw = BCrypt.hashpw(newPw, BCrypt.gensalt());
+            return accountDAO.updatePassword(userId, newHashedPw);
         }
-        // 현재 비밀번호가 틀렸거나 사용자가 없는 경우
         return false;
     }
 }

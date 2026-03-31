@@ -4,7 +4,7 @@
 body, h2, p, form, input, button {
     margin: 0;
     padding: 0;
-    font-family: 'Noto Sans KR', sans-serif; /* 나눔고딕/본고딕 계열 권장 */
+    font-family: 'Noto Sans KR', sans-serif;
     box-sizing: border-box;
 }
 
@@ -13,16 +13,16 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh; /* 화면 꽉 차게 */
+    height: 100vh;
 }
 
 /* 로그인 카드 컨테이너 */
 .login-card {
     background-color: white;
-    width: 450px; /* 적당한 너비 */
+    width: 450px;
     padding: 60px 50px;
     border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15); /* 부드러운 그림자 */
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
     text-align: center;
 }
 
@@ -34,9 +34,7 @@ body {
     align-items: center;
 }
 
-.logo-area img {
-    width: 40px; /* 로고 아이콘 크기 */
-    height: 40px;
+.logo-area i { /* 아이콘 사용 시 */
     margin-bottom: 15px;
 }
 
@@ -66,7 +64,6 @@ body {
     font-weight: 500;
 }
 
-/* 빨간 별표(*) */
 .input-label .required {
     color: #E74C3C;
     margin-left: 3px;
@@ -75,7 +72,7 @@ body {
 .input-box {
     width: 100%;
     padding: 15px;
-    border: 1px solid #D1D8E0; /* 연한 회색 테두리 */
+    border: 1px solid #D1D8E0;
     border-radius: 6px;
     font-size: 16px;
     color: #333;
@@ -83,38 +80,42 @@ body {
 }
 
 .input-box:focus {
-    border-color: #3498db; /* 포커스 시 파란색 */
+    border-color: #3498db;
     outline: none;
 }
 
-/* 경고 알림 박스 */
+/* 알림 박스 (공통 및 실패/잠금 스타일) */
 .alert-box {
-    background-color: #FEF9E7; /* 연한 노랑 */
-    border: 1px solid #F9E79F;
     border-radius: 6px;
     padding: 12px 15px;
     text-align: left;
     margin-bottom: 30px;
     display: flex;
     align-items: center;
-}
-
-.alert-box .alert-icon {
-    color: #F1C40F; /* 노란색 아이콘 */
-    margin-right: 10px;
-    font-size: 18px;
-}
-
-.alert-box p {
     font-size: 14px;
-    color: #B7950B; /* 진한 노랑/갈색 텍스트 */
 }
+
+/* 기본 경고 (노란색) */
+.alert-default {
+    background-color: #FEF9E7;
+    border: 1px solid #F9E79F;
+    color: #B7950B;
+}
+.alert-default .alert-icon { color: #F1C40F; margin-right: 10px; }
+
+/* 실패/잠금 경고 (빨간색) */
+.alert-danger {
+    background-color: #FDEDEC;
+    border: 1px solid #E74C3C;
+    color: #E74C3C;
+}
+.alert-danger .alert-icon { color: #E74C3C; margin-right: 10px; }
 
 /* 로그인 버튼 */
 .login-btn {
     width: 100%;
     padding: 18px;
-    background-color: #3498db; /* 밝은 파랑 */
+    background-color: #3498db;
     color: white;
     border: none;
     border-radius: 6px;
@@ -125,21 +126,27 @@ body {
 }
 
 .login-btn:hover {
-    background-color: #2980b9; /* 마우스 오버 시 진하게 */
+    background-color: #2980b9;
 }
 
-/* 하단 링크 */
-.footer-link {
+/* 하단 문의 정보 (전화번호 안내) */
+.footer-info {
     margin-top: 35px;
-    font-size: 15px;
-    color: #777;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    font-size: 14px;
+    color: #7f8c8d;
+    line-height: 1.6;
 }
 
-.footer-link a {
-    color: #3498db;
-    text-decoration: none; /* 밑줄 제거 */
+.footer-info .contact-title {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
 }
 
-.footer-link a:hover {
-    text-decoration: underline; /* 마우스 오버 시 밑줄 */
+.footer-info .phone-number {
+    color: #34495e;
+    font-weight: bold;
+    font-size: 16px;
 }

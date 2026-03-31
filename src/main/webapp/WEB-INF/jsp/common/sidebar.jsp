@@ -61,11 +61,14 @@
       </div>
     </div>
 
-    <div class="nav-group">
-      <div class="nav-group-header" onclick="toggleAccordion(this)">인사 평가</div>
-      <div class="nav-group-content">
-        <a href="/eval/write" class="nav-item">평가 작성·확정</a>
-        <a href="/eval/status" class="nav-item">평가 현황</a>
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleAccordion(this)">인사 평가</div>
+        <div class="nav-group-content">
+          <a href="${pageContext.request.contextPath}/eval/write" class="nav-item">평가 작성·확정</a>
+          <c:if test="${sessionScope.userRole == '관리자' || sessionScope.userRole == 'HR담당자'}">
+          <a href="${pageContext.request.contextPath}/eval/status" class="nav-item">평가 현황</a>
+          </c:if>
+        </div>
       </div>
     </div>
 
@@ -74,7 +77,7 @@
         <div class="nav-group-header" onclick="toggleAccordion(this)">시스템</div>
         <div class="nav-group-content">
           <a href="${pageContext.request.contextPath}/sys/accountUnlock" class="nav-item">계정 잠금 해제</a>
-          <a href="${pageContext.request.contextPath}/sys/holidayManage" class="nav-item">공휴일 관리</a>
+          <a href="${pageContext.request.contextPath}/sys/holiday" class="nav-item">공휴일 관리</a>
           <a href="${pageContext.request.contextPath}/sys/auditLog" class="nav-item">변경 이력 조회</a>
           <a href="${pageContext.request.contextPath}/sys/passwordReset" class="nav-item">비밀번호 초기화</a>
           <a href="${pageContext.request.contextPath}/sys/roleChange" class="nav-item">계정 권한 변경</a>

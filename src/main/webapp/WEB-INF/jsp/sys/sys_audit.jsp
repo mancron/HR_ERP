@@ -56,7 +56,7 @@
                     </div>
                     
                     <div class="form-group" style="margin-left: auto;">
-                        <button type="button" class="btn btn-secondary" onclick="location.href='${pageContext.request.contextPath}/sys/audit'">초기화</button>
+                        <button type="button" class="btn btn-secondary" onclick="location.href='${pageContext.request.contextPath}/sys/auditLog'">초기화</button>
                         <button type="submit" class="btn btn-primary">조회</button>
                     </div>
                 </form>

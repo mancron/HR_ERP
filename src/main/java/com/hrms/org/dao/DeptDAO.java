@@ -46,4 +46,28 @@ public class DeptDAO {
 	        }
 	        return vlist;
 	}
+		
+		public String getDeptNameById(int deptId) {
+		    Connection con = null;
+		    PreparedStatement pstmt = null;
+		    ResultSet rs = null;
+		    String deptName = "소속 미지정";
+
+		    try {
+		        con = DatabaseConnection.getConnection();
+		        String sql = "SELECT dept_name FROM department WHERE dept_id = ?";
+		        pstmt = con.prepareStatement(sql);
+		        pstmt.setInt(1, deptId);
+		        rs = pstmt.executeQuery();
+
+		        if (rs.next()) {
+		            deptName = rs.getString("dept_name");
+		        }
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		    } finally {
+		        // ... (기존 close 로직 동일)
+		    }
+		    return deptName;
+		}
 }
