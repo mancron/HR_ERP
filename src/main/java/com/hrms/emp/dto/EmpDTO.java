@@ -27,8 +27,20 @@ public class EmpDTO {
 	private String dept_name; 	 //부서명
 	private String position_name; //직급명
 	
+	//상세정보 열람을 위한 권한정보 가져오기
+	private String role;
+	
+
 	public EmpDTO() {}
 	
+	
+	public String getRole() {
+		return role;
+	}
+	
+	public void setRole(String role) {
+		this.role = role;
+	}
 	
 	public String getDept_name() {
 		return dept_name;
