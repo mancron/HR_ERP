@@ -9,29 +9,8 @@
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/empList.css">
   <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const modal     = document.getElementById('empDetailModal');
-      const iframe    = document.getElementById('modalIframe');
-      const closeBtn  = document.getElementById('closeModalBtn');
-      const baseUrl   = '${pageContext.request.contextPath}/emp/detail?emp_no=';
+  <script src="${pageContext.request.contextPath}/js/emp/list.js"></script>
 
-      // 상세 버튼 클릭 → 모달 열기
-      document.querySelectorAll('.btn-detail').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          const empNo = this.getAttribute('data-empno');
-          iframe.src = baseUrl + empNo;
-          modal.classList.add('active');
-        });
-      });
-
-      // 모달 닫기
-      closeBtn.addEventListener('click', function () {
-        modal.classList.remove('active');
-        iframe.src = '';
-      });
-    });
-  </script>
 </head>
 <body data-context-path="${pageContext.request.contextPath}">
 
