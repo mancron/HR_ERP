@@ -123,7 +123,7 @@ public class LeaveService {
 			conn = DatabaseConnection.getConnection();
 			conn.setAutoCommit(false); // 🔥 트랜잭션 시작
 			// 휴가 정보 조회
-			LeaveDTO leave = leaveDAO.getLeaveById(conn, leaveId);
+			LeaveDTO leave = leaveDAO.getLeaveById(leaveId);
 			if (leave == null) {
 				throw new Exception("휴가 정보 없음");
 			}
@@ -167,5 +167,9 @@ public class LeaveService {
 			}
 		}
 		return false;
+	}
+	
+	public LeaveDTO getLeaveDetail(int leaveId) {
+	    return leaveDAO.getLeaveById(leaveId);
 	}
 }

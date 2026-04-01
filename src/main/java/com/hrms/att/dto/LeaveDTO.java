@@ -21,6 +21,9 @@ public class LeaveDTO {
 	private String empName;
 	private String position;
 	private String deptName;
+	private String approverName;
+	private String approverPosition;
+	private String approverDept;
 
 	// 기본 생성자
 	public LeaveDTO() {
@@ -156,4 +159,28 @@ public class LeaveDTO {
 		this.deptName = deptName;
 	}
 
+	public String getApproverName() {
+		return approverName;
+	}
+
+	public void setApproverName(String approverName) {
+		this.approverName = approverName;
+	}
+
+	public String getApproverPosition() {
+		return approverPosition;
+	}
+
+	public void setApproverPosition(String approverPosition) {
+		this.approverPosition = approverPosition;
+	}
+
+	public String getApproverDept() {
+		return approverDept;
+	}
+
+	public void setApproverDept(String approverDept) {
+		this.approverDept = approverDept;
+	}
+	
 }
