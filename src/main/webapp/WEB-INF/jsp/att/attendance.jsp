@@ -1,8 +1,13 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR ERP - 출퇴근</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/attendance.css">
+</head>
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 
@@ -110,6 +115,7 @@
 					<td><span
 						class="status-badge
         <c:choose>
+        	<c:when test='${dto.status == "휴가"}'>status-leave</c:when>
             <c:when test='${dto.status == "결근"}'>status-absent</c:when>
             <c:when test='${dto.status == "지각"}'>status-late</c:when>
             <c:when test='${dto.status == "퇴근미처리"}'>status-no</c:when>
