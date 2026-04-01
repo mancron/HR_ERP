@@ -2,59 +2,75 @@ package com.hrms.emp.service;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.hrms.common.db.DatabaseConnection;
 import com.hrms.emp.dao.EmpDAO;
 import com.hrms.emp.dao.TransferDAO;
+import com.hrms.emp.dto.EmpDTO;
+import com.hrms.emp.dto.HistoryDTO;
 import com.hrms.emp.dto.TransferDTO; // 발령 데이터를 담는 DTO (가정)
+import com.hrms.org.dto.DeptDTO;
 
 public class TransferService {
 
     // 1. 발령 전용 DAO인 TransferDAO를 사용하도록 수정
     private TransferDAO transferDao = new TransferDAO();
 
-    /**
-     * 인사발령 실행 (트랜잭션 처리)
-     */
-    public boolean executeTransfer(TransferDTO dto) {
+    //인사발령 실행 (트랜잭션 처리)
+    public boolean executeTransfer(String empNo, HistoryDTO dto) {
         Connection con = null;
-        boolean isSuccess = false;
-
         try {
             con = DatabaseConnection.getConnection();
-            con.setAutoCommit(false); // [설계서: 트랜잭션 시작]
+            con.setAutoCommit(false);
 
-            // 2. TransferDAO에 정의한 메서드 호출 (변수명 transferDao 확인!)
-            // 주의: TransferDAO 클래스 안에 아래 두 메서드 이름이 똑같이 있어야 합니다.
-            int updateResult = transferDao.updateEmployeePosition(con, dto);
-            int insertResult = transferDao.insertPersonnelHistory(con, dto);
+            int r1 = transferDao.updateEmployeePosition(con, empNo,
+                         dto.getTo_dept_id(), dto.getTo_position_id());
+            int r2 = transferDao.insertPersonnelHistory(con, dto);
 
-            // 3. 두 작업이 모두 성공(1행 이상 영향)했는지 확인
-            if (updateResult > 0 && insertResult > 0) {
-                con.commit(); // [설계서: 트랜잭션 커밋]
-                isSuccess = true;
-                System.out.println("[TransferService] 인사발령 성공: 커밋 완료");
+            if (r1 > 0 && r2 > 0) {
+                con.commit();
+                return true;
             } else {
-                con.rollback(); // 하나라도 실패하면 롤백
-                System.err.println("[TransferService] 인사발령 실패: 결과 부족 (Update:" + updateResult + ", Insert:" + insertResult + ")");
+                con.rollback();
+                return false;
             }
-
         } catch (Exception e) {
-            if (con != null) {
-                try {
-                    con.rollback();
-                    System.err.println("[TransferService] 예외 발생으로 인한 롤백 수행: " + e.getMessage());
-                } catch (SQLException se) {
-                    se.printStackTrace();
-                }
-            }
             e.printStackTrace();
+            try { if (con != null) con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+            return false;
         } finally {
-            closeConnection(con);
+            try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
         }
-
-        return isSuccess;
     }
 
+    public List<EmpDTO> getDeptList() {
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            return transferDao.getDeptList(con);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
+    
+    public List<EmpDTO> getPositionList() {
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            return transferDao.getPositionList(con);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
+    
     private void closeConnection(Connection con) {
         if (con != null) {
             try {
