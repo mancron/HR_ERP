@@ -7,7 +7,7 @@
     <div style="display:flex; align-items:center; gap:16px;">
 
         <%-- 알림 배지 버튼 --%>
-        <a href="${pageContext.request.contextPath}/sys/notification"
+        <a href="${pageContext.request.contextPath}/notification"
            style="position:relative; text-decoration:none; color:var(--gray-600);"
            title="알림">
             🔔
