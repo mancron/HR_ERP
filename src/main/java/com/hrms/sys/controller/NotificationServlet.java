@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet("/sys/notification")
+@WebServlet("/notification")
 public class NotificationServlet extends HttpServlet {
 
     private NotificationService notificationService;

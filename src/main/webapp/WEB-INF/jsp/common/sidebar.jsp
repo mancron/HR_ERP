@@ -18,6 +18,7 @@
       <div class="nav-group-content">
         <a href="${pageContext.request.contextPath}/main" class="nav-item">메인 대시보드</a>
         <a href="${pageContext.request.contextPath}/auth/pw-change" class="nav-item">비밀번호 변경</a>
+        <a href="${pageContext.request.contextPath}/notification" class="nav-item">알림</a>
       </div>
     </div>
 
@@ -82,7 +83,6 @@
           <a href="${pageContext.request.contextPath}/sys/passwordReset" class="nav-item">비밀번호 초기화</a>
           <a href="${pageContext.request.contextPath}/sys/roleChange" class="nav-item">계정 권한 변경</a>
           <a href="${pageContext.request.contextPath}/sys/sqlQuery" class="nav-item">AI 데이터 조회</a>
-          <a href="${pageContext.request.contextPath}/sys/notification" class="nav-item">알림</a>
         </div>
       </div>
     </c:if>
