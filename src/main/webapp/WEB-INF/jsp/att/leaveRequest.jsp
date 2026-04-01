@@ -1,9 +1,16 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR ERP - 휴가 신청</title>
 <link rel="stylesheet"
 	href="<c:out value='${pageContext.request.contextPath}/css/att/attendance.css'/>">
 <link rel="stylesheet"
 	href="<c:out value='${pageContext.request.contextPath}/css/att/leave.css'/>">
+</head>
+
 <!-- 알림 -->
 <c:if test="${param.msg eq 'success'}">
 	<script>
