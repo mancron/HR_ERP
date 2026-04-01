@@ -6,6 +6,21 @@ import com.hrms.sys.dao.NotificationDAO;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+/**
+ * =====================================================
+ * 알림 발송 공통 유틸리티
+ * =====================================================
+ * 사용 방법:
+ *   1. 반드시 메인 트랜잭션 conn.commit() 완료 후 호출
+ *   2. static 메서드이므로 인스턴스 생성 불필요
+ *   3. 알림 실패는 로그만 남기고 무시됨 (메인 로직에 영향 없음)
+ *
+ * 예시:
+ *   conn.commit(); // 메인 트랜잭션 커밋
+ *   NotificationUtil.sendPasswordReset(empId, accountId); // 알림 발송
+ * =====================================================
+ */
+
 public class NotificationUtil {
 
     private static final NotificationDAO notificationDAO = new NotificationDAO();
