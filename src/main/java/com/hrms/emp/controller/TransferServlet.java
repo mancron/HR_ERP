@@ -5,13 +5,15 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 
 import com.hrms.emp.dto.EmpDTO;
-import com.hrms.emp.dto.TransferDTO;
+import com.hrms.emp.dto.HistoryDTO;
 import com.hrms.emp.service.EmpService;
-import com.hrms.org.dto.DeptDTO;
 import com.hrms.emp.service.TransferService;
 
 
@@ -39,13 +41,15 @@ public class TransferServlet extends HttpServlet {
         }
         
         // 부서/직급 목록 조회 (TransferService에 추가할 메서드)
-        List<DeptDTO> deptList = transferService.getDeptList();
-        List<PositionDTO> positionList = transferService.getPositionList();
+        List<EmpDTO> deptList = transferService.getDeptList();
+        List<EmpDTO> positionList = transferService.getPositionList();
+        String tomorrow = LocalDate.now().plusDays(1).toString();
+
         
         request.setAttribute("empDetail", empDetail);
         request.setAttribute("deptList", deptList);
         request.setAttribute("positionList", positionList);
-        request.setAttribute("tomorrow", tomorrow.toString()); // "2026-04-01" 형식
+        request.setAttribute("tomorrow", tomorrow);
         
         // 발령 페이지로 이동
         request.getRequestDispatcher("/WEB-INF/jsp/emp/transfer.jsp").forward(request, response);
@@ -54,37 +58,37 @@ public class TransferServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
+    	request.setCharacterEncoding("UTF-8");
     	
+    	HttpSession session = request.getSession(false);
+        Integer approvedBy = (Integer) session.getAttribute("empId");
     	
-        // 1. 폼 데이터 받기
         String empNo = request.getParameter("emp_no");
-        String transferType = request.getParameter("transfer_type");
-        String targetDeptId = request.getParameter("target_dept");      // JSP의 value가 ID라고 가정
-        String targetPosId = request.getParameter("target_position");  // JSP의 value가 ID라고 가정
-        String transferDate = request.getParameter("transfer_date");
-        String reason = request.getParameter("reason");
         
-        // 이전 정보 (hidden 혹은 조회 결과에서 가져옴)
-        String prevDeptId = request.getParameter("prev_dept_id");
-        String prevPosId = request.getParameter("prev_position_id");
-
-        // 2. DTO 객체 생성 및 데이터 담기
-        TransferDTO dto = new TransferDTO();
-        dto.setEmp_no(empNo);
-        dto.setTransfer_type(transferType);
-        dto.setTransfer_date(transferDate);
-        dto.setReason(reason);
-        dto.setTarget_dept_id(Integer.parseInt(targetDeptId));
-        dto.setTarget_position_id(Integer.parseInt(targetPosId));
-        dto.setPrev_dept_id(Integer.parseInt(prevDeptId));
-        dto.setPrev_position_id(Integer.parseInt(prevPosId));
+        HistoryDTO dto = new HistoryDTO();
+        dto.setEmp_id(Integer.parseInt(request.getParameter("emp_id")));
+        dto.setChange_type(request.getParameter("transfer_type"));
+        dto.setFrom_dept_id(Integer.parseInt(request.getParameter("prev_dept_id")));
+        dto.setTo_dept_id(Integer.parseInt(request.getParameter("target_dept")));
+        dto.setFrom_position_id(Integer.parseInt(request.getParameter("prev_position_id")));
+        dto.setTo_position_id(Integer.parseInt(request.getParameter("target_position")));
+        dto.setReason(request.getParameter("reason"));
+        dto.setApproved_by(approvedBy != null ? approvedBy : 0);
+        dto.setChange_date(LocalDate.parse(request.getParameter("transfer_date")).atStartOfDay());
 
         // 3. TransferService를 통해 트랜잭션 실행
-        boolean isSuccess = transferService.executeTransfer(dto);
+        boolean isSuccess = transferService.executeTransfer(empNo, dto);
 
         if(isSuccess) {
             // 성공 시 해당 사원의 상세 페이지로 이동
-            response.sendRedirect(request.getContextPath() + "/emp/detail?emp_no=" + empNo);
+            //response.sendRedirect(request.getContextPath() + "/emp/detail?emp_no=" + empNo); //직원 상세 창으로 돌아가기
+        	//발령 처리를 하자마자 창꺼지고 새로고침
+            response.setContentType("text/html; charset=UTF-8");
+            java.io.PrintWriter out = response.getWriter();
+            out.println("<script>");
+            out.println("window.top.location.reload();"); // 부모 창(목록) 새로고침
+            out.println("</script>");
+            out.flush();
         } else {
             // 실패 시 메시지와 함께 뒤로 가기 등 처리
             response.sendRedirect(request.getContextPath() + "/emp/transfer?emp_no=" + empNo + "&error=1");

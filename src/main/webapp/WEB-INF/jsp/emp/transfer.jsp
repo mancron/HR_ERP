@@ -20,7 +20,7 @@
 		</div>
 	</div>
 
-	<form action="${pageContext.request.contextPath}/emp/transferProcess"
+	<form action="${pageContext.request.contextPath}/emp/transfer"
 		method="post">
 		<input type="hidden" name="emp_no" value="${empDetail.emp_no}">
 		<input type="hidden" name="emp_id" value="${empDetail.emp_id}">

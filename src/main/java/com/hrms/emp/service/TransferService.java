@@ -8,6 +8,8 @@ import java.util.List;
 import com.hrms.common.db.DatabaseConnection;
 import com.hrms.emp.dao.EmpDAO;
 import com.hrms.emp.dao.TransferDAO;
+import com.hrms.emp.dto.EmpDTO;
+import com.hrms.emp.dto.HistoryDTO;
 import com.hrms.emp.dto.TransferDTO; // 발령 데이터를 담는 DTO (가정)
 import com.hrms.org.dto.DeptDTO;
 
@@ -17,35 +19,33 @@ public class TransferService {
     private TransferDAO transferDao = new TransferDAO();
 
     //인사발령 실행 (트랜잭션 처리)
-    public boolean executeTransfer(TransferDTO dto) {
+    public boolean executeTransfer(String empNo, HistoryDTO dto) {
         Connection con = null;
         try {
-        	 con = DatabaseConnection.getConnection();
-             con.setAutoCommit(false);
+            con = DatabaseConnection.getConnection();
+            con.setAutoCommit(false);
 
-             // 1. employee 테이블 부서/직급 업데이트
-             int r1 = transferDao.updateEmployeePosition(con, empNo,
-                          dto.getTo_dept_id(), dto.getTo_position_id());
+            int r1 = transferDao.updateEmployeePosition(con, empNo,
+                         dto.getTo_dept_id(), dto.getTo_position_id());
+            int r2 = transferDao.insertPersonnelHistory(con, dto);
 
-             // 2. personnel_history 이력 INSERT
-             int r2 = transferDao.insertPersonnelHistory(con, dto);
+            if (r1 > 0 && r2 > 0) {
+                con.commit();
+                return true;
+            } else {
+                con.rollback();
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { if (con != null) con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+            return false;
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
 
-             if (r1 > 0 && r2 > 0) {
-                 con.commit();
-                 return true;
-             } else {
-                 con.rollback();
-                 return false;
-             }
-         } catch (Exception e) {
-             e.printStackTrace();
-             try { if (con != null) con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
-             return false;
-         } finally {
-             try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
-         }
-
-    public List<DeptDTO> getDeptList() {
+    public List<EmpDTO> getDeptList() {
         Connection con = null;
         try {
             con = DatabaseConnection.getConnection();
@@ -58,7 +58,7 @@ public class TransferService {
         }
     }
     
-    public List<PositionDTO> getPositionList() {
+    public List<EmpDTO> getPositionList() {
         Connection con = null;
         try {
             con = DatabaseConnection.getConnection();
