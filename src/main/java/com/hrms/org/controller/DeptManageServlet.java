@@ -19,54 +19,67 @@ public class DeptManageServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // 1. 조직도 트리 (좌측 패널용 계층 Map)
+        HttpSession session = request.getSession();
+        String userRole = (String) session.getAttribute("userRole");
+        boolean isPrivileged = "관리자".equals(userRole) || "HR담당자".equals(userRole);
+
+        // 1. 조직도 트리 (활성 부서 전용)
         List<Map<String, Object>> deptTree = deptService.getDeptTree();
 
-        // 2. 상위 부서 드롭다운용 전체 부서 목록
+        // 2. 상위 부서 목록 (전체 부서)
         List<DeptDTO> allDepts = deptService.getAllDepts();
 
-        // 3. 부서장 후보 사원 목록
+        // 3. 부서장 후보 목록 (직원 리스트)
         List<Map<String, Object>> empList = deptService.getEmpList();
 
-        // 4. 선택 부서 처리
+        // 4. 비활성 부서 목록 (권한이 있을 때만)
+        if (isPrivileged) {
+            List<DeptDTO> inactiveDepts = deptService.getInactiveDeptList();
+            request.setAttribute("inactiveDepts", inactiveDepts);
+        }
+
+        // 5. 선택 부서 및 액션 처리
         String deptIdParam = request.getParameter("deptId");
         String action      = request.getParameter("action");
-        String errorParam  = request.getParameter("error");
-
-        DeptDTO selectedDept = new DeptDTO();
+        
+        DeptDTO selectedDept = null;
         List<Map<String, Object>> memberList = null;
         int selectedDeptId = 0;
 
-        if ("new".equals(action)) {
-            // 신규 추가 모드: 빈 폼
+        // [수정 포인트] 신규 추가도 아니고, 파라미터도 없을 때 (즉, 메뉴 클릭 시 첫 진입)
+        if (deptIdParam == null && action == null) {
+            // 최상위 부서(ID: 1)를 기본값으로 로드
+            selectedDeptId = 1; 
+            selectedDept   = deptService.getDeptById(selectedDeptId);
+            memberList     = deptService.getMembersByDeptId(selectedDeptId);
+        } 
+        else if ("new".equals(action) && isPrivileged) {
             selectedDept = new DeptDTO();
-
-        } else if (deptIdParam != null && !deptIdParam.isEmpty()) {
+            selectedDept.setIs_active(1); // 신규 생성 시 기본값 활성
+        } 
+        else if (deptIdParam != null && !deptIdParam.isEmpty()) {
             try {
                 selectedDeptId = Integer.parseInt(deptIdParam);
                 selectedDept   = deptService.getDeptById(selectedDeptId);
-                
-                // [수정 포인트 1] DAO가 수정되었다면, 여기서 하위 부서원까지 포함된 리스트를 가져오게 됩니다.
                 memberList     = deptService.getMembersByDeptId(selectedDeptId);
-                
-                if (selectedDept == null) selectedDept = new DeptDTO();
             } catch (NumberFormatException e) {
                 e.printStackTrace();
             }
         }
 
-        // 5. 에러 메시지 처리
-        if ("has_members".equals(errorParam)) {
-            request.setAttribute("errorMsg", "소속 직원이 있어 부서를 폐지할 수 없습니다.");
-        } else if ("save_fail".equals(errorParam)) {
-            request.setAttribute("errorMsg", "저장 중 오류가 발생했습니다.");
-        } else if ("no_auth".equals(errorParam)) {
-            // [추가] 권한 부족 메시지 처리
-            request.setAttribute("errorMsg", "해당 작업을 수행할 권한이 없습니다.");
+        // 최종 방어 코드: 검색 실패 시 빈 객체 생성
+        if (selectedDept == null) {
+            selectedDept = new DeptDTO();
+            selectedDept.setIs_active(1); 
+        } else if (!isPrivileged) {
+            // 일반 사용자 권한 필터링
+            selectedDept.setSort_order(0);
+            selectedDept.setDept_level(0);
+            selectedDept.setIs_active(1);
         }
 
-        // TODO: 회사명을 DB 설정값 또는 공통 상수에서 가져오도록 수정
-        request.setAttribute("companyName",    "(주)예시회사");
+        // 결과 세팅
+        request.setAttribute("isPrivileged",   isPrivileged); 
         request.setAttribute("deptTree",       deptTree);
         request.setAttribute("allDepts",       allDepts);
         request.setAttribute("empList",        empList);
@@ -83,11 +96,9 @@ public class DeptManageServlet extends HttpServlet {
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
 
-        // [수정 포인트 2] 보안: 세션 권한 체크
         HttpSession session = request.getSession();
         String userRole = (String) session.getAttribute("userRole");
 
-        // 관리자나 HR담당자가 아니면 POST 요청(저장/삭제) 처리 거부
         if (!"관리자".equals(userRole) && !"HR담당자".equals(userRole)) {
             response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
             return;
@@ -107,30 +118,18 @@ public class DeptManageServlet extends HttpServlet {
                 }
 
             } else {
-                // 저장 (신규 or 수정)
                 DeptDTO dept = new DeptDTO();
-
                 String deptIdStr = request.getParameter("dept_id");
-                dept.setDept_id(deptIdStr != null && !deptIdStr.isEmpty()
-                        ? Integer.parseInt(deptIdStr) : 0);
-
+                dept.setDept_id(deptIdStr != null && !deptIdStr.isEmpty() ? Integer.parseInt(deptIdStr) : 0);
                 dept.setDept_name(request.getParameter("dept_name"));
-
                 String parentStr = request.getParameter("parent_dept_id");
-                dept.setParent_dept_id(parentStr != null && !parentStr.isEmpty()
-                        ? Integer.parseInt(parentStr) : 0);
-
+                dept.setParent_dept_id(parentStr != null && !parentStr.isEmpty() ? Integer.parseInt(parentStr) : 0);
                 String managerStr = request.getParameter("manager_id");
-                dept.setManager_id(managerStr != null && !managerStr.isEmpty()
-                        ? Integer.parseInt(managerStr) : 0);
-
+                dept.setManager_id(managerStr != null && !managerStr.isEmpty() ? Integer.parseInt(managerStr) : 0);
                 String sortStr = request.getParameter("sort_order");
-                dept.setSort_order(sortStr != null && !sortStr.isEmpty()
-                        ? Integer.parseInt(sortStr) : 1);
-
+                dept.setSort_order(sortStr != null && !sortStr.isEmpty() ? Integer.parseInt(sortStr) : 1);
                 String activeStr = request.getParameter("is_active");
-                dept.setIs_active(activeStr != null && !activeStr.isEmpty()
-                        ? Integer.parseInt(activeStr) : 1);
+                dept.setIs_active(activeStr != null && !activeStr.isEmpty() ? Integer.parseInt(activeStr) : 1);
 
                 boolean ok = deptService.saveDept(dept);
                 if (ok) {
