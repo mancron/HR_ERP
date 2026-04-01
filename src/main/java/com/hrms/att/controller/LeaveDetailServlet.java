@@ -31,7 +31,5 @@ public class LeaveDetailServlet extends HttpServlet {
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 
 		out.print(gson.toJson(dto));
-		
-		System.out.print(gson.toJson(dto));
 	}
 }

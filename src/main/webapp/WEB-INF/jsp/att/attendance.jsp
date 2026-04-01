@@ -1,8 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
-
-
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -117,6 +115,7 @@
 					<td><span
 						class="status-badge
         <c:choose>
+        	<c:when test='${dto.status == "휴가"}'>status-leave</c:when>
             <c:when test='${dto.status == "결근"}'>status-absent</c:when>
             <c:when test='${dto.status == "지각"}'>status-late</c:when>
             <c:when test='${dto.status == "퇴근미처리"}'>status-no</c:when>

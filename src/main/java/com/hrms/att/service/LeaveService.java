@@ -172,4 +172,9 @@ public class LeaveService {
 	public LeaveDTO getLeaveDetail(int leaveId) {
 	    return leaveDAO.getLeaveById(leaveId);
 	}
+	
+	//특정 날짜 휴가 존재 여부 확인
+	public boolean existsLeaveByDate(int empId, LocalDate date) {
+	    return leaveDAO.existsByDate(empId, date);
+	}
 }

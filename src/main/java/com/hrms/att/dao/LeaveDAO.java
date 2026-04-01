@@ -5,6 +5,7 @@ import com.hrms.att.dto.LeaveDTO;
 import com.hrms.common.db.DatabaseConnection;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -426,4 +427,32 @@ public class LeaveDAO {
 
 	    return null;
 	}
+	
+	//특정 날짜에 휴가인지 확인
+	public boolean existsByDate(int empId, LocalDate date) {
+
+	    String sql = "SELECT COUNT(*) FROM leave_request "
+	               + "WHERE emp_id = ? "
+	               + "AND status = '승인' "
+	               + "AND ? BETWEEN start_date AND end_date";
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, empId);
+	        pstmt.setDate(2, java.sql.Date.valueOf(date));
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            if (rs.next()) {
+	                return rs.getInt(1) > 0;
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return false;
+	}
+	
 }
