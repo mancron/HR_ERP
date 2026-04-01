@@ -184,3 +184,10 @@
     padding: 20px;
     color: #888;
 }
+
+.reject-row input[name="reason"] {
+    height: 36px;
+    padding: 0 10px;
+    font-size: 14px;
+    box-sizing: border-box;
+}

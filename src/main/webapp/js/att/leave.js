@@ -1,3 +1,33 @@
+function showRejectForm(btn) {
+    const tr = btn.closest("tr");
+
+    if (tr.nextElementSibling && tr.nextElementSibling.classList.contains("reject-row")) {
+        tr.nextElementSibling.remove();
+        return;
+    }
+
+    const leaveId = tr.querySelector("input[name='leaveId']").value;
+
+    const newRow = document.createElement("tr");
+    newRow.classList.add("reject-row");
+
+    newRow.innerHTML = `
+        <td colspan="9">
+            <form action="${contextPath}/leave/updateStatus" method="post" class="reject-form">
+                <input type="hidden" name="leaveId" value="${leaveId}">
+                <input type="hidden" name="status" value="반려">
+
+                <input type="text" name="reason" placeholder="반려 사유를 입력하세요" required>
+
+                <button type="submit" class="btn reject-btn">확인</button>
+                <button type="button" class="btn" onclick="this.closest('tr').remove()">취소</button>
+            </form>
+        </td>
+    `;
+
+    tr.after(newRow);
+}
+
 document.addEventListener("DOMContentLoaded", function () {
 
     const leaveType = document.getElementById("leaveType");

@@ -114,7 +114,8 @@
 											<input type="hidden" name="status" value="반려"> <input
 												type="hidden" name="reason">
 
-											<button type="submit" class="btn reject-btn">반려</button>
+											<button type="button" class="btn reject-btn"
+												onclick="showRejectForm(this)">반려</button>
 										</form>
 
 									</td>
@@ -138,18 +139,8 @@
 
 	</main>
 </div>
-
 <script>
-	function confirmReject(form) {
-		const reason = prompt("반려 사유를 입력하세요:");
-		if (!reason) {
-			alert("반려 사유는 필수입니다.");
-			return false;
-		}
-		form.reason.value = reason;
-		return true;
-	}
+    const contextPath = "${pageContext.request.contextPath}";
 </script>
-
 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
 <script src="${pageContext.request.contextPath}/js/att/leave.js"></script>
