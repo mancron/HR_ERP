@@ -13,14 +13,11 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
-// 모든 URL 요청을 가로채서 검증한다.
 @WebFilter("/*")
 public class AuthenticationFilter implements Filter {
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
-        // 필터 초기화 시 필요한 로직이 있다면 작성
-    }
+    public void init(FilterConfig filterConfig) throws ServletException {}
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -31,46 +28,59 @@ public class AuthenticationFilter implements Filter {
 
         String requestURI = req.getRequestURI();
         String contextPath = req.getContextPath();
-        
-        // Context Path를 제외한 실제 요청 경로 추출
         String path = requestURI.substring(contextPath.length());
 
-     // 1. [핵심 수정] 검증 예외 경로 (Bypass)
-        // 로그인 화면 진입(/auth/login), 실제 로그인 처리(.do), 정적 리소스는 무조건 통과
+        // 1. [Bypass] 검증 예외 경로 (로그인 없이 접근 가능)
         if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
-                || path.equals("/auth/login")    // 로그인 페이지 서블릿 주소 추가
-                || path.equals("/auth/login.do") // 로그인 처리 서블릿 주소
-                || path.contains("login.jsp")) { // JSP 파일 직접 접근(권장하진 않지만 예외처리)
+                || path.equals("/auth/login")
+                || path.equals("/auth/login.do")
+                || path.contains("login.jsp")
+                || path.equals("/index.jsp")) {
             
             chain.doFilter(request, response);
             return;
         }
 
-        // 2. 인증 검증
+        // 2. [Authentication] 인증 검증 (로그인 여부 확인)
         HttpSession session = req.getSession(false);
-        boolean isLoggedIn = (session != null && session.getAttribute("userRole") != null);
+        String userRole = (session != null) ? (String) session.getAttribute("userRole") : null;
 
-        if (!isLoggedIn) {
-            // [중요] 리다이렉트 경로가 위 예외 경로(1번)에 반드시 포함되어야 함!
-            res.sendRedirect(contextPath + "/auth/login"); 
+        if (userRole == null) {
+            // 비동기 세션 연장(ping) 요청인 경우 401 에러 반환
+            String action = req.getParameter("action");
+            if ("ping".equals(action)) {
+                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+
+            // 일반 요청인데 세션이 없는 경우 -> 로그인 페이지로 이동 (?timeout=y 추가)
+            res.sendRedirect(contextPath + "/auth/login?timeout=y");
             return;
         }
 
-        // 3. 인가 검증 (/sys/ 관리자 체크)
+        // 3. [Authorization] 인가 검증 (URL 직접 접근 차단)
+        // (1) 관리자 전용 경로 (/sys/ 등) 체크
         if (path.startsWith("/sys/")) {
-            String role = (String) session.getAttribute("userRole");
-            if (!"관리자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "관리자 권한이 필요합니다.");
+            if (!"관리자".equals(userRole)) {
+                // 관리자가 아닌데 주소창에 직접 치고 들어온 경우 -> 메인으로 튕기기
+                res.sendRedirect(contextPath + "/main?msg=no_admin_auth");
                 return;
             }
         }
 
-        // 모든 보안 검증을 통과한 정상 요청만 다음 필터나 서블릿으로 보낸다.
+        // (2) 중요 액션(수정/삭제 등)에 대한 추가 권한 체크가 필요하다면 여기서 처리
+        /*
+        String action = req.getParameter("action");
+        if ("delete".equals(action) && !"관리자".equals(userRole)) {
+             res.sendRedirect(contextPath + "/main?msg=no_permission");
+             return;
+        }
+        */
+
+        // 모든 보안 검증 통과 시 다음 필터나 서블릿으로 전달
         chain.doFilter(request, response);
     }
 
     @Override
-    public void destroy() {
-        // 자원 해제 로직
-    }
+    public void destroy() {}
 }
