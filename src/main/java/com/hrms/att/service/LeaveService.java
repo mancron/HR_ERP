@@ -110,8 +110,9 @@ public class LeaveService {
 			// 휴가 일수 계산
 			double days = calculateDays(leave.getStartDate().toLocalDate(), leave.getEndDate().toLocalDate(),
 					leave.getLeaveType());
+			String leaveType = leave.getLeaveType();
 			// 승인일 경우만 연차 차감
-			if ("승인".equals(status)) {
+			if ("승인".equals(status) && ("연차".equals(leaveType) || "반차".equals(leaveType))) {
 				double remain = leaveDAO.getRemainDays(empId);
 				if (remain < days) {
 					throw new Exception("연차 부족");
