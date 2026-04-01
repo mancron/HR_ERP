@@ -151,4 +151,13 @@ public class DeptService {
         if (activeCount > 0) return false;
         return deptDao.deleteDept(deptId);
     }
+    
+    /**
+    * 비활성화(폐지)된 부서 목록 조회
+    * 관리자/HR담당자 전용 탭에서 사용됨
+    */
+   public List<DeptDTO> getInactiveDeptList() {
+       // DAO에서 is_active = 0인 데이터를 가져옵니다.
+       return deptDao.getInactiveDepts();
+   }
 }

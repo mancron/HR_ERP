@@ -155,8 +155,10 @@ public class DeptDAO {
         try {
             con = DatabaseConnection.getConnection();
             
-            // 1. 재귀 쿼리(CTE)를 사용해 자신을 포함한 모든 하위 부서 ID를 먼저 추출
-            // 2. 해당 ID들에 속한 사원 정보를 JOIN해서 가져옴
+            // 정렬 조건: 
+            // 1. 상태가 '재직'인 사람 우선 (CASE문 사용)
+            // 2. 직급 레벨이 높은 순 (DESC)
+            // 3. 직급이 같다면 사번(emp_no) 오름차순 (ASC)
             String sql = "WITH RECURSIVE DeptHierarchy AS (" +
                          "    SELECT dept_id FROM department WHERE dept_id = ? " +
                          "    UNION ALL " +
@@ -168,7 +170,10 @@ public class DeptDAO {
                          "FROM employee e " +
                          "LEFT JOIN job_position p ON e.position_id = p.position_id " +
                          "WHERE e.dept_id IN (SELECT dept_id FROM DeptHierarchy) " +
-                         "ORDER BY p.position_level DESC, e.emp_name ASC";
+                         "ORDER BY " +
+                         "  CASE WHEN e.status = '재직' THEN 1 ELSE 2 END ASC, " + // 재직자 상단, 휴직/퇴직 하단
+                         "  p.position_level DESC, " +                           // 직급 높은 순
+                         "  e.emp_no ASC";                                        // 사번 순
                          
             pstmt = con.prepareStatement(sql);
             pstmt.setInt(1, deptId);
@@ -329,6 +334,48 @@ public class DeptDAO {
             closeResources(rs, pstmt, con);
         }
         return success;
+    }
+    
+    /**
+     * 비활성 부서 목록 조회 (is_active = 0)
+     * HR 관리자 탭에서 폐지된 부서들을 확인할 때 사용
+     */
+    public List<DeptDTO> getInactiveDepts() {
+        List<DeptDTO> list = new ArrayList<>();
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            // is_active = 0인 부서만 조회하며, 폐지일(closed_at) 최신순으로 정렬
+            String sql = "SELECT dept_id, dept_name, parent_dept_id, manager_id, " +
+                         "dept_level, sort_order, is_active, closed_at, created_at " +
+                         "FROM department " +
+                         "WHERE is_active = 0 " +
+                         "ORDER BY closed_at DESC, dept_id ASC";
+            
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                DeptDTO dto = new DeptDTO();
+                dto.setDept_id(rs.getInt("dept_id"));
+                dto.setDept_name(rs.getString("dept_name"));
+                dto.setParent_dept_id(rs.getInt("parent_dept_id"));
+                dto.setManager_id(rs.getInt("manager_id"));
+                dto.setDept_level(rs.getInt("dept_level"));
+                dto.setSort_order(rs.getInt("sort_order"));
+                dto.setIs_active(rs.getInt("is_active"));
+                dto.setClosed_at(rs.getString("closed_at"));
+                dto.setCreated_at(rs.getString("created_at"));
+                list.add(dto);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, con);
+        }
+        return list;
     }
 
     private void closeResources(ResultSet rs, PreparedStatement pstmt, Connection con) {
