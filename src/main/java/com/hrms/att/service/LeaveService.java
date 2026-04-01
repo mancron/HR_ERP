@@ -4,16 +4,18 @@ import com.hrms.att.dao.LeaveDAO;
 import com.hrms.att.dto.AnnualLeaveDTO;
 import com.hrms.att.dto.LeaveDTO;
 import com.hrms.common.db.DatabaseConnection;
+import com.hrms.sys.dao.HolidayDAO;
 
 import java.sql.Connection;
 import java.sql.Date;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 public class LeaveService {
 
 	private LeaveDAO leaveDAO = new LeaveDAO();
+	private HolidayDAO holidayDAO = new HolidayDAO();
 
 	// 휴가 신청 처리
 	public String applyLeave(LeaveDTO dto) {
@@ -55,15 +57,37 @@ public class LeaveService {
 		return leaveDAO.getAnnualLeave(empId);
 	}
 
-	public double calculateDays(LocalDate start, LocalDate end, String leaveType) {
+	public double calculateDays(LocalDate start, LocalDate end, String type) {
 
-		long daysBetween = ChronoUnit.DAYS.between(start, end) + 1;
-
-		if ("반차".equals(leaveType)) {
+		// 반차
+		if ("반차".equals(type)) {
 			return 0.5;
 		}
 
-		return daysBetween;
+		double days = 0;
+		LocalDate date = start;
+
+		try (Connection conn = DatabaseConnection.getConnection()) {
+
+			while (!date.isAfter(end)) {
+
+				boolean isWeekend = date.getDayOfWeek() == DayOfWeek.SATURDAY
+						|| date.getDayOfWeek() == DayOfWeek.SUNDAY;
+
+				boolean isHoliday = holidayDAO.existsByDate(date, conn);
+
+				if (!isWeekend && !isHoliday) {
+					days++;
+				}
+
+				date = date.plusDays(1);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return days;
 	}
 
 	// 휴가 리스트 출력
@@ -81,12 +105,12 @@ public class LeaveService {
 		return leaveDAO.cancelLeave(leaveId, empId);
 	}
 
-	//필터 + 정렬 포함 (신규 기능)
+	// 필터 + 정렬 포함 (신규 기능)
 	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int approverId) {
 		return leaveDAO.getPendingLeaves(dept, sort, startDate, endDate, approverId);
 	}
 
-	//부서 목록 조회 (드롭다운용)
+	// 부서 목록 조회 (드롭다운용)
 	public List<String> getPendingDeptList() {
 		return leaveDAO.getPendingDeptList();
 	}

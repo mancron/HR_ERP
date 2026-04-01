@@ -93,4 +93,26 @@ public class HolidayDAO {
             if (pstmt != null) try { pstmt.close(); } catch (SQLException e) {}
         }
     }
+    
+    /** 특정 날짜가 공휴일인지 확인 */
+    public static boolean existsByDate(LocalDate date, Connection conn) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM public_holiday WHERE holiday_date = ?";
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setDate(1, Date.valueOf(date));
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException e) {}
+        }
+
+        return false;
+    }
 }
