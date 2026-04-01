@@ -40,18 +40,21 @@ public class TextToSqlService extends HttpServlet {
         TextToSqlResultDTO result = new TextToSqlResultDTO();
 
         try {
-            // 1. Ollama API 호출 → SQL 생성
-            String rawSql = callOllama(userQuestion);
+            String rawSql  = callOllama(userQuestion);
             String cleanSql = cleanSql(rawSql);
             result.setGeneratedSql(cleanSql);
 
-            // 2. SELECT만 허용 검증
+            // ✅ v3 Lockdown 응답 처리
+            if ("불가능".equals(cleanSql.trim())) {
+                result.setErrorMsg("해당 질문은 현재 HR 데이터베이스 스키마로 조회할 수 없습니다.");
+                return result;
+            }
+
             if (!isSafeQuery(cleanSql)) {
                 result.setErrorMsg("SELECT 쿼리만 실행할 수 있습니다.");
                 return result;
             }
 
-            // 3. DB 실행
             executeQuery(cleanSql, result);
 
         } catch (Exception e) {
@@ -68,14 +71,20 @@ public class TextToSqlService extends HttpServlet {
     private String callOllama(String userQuestion) throws IOException {
     	String prompt = DynamicPromptBuilder.build(userQuestion);
 
-    	System.out.println("[AI] 매칭 카테고리: " + DynamicPromptBuilder.getMatchedCategories(userQuestion));
+        System.out.println("[AI] 매칭 카테고리: " + DynamicPromptBuilder.getMatchedCategory(userQuestion));
         System.out.println("[AI] 프롬프트 토큰: ~" + DynamicPromptBuilder.estimateTokens(prompt));
         // JSON 요청 본문 수동 조립 (외부 라이브러리 없이)
         String requestBody = "{"
-            + "\"model\":\"" + OLLAMA_MODEL + "\","
-            + "\"prompt\":\"" + escapeJson(prompt) + "\","
-            + "\"stream\":false"
-            + "}";
+        	    + "\"model\":\""   + OLLAMA_MODEL + "\","
+        	    + "\"prompt\":\""  + escapeJson(prompt) + "\","
+        	    + "\"stream\":false,"
+        	    + "\"options\":{"
+        	    +   "\"temperature\":0,"      // ✅ 0 = 항상 최고확률 토큰 선택 (결정론적)
+        	    +   "\"top_p\":1,"            // ✅ temperature=0 시 top_p는 무의미하지만 명시
+        	    +   "\"repeat_penalty\":1.1," // ✅ 같은 컬럼명 반복 억제
+        	    +   "\"num_predict\":300"     // ✅ 최대 토큰 제한 (SQL이 300토큰 넘을 일 없음)
+        	    + "}"
+        	    + "}";
 
         URL url = new URL(OLLAMA_URL);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
