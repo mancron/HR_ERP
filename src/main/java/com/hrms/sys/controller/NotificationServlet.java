@@ -66,6 +66,6 @@ public class NotificationServlet extends HttpServlet {
         }
 
         // PRG 패턴
-        response.sendRedirect(request.getContextPath() + "/sys/notification");
+        response.sendRedirect(request.getContextPath() + "/notification");
     }
 }

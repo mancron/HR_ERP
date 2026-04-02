@@ -22,11 +22,11 @@
             <%-- 필터 탭 + 전체 읽음 처리 버튼 --%>
             <div class="noti-toolbar">
                 <div class="filter-tabs">
-                    <a href="${pageContext.request.contextPath}/sys/notification"
+                    <a href="${pageContext.request.contextPath}/notification"
                        class="btn btn-sm ${empty filter or filter == 'all' ? 'btn-primary' : 'btn-secondary'}">
                         전체
                     </a>
-                    <a href="${pageContext.request.contextPath}/sys/notification?filter=unread"
+                    <a href="${pageContext.request.contextPath}/notification?filter=unread"
                        class="btn btn-sm ${filter == 'unread' ? 'btn-primary' : 'btn-secondary'}">
                         미읽음
                         <c:if test="${unreadCount > 0}">
@@ -36,7 +36,7 @@
                 </div>
 
                 <c:if test="${unreadCount > 0}">
-                    <form action="${pageContext.request.contextPath}/sys/notification"
+                    <form action="${pageContext.request.contextPath}/notification"
                           method="post"
                           onsubmit="return confirm('모든 알림을 읽음 처리하시겠습니까?')">
                         <input type="hidden" name="action" value="markAll">
@@ -70,7 +70,7 @@
                                         <c:out value="${noti.createdAtStr}" />
                                     </span>
                                     <c:if test="${noti.isRead == 0}">
-                                        <form action="${pageContext.request.contextPath}/sys/notification"
+                                        <form action="${pageContext.request.contextPath}/notification"
                                               method="post" class="inline-form">
                                             <input type="hidden" name="action" value="markOne">
                                             <input type="hidden" name="notiId" value="${noti.notiId}">
