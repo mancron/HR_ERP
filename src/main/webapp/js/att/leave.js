@@ -112,54 +112,91 @@ function closeModal() {
     document.getElementById("leaveModal").style.display = "none";
 }
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
+
+    initLeaveForm();
+    initToast();
+
+});
+
+// 🔹 휴가 신청 UI 로직
+function initLeaveForm() {
 
     const leaveType = document.getElementById("leaveType");
     const halfTypeDiv = document.getElementById("halfTypeDiv");
-    const form = document.querySelector("form");
+    const startDate = document.getElementById("startDate");
+    const endDate = document.getElementById("endDate");
+	const hiddenEndDate = document.getElementById("hiddenEndDate");
 
-    // 🔥 반차 선택 시 표시
     if (leaveType) {
-        leaveType.addEventListener("change", function() {
-            halfTypeDiv.style.display = (this.value === "반차") ? "block" : "none";
-        });
-    }
+        leaveType.addEventListener("change", function () {
 
-    // 🔥 폼 검증
-    if (form) {
-        form.addEventListener("submit", function(e) {
+            const isHalf = this.value === "반차";
 
-            const reason = document.querySelector("textarea[name='reason']").value.trim();
-            const start = document.querySelector("input[name='start_date']").value;
-            const end = document.querySelector("input[name='end_date']").value;
+            // 1. UI 표시
+            halfTypeDiv.style.display = isHalf ? "block" : "none";
 
-            if (!reason) {
-                alert("휴가 사유를 입력해주세요.");
-                e.preventDefault();
-                return;
-            }
+            if (isHalf) {
 
-            if (start && end && start > end) {
-                alert("시작일은 종료일보다 늦을 수 없습니다.");
-                e.preventDefault();
-                return;
-            }
-        });
-    }
+                // 🔥 시작일 없으면 먼저 선택하게 유도
+                if (!startDate.value) {
+                    showToast("시작일을 먼저 선택하세요.", "error");
+                    leaveType.value = "연차";
+                    return;
+                }
 
-    const filterForm = document.querySelector(".filter-box");
+                // 🔥 종료일 = 시작일 강제
+                endDate.value = startDate.value;
+				hiddenEndDate.value = startDate.value;
+                // 🔥 선택 자체를 막아버림
+                endDate.setAttribute("disabled", true);
 
-    if (filterForm) {
-        filterForm.addEventListener("submit", function(e) {
-
-            const start = document.querySelector("input[name='startDate']").value;
-            const end = document.querySelector("input[name='endDate']").value;
-
-            if (start && end && start > end) {
-                alert("시작일은 종료일보다 늦을 수 없습니다.");
-                e.preventDefault();
+            } else {
+                endDate.removeAttribute("disabled");
             }
         });
     }
 
-});
+    // 🔥 시작일 바꾸면 무조건 동기화
+    if (startDate) {
+        startDate.addEventListener("change", function () {
+            if (leaveType.value === "반차") {
+                endDate.value = startDate.value;
+            }
+        });
+    }
+}
+
+// 🔹 Toast 처리
+function initToast() {
+
+    const toastData = document.getElementById("toast-data");
+    if (!toastData) return;
+
+    const errorMsg = toastData.dataset.error;
+    const successMsg = toastData.dataset.msg;
+
+    if (errorMsg && errorMsg.trim() !== "") {
+        showToast(errorMsg, "error");
+    } else if (successMsg && successMsg.trim() !== "") {
+        showToast(successMsg, "success");
+    }
+}
+
+// 🔹 Toast 생성 함수
+function showToast(message, type) {
+
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    toast.innerText = message;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.display = "block";
+    }, 10);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
