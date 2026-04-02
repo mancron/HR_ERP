@@ -1,15 +1,29 @@
 package com.hrms.sys.service;
 
-import com.hrms.common.db.DatabaseConnection;
-import com.hrms.sys.dto.TextToSqlResultDTO;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-public class TextToSqlService {
+import com.hrms.common.db.DatabaseConnection;
+import com.hrms.sys.dto.TextToSqlResultDTO;
+import com.hrms.sys.util.DynamicPromptBuilder;
+
+import jakarta.servlet.http.HttpServlet;
+
+public class TextToSqlService extends HttpServlet {
 
     // Ollama API 엔드포인트
     private static final String OLLAMA_URL   = "http://localhost:11434/api/generate";
@@ -18,157 +32,7 @@ public class TextToSqlService {
     // SELECT만 허용 — 화이트리스트
     private static final List<String> ALLOWED_START = Arrays.asList("SELECT", "select");
 
-    // 스키마 프롬프트 (모델에게 DB 구조 주입)
-    // =============================================
-    // SCHEMA_PROMPT v2 — 최적화 버전
-    // =============================================
-    // 개선사항:
-    //   1. 토큰 효율: 압축 표기법 사용 (~30% 절감)
-    //   2. 커버리지: 집계/날짜/서브쿼리/NULL/LIKE 패턴 추가
-    //   3. 한국어 동의어 매핑: 자연어 → SQL 변환 정확도 향상
-    //   4. 안전장치: 환각 방지, 모호성 대응 규칙 강화
-    //   5. 뷰 우선 전략: 불필요한 JOIN 방지
-    // =============================================
- 
-    private static final String SCHEMA_PROMPT =
-        "You are a MySQL expert. Generate ONLY a raw MySQL SELECT query.\n\n" +
- 
-        // ── 출력 규칙 ──
-        "OUTPUT RULES:\n" +
-        "- Output ONLY the SQL query. No markdown, no explanation, no code blocks.\n" +
-        "- End with semicolon.\n" +
-        "- Use ONLY columns explicitly listed below. NEVER invent columns.\n" +
-        "- Always use PK/FK relationships for JOINs.\n" +
-        "- Default LIMIT 100 unless user specifies count.\n" +
-        "- For ambiguous questions, return broader results rather than guessing filters.\n\n" +
- 
-        // ── 한국어 → SQL 도메인 매핑 ──
-        "DOMAIN RULES (Korean → SQL):\n" +
-        "Status Filters:\n" +
-        "  재직자/현재직원/일하는사람: employee.status='재직'\n" +
-        "  퇴사자/퇴직자/그만둔사람: employee.status='퇴직'\n" +
-        "  휴직자/쉬는사람: employee.status='휴직'\n" +
-        "  정규직/계약직/파트타임: employee.emp_type='정규직'|'계약직'|'파트타임'\n" +
-        "  잠긴계정/잠금: account.locked_at IS NOT NULL\n" +
-        "  활성계정: account.is_active=1 AND account.locked_at IS NULL\n" +
-        "  운영중인부서/직급: is_active=1\n" +
-        "  폐지된부서/직급: is_active=0\n" +
-        "Approval Status:\n" +
-        "  승인된/처리된: status='승인'\n" +
-        "  대기중/미승인/결재대기: status='대기'\n" +
-        "  반려된/거절된: status='반려'\n" +
-        "  취소된: status='취소'\n" +
-        "Salary:\n" +
-        "  연봉/기준연봉/기본연봉: employee.base_salary (월기본급 아님, 연봉 기준)\n" +
-        "  월급/급여/실수령: salary table (net_salary=실수령, gross_salary=세전)\n" +
-        "  지급완료: salary.status='완료'\n" +
-        "  급여대기/미지급: salary.status='대기'\n" +
-        "Evaluation:\n" +
-        "  확정된평가: evaluation.eval_status='최종확정'\n" +
-        "  작성중평가: evaluation.eval_status='작성중'\n" +
-        "Notification:\n" +
-        "  안읽은알림/새알림: notification.is_read=0\n" +
-        "  읽은알림: notification.is_read=1\n" +
-        "Organization:\n" +
-        "  부서장/팀장: department.manager_id=employee.emp_id\n" +
-        "  상위부서: department.parent_dept_id\n" +
-        "Age:\n" +
-        "  나이/만나이: TIMESTAMPDIFF(YEAR, employee.birth_date, CURDATE()). NEVER use 'age' column.\n" +
-        "  근속연수/재직기간: TIMESTAMPDIFF(YEAR, employee.hire_date, CURDATE())\n" +
-        "  근속월수: TIMESTAMPDIFF(MONTH, employee.hire_date, CURDATE())\n" +
-        "Time:\n" +
-        "  이번달/당월: YEAR(CURDATE()), MONTH(CURDATE())\n" +
-        "  지난달/전월: YEAR(DATE_SUB(CURDATE(),INTERVAL 1 MONTH)), MONTH(DATE_SUB(CURDATE(),INTERVAL 1 MONTH))\n" +
-        "  올해/금년: YEAR(CURDATE())\n" +
-        "  작년/전년: YEAR(CURDATE())-1\n" +
-        "  상반기: eval_period='상반기' or MONTH BETWEEN 1 AND 6\n" +
-        "  하반기: eval_period='하반기' or MONTH BETWEEN 7 AND 12\n\n" +
- 
-        // ── 스키마 정의 (압축 표기) ──
-        "SCHEMA (db: hr_erp):\n" +
-        "Tables:\n" +
-        "  job_position(PK:position_id, position_name, position_level(1~5), base_salary, meal_allowance, transport_allowance, position_allowance, is_active(1/0), created_at)\n" +
-        "  department(PK:dept_id, dept_name, FK:parent_dept_id→department, FK:manager_id→employee, dept_level, sort_order, is_active(1/0), closed_at, created_at)\n" +
-        "  employee(PK:emp_id, emp_name, emp_no, FK:dept_id, FK:position_id, hire_date, resign_date, emp_type ENUM('정규직','계약직','파트타임'), status ENUM('재직','휴직','퇴직'), base_salary, birth_date, gender ENUM('M','F'), address, emergency_contact, bank_account, email, phone, created_at)\n" +
-        "  personnel_history(PK:history_id, FK:emp_id, change_type ENUM('발령','승진','전보','퇴직','복직'), FK:from_dept_id→dept, FK:to_dept_id→dept, FK:from_position_id→job_position, FK:to_position_id→job_position, change_date, reason, FK:approved_by→employee, created_at)\n" +
-        "  account(PK:account_id, FK:emp_id, username, role ENUM('관리자','HR담당자','일반'), is_active(1/0), login_attempts, last_login, password_changed_at, locked_at, created_at)\n" +
-        "  attendance(PK:att_id, FK:emp_id, work_date, check_in, check_out, work_hours, overtime_hours, status ENUM('출근','지각','결근','휴가','출장'), note, created_at)\n" +
-        "  leave_request(PK:leave_id, FK:emp_id, leave_type ENUM('연차','반차','병가','경조사','공가'), half_type ENUM('오전','오후'), start_date, end_date, days, reason, status ENUM('대기','승인','반려','취소'), FK:approver_id→employee, approved_at, reject_reason, created_at)\n" +
-        "  annual_leave(PK:al_id, FK:emp_id, leave_year, total_days, used_days, remain_days)\n" +
-        "  overtime_request(PK:ot_id, FK:emp_id, ot_date, start_time, end_time, ot_hours, reason, status ENUM('대기','승인','반려'), FK:approver_id→employee, approved_at, created_at)\n" +
-        "  public_holiday(PK:holiday_id, holiday_date, holiday_name, holiday_year, created_at)\n" +
-        "  salary(PK:salary_id, FK:emp_id, salary_year, salary_month, base_salary, meal_allowance, transport_allowance, position_allowance, overtime_pay, other_allowance, gross_salary, national_pension, health_insurance, long_term_care, employment_insurance, income_tax, local_income_tax, total_deduction, net_salary, pay_date, status ENUM('대기','완료'), created_at)\n" +
-        "  deduction_rate(PK:rate_id, target_year, national_pension_rate, health_insurance_rate, long_term_care_rate, employment_insurance_rate, created_at)\n" +
-        "  evaluation(PK:eval_id, FK:emp_id, eval_year, eval_period ENUM('상반기','하반기','연간'), eval_type ENUM('자기평가','상위평가','동료평가'), total_score, grade ENUM('S','A','B','C','D'), eval_comment, eval_status ENUM('작성중','최종확정'), FK:evaluator_id→employee, confirmed_at, created_at)\n" +
-        "  evaluation_item(PK:item_id, FK:eval_id, item_name, score, max_score)\n" +
-        "  notification(PK:noti_id, FK:emp_id, noti_type, ref_table, ref_id, message, is_read(1/0), read_at, created_at)\n" +
-        "  audit_log(PK:log_id, FK:actor_id→employee, target_table, target_id, action ENUM('INSERT','UPDATE','DELETE'), column_name, old_value, new_value, created_at)\n\n" +
- 
-        // ── 뷰 정의 ──
-        "PRE-BUILT VIEWS (prefer views over raw JOINs when columns match):\n" +
-        "  v_employee_full(emp_id, emp_name, emp_no, status, emp_type, base_salary, hire_date, resign_date, birth_date, gender, email, phone, dept_name, position_name, position_level)\n" +
-        "  v_salary_summary(emp_id, emp_name, emp_no, dept_name, position_name, salary_year, salary_month, base_salary, gross_salary, total_deduction, net_salary, overtime_pay, salary_status, pay_date)\n" +
-        "  v_leave_status(emp_id, emp_name, emp_no, dept_name, position_name, leave_id, leave_type, half_type, start_date, end_date, days, reason, leave_status, approved_at, reject_reason, leave_year, total_days, used_days, remain_days)\n" +
-        "  v_evaluation_result(emp_id, emp_name, emp_no, dept_name, position_name, eval_id, eval_year, eval_period, eval_type, total_score, grade, eval_comment, eval_status, confirmed_at, evaluator_name)\n\n" +
- 
-        // ── SQL 패턴 가이드 ──
-        "SQL PATTERNS:\n" +
-        "- Count/통계: SELECT COUNT(*), AVG(), SUM(), MIN(), MAX() with GROUP BY\n" +
-        "- Ranking: ORDER BY col DESC LIMIT N\n" +
-        "- 부서별/직급별 통계: GROUP BY dept_name or position_name (use views)\n" +
-        "- 기간 범위: WHERE date_col BETWEEN 'YYYY-MM-DD' AND 'YYYY-MM-DD'\n" +
-        "- 이름 검색/포함: WHERE emp_name LIKE '%keyword%'\n" +
-        "- NULL 체크: IS NULL / IS NOT NULL (locked_at, resign_date, etc.)\n" +
-        "- 서브쿼리: Use for '가장 높은', '가장 많은', '평균 이상' patterns\n" +
-        "- 다중 테이블: When view columns are insufficient, JOIN raw tables\n" +
-        "- Percentage: ROUND(count/total*100,1) for 비율/퍼센트\n" +
-        "- Year-Month grouping: GROUP BY salary_year, salary_month\n\n" +
- 
-        // ── Few-shot 예제 (패턴별 대표) ──
-        "EXAMPLES:\n" +
-        "Q: 재직 중인 직원들의 부서명 조회\n" +
-        "A: SELECT emp_name, dept_name FROM v_employee_full WHERE status = '재직';\n\n" +
-        "Q: 홍길동이 어느 부서의 어떤 직급이야?\n" +
-        "A: SELECT emp_name, dept_name, position_name FROM v_employee_full WHERE emp_name = '홍길동';\n\n" +
-        "Q: 잠긴 계정 목록을 보여줘\n" +
-        "A: SELECT a.account_id, e.emp_name, a.username, a.locked_at FROM account a JOIN employee e ON a.emp_id = e.emp_id WHERE a.locked_at IS NOT NULL;\n\n" +
-        "Q: 부서별 직원 수\n" +
-        "A: SELECT dept_name, COUNT(*) AS emp_count FROM v_employee_full WHERE status = '재직' GROUP BY dept_name ORDER BY emp_count DESC;\n\n" +
-        "Q: 연봉이 가장 높은 직원 3명\n" +
-        "A: SELECT emp_name, dept_name, position_name, base_salary FROM v_employee_full WHERE status = '재직' ORDER BY base_salary DESC LIMIT 3;\n\n" +
-        "Q: 인사팀 이번달 급여 현황\n" +
-        "A: SELECT emp_name, gross_salary, total_deduction, net_salary, salary_status FROM v_salary_summary WHERE dept_name = '인사팀' AND salary_year = YEAR(CURDATE()) AND salary_month = MONTH(CURDATE());\n\n" +
-        "Q: 2024년 하반기 S등급 받은 직원\n" +
-        "A: SELECT emp_name, dept_name, total_score, grade FROM v_evaluation_result WHERE eval_year = 2024 AND eval_period = '하반기' AND grade = 'S';\n\n" +
-        "Q: 30세 이상 40세 이하 재직 직원\n" +
-        "A: SELECT emp_name, dept_name, position_name, TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) AS age FROM v_employee_full WHERE status = '재직' AND TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) BETWEEN 30 AND 40;\n\n" +
-        "Q: 부서별 평균 연봉\n" +
-        "A: SELECT dept_name, ROUND(AVG(base_salary)) AS avg_salary, COUNT(*) AS emp_count FROM v_employee_full WHERE status = '재직' GROUP BY dept_name ORDER BY avg_salary DESC;\n\n" +
-        "Q: 이번달 지각한 사람\n" +
-        "A: SELECT e.emp_name, a.work_date, a.check_in FROM attendance a JOIN employee e ON a.emp_id = e.emp_id WHERE a.status = '지각' AND YEAR(a.work_date) = YEAR(CURDATE()) AND MONTH(a.work_date) = MONTH(CURDATE());\n\n" +
-        "Q: 연차 남은 일수가 3일 이하인 직원\n" +
-        "A: SELECT emp_name, dept_name, remain_days FROM v_leave_status WHERE leave_year = YEAR(CURDATE()) AND remain_days <= 3 GROUP BY emp_id, emp_name, dept_name, remain_days;\n\n" +
-        "Q: 김으로 시작하는 직원 목록\n" +
-        "A: SELECT emp_name, dept_name, position_name FROM v_employee_full WHERE emp_name LIKE '김%' AND status = '재직';\n\n" +
-        "Q: 근속 5년 이상인 직원\n" +
-        "A: SELECT emp_name, dept_name, hire_date, TIMESTAMPDIFF(YEAR, hire_date, CURDATE()) AS years_worked FROM v_employee_full WHERE status = '재직' AND TIMESTAMPDIFF(YEAR, hire_date, CURDATE()) >= 5 ORDER BY hire_date;\n\n" +
-        "Q: 이번 달 초과근무 승인된 건수와 총 시간\n" +
-        "A: SELECT COUNT(*) AS approved_count, SUM(ot_hours) AS total_ot_hours FROM overtime_request WHERE status = '승인' AND YEAR(ot_date) = YEAR(CURDATE()) AND MONTH(ot_date) = MONTH(CURDATE());\n\n" +
-        "Q: 직급별 인원수와 평균연봉\n" +
-        "A: SELECT position_name, COUNT(*) AS cnt, ROUND(AVG(base_salary)) AS avg_salary FROM v_employee_full WHERE status = '재직' GROUP BY position_name, position_level ORDER BY position_level;\n\n" +
-        "Q: 퇴직자 중 올해 퇴직한 사람\n" +
-        "A: SELECT emp_name, dept_name, resign_date FROM v_employee_full WHERE status = '퇴직' AND YEAR(resign_date) = YEAR(CURDATE());\n\n" +
-        "Q: 2025년 공휴일 목록\n" +
-        "A: SELECT holiday_date, holiday_name FROM public_holiday WHERE holiday_year = 2025 ORDER BY holiday_date;\n\n" +
-        "Q: 최근 감사로그 10건\n" +
-        "A: SELECT al.created_at, e.emp_name AS actor, al.target_table, al.action, al.column_name, al.old_value, al.new_value FROM audit_log al LEFT JOIN employee e ON al.actor_id = e.emp_id ORDER BY al.created_at DESC LIMIT 10;\n\n" +
-        "Q: 성별 비율\n" +
-        "A: SELECT gender, COUNT(*) AS cnt, ROUND(COUNT(*)*100.0/(SELECT COUNT(*) FROM employee WHERE status='재직'),1) AS pct FROM employee WHERE status = '재직' GROUP BY gender;\n\n" +
-        "Q: 평균 연봉보다 높은 직원\n" +
-        "A: SELECT emp_name, dept_name, base_salary FROM v_employee_full WHERE status = '재직' AND base_salary > (SELECT AVG(base_salary) FROM employee WHERE status = '재직') ORDER BY base_salary DESC;\n\n" +
- 
-        "Question: ";
-
+  
     // ──────────────────────────────────────
     // 메인: 텍스트 → SQL → 실행 → 결과 반환
     // ──────────────────────────────────────
@@ -176,18 +40,21 @@ public class TextToSqlService {
         TextToSqlResultDTO result = new TextToSqlResultDTO();
 
         try {
-            // 1. Ollama API 호출 → SQL 생성
-            String rawSql = callOllama(userQuestion);
+            String rawSql  = callOllama(userQuestion);
             String cleanSql = cleanSql(rawSql);
             result.setGeneratedSql(cleanSql);
 
-            // 2. SELECT만 허용 검증
+            // ✅ v3 Lockdown 응답 처리
+            if ("불가능".equals(cleanSql.trim())) {
+                result.setErrorMsg("해당 질문은 현재 HR 데이터베이스 스키마로 조회할 수 없습니다.");
+                return result;
+            }
+
             if (!isSafeQuery(cleanSql)) {
                 result.setErrorMsg("SELECT 쿼리만 실행할 수 있습니다.");
                 return result;
             }
 
-            // 3. DB 실행
             executeQuery(cleanSql, result);
 
         } catch (Exception e) {
@@ -202,14 +69,22 @@ public class TextToSqlService {
     // Ollama REST API 호출
     // ──────────────────────────────────────
     private String callOllama(String userQuestion) throws IOException {
-        String prompt = SCHEMA_PROMPT + userQuestion;
+    	String prompt = DynamicPromptBuilder.build(userQuestion);
 
+        System.out.println("[AI] 매칭 카테고리: " + DynamicPromptBuilder.getMatchedCategory(userQuestion));
+        System.out.println("[AI] 프롬프트 토큰: ~" + DynamicPromptBuilder.estimateTokens(prompt));
         // JSON 요청 본문 수동 조립 (외부 라이브러리 없이)
         String requestBody = "{"
-            + "\"model\":\"" + OLLAMA_MODEL + "\","
-            + "\"prompt\":\"" + escapeJson(prompt) + "\","
-            + "\"stream\":false"
-            + "}";
+        	    + "\"model\":\""   + OLLAMA_MODEL + "\","
+        	    + "\"prompt\":\""  + escapeJson(prompt) + "\","
+        	    + "\"stream\":false,"
+        	    + "\"options\":{"
+        	    +   "\"temperature\":0,"      // ✅ 0 = 항상 최고확률 토큰 선택 (결정론적)
+        	    +   "\"top_p\":1,"            // ✅ temperature=0 시 top_p는 무의미하지만 명시
+        	    +   "\"repeat_penalty\":1.1," // ✅ 같은 컬럼명 반복 억제
+        	    +   "\"num_predict\":300"     // ✅ 최대 토큰 제한 (SQL이 300토큰 넘을 일 없음)
+        	    + "}"
+        	    + "}";
 
         URL url = new URL(OLLAMA_URL);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();

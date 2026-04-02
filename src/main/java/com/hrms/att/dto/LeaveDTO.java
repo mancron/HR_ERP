@@ -5,126 +5,182 @@ import java.sql.Timestamp;
 
 public class LeaveDTO {
 
-    private int leaveId;
-    private int empId;
-    private String leaveType;
-    private String halfType;
-    private Date startDate;
-    private Date endDate;
-    private double days;
-    private String reason;
-    private String status;
-    private Integer approverId; // null 가능
-    private Timestamp approvedAt;
-    private String rejectReason;
-    private Timestamp createdAt;
+	private int leaveId;
+	private int empId;
+	private String leaveType;
+	private String halfType;
+	private Date startDate;
+	private Date endDate;
+	private double days;
+	private String reason;
+	private String status;
+	private Integer approverId; // null 가능
+	private Timestamp approvedAt;
+	private String rejectReason;
+	private Timestamp createdAt;
+	private String empName;
+	private String position;
+	private String deptName;
+	private String approverName;
+	private String approverPosition;
+	private String approverDept;
 
-    // 기본 생성자
-    public LeaveDTO() {}
+	// 기본 생성자
+	public LeaveDTO() {
+	}
 
-    // ===================== Getter / Setter =====================
+	// ===================== Getter / Setter =====================
 
-    public int getLeaveId() {
-        return leaveId;
-    }
+	public int getLeaveId() {
+		return leaveId;
+	}
 
-    public void setLeaveId(int leaveId) {
-        this.leaveId = leaveId;
-    }
+	public void setLeaveId(int leaveId) {
+		this.leaveId = leaveId;
+	}
 
-    public int getEmpId() {
-        return empId;
-    }
+	public int getEmpId() {
+		return empId;
+	}
 
-    public void setEmpId(int empId) {
-        this.empId = empId;
-    }
+	public void setEmpId(int empId) {
+		this.empId = empId;
+	}
 
-    public String getLeaveType() {
-        return leaveType;
-    }
+	public String getLeaveType() {
+		return leaveType;
+	}
 
-    public void setLeaveType(String leaveType) {
-        this.leaveType = leaveType;
-    }
+	public void setLeaveType(String leaveType) {
+		this.leaveType = leaveType;
+	}
 
-    public String getHalfType() {
-        return halfType;
-    }
+	public String getHalfType() {
+		return halfType;
+	}
 
-    public void setHalfType(String halfType) {
-        this.halfType = halfType;
-    }
+	public void setHalfType(String halfType) {
+		this.halfType = halfType;
+	}
 
-    public Date getStartDate() {
-        return startDate;
-    }
+	public Date getStartDate() {
+		return startDate;
+	}
 
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
-    }
+	public void setStartDate(Date startDate) {
+		this.startDate = startDate;
+	}
 
-    public Date getEndDate() {
-        return endDate;
-    }
+	public Date getEndDate() {
+		return endDate;
+	}
 
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate;
-    }
+	public void setEndDate(Date endDate) {
+		this.endDate = endDate;
+	}
 
-    public double getDays() {
-        return days;
-    }
+	public double getDays() {
+		return days;
+	}
 
-    public void setDays(double days) {
-        this.days = days;
-    }
+	public void setDays(double days) {
+		this.days = days;
+	}
 
-    public String getReason() {
-        return reason;
-    }
+	public String getReason() {
+		return reason;
+	}
 
-    public void setReason(String reason) {
-        this.reason = reason;
-    }
+	public void setReason(String reason) {
+		this.reason = reason;
+	}
 
-    public String getStatus() {
-        return status;
-    }
+	public String getStatus() {
+		return status;
+	}
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+	public void setStatus(String status) {
+		this.status = status;
+	}
 
-    public Integer getApproverId() {
-        return approverId;
-    }
+	public Integer getApproverId() {
+		return approverId;
+	}
 
-    public void setApproverId(Integer approverId) {
-        this.approverId = approverId;
-    }
+	public void setApproverId(Integer approverId) {
+		this.approverId = approverId;
+	}
 
-    public Timestamp getApprovedAt() {
-        return approvedAt;
-    }
+	public Timestamp getApprovedAt() {
+		return approvedAt;
+	}
 
-    public void setApprovedAt(Timestamp approvedAt) {
-        this.approvedAt = approvedAt;
-    }
+	public void setApprovedAt(Timestamp approvedAt) {
+		this.approvedAt = approvedAt;
+	}
 
-    public String getRejectReason() {
-        return rejectReason;
-    }
+	public String getRejectReason() {
+		return rejectReason;
+	}
 
-    public void setRejectReason(String rejectReason) {
-        this.rejectReason = rejectReason;
-    }
+	public void setRejectReason(String rejectReason) {
+		this.rejectReason = rejectReason;
+	}
 
-    public Timestamp getCreatedAt() {
-        return createdAt;
-    }
+	public Timestamp getCreatedAt() {
+		return createdAt;
+	}
 
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
-    }
+	public void setCreatedAt(Timestamp createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public String getEmpName() {
+		return empName;
+	}
+
+	public void setEmpName(String empName) {
+		this.empName = empName;
+	}
+
+	public String getPosition() {
+		return position;
+	}
+
+	public void setPosition(String position) {
+		this.position = position;
+	}
+
+	public String getDeptName() {
+		return deptName;
+	}
+
+	public void setDeptName(String deptName) {
+		this.deptName = deptName;
+	}
+
+	public String getApproverName() {
+		return approverName;
+	}
+
+	public void setApproverName(String approverName) {
+		this.approverName = approverName;
+	}
+
+	public String getApproverPosition() {
+		return approverPosition;
+	}
+
+	public void setApproverPosition(String approverPosition) {
+		this.approverPosition = approverPosition;
+	}
+
+	public String getApproverDept() {
+		return approverDept;
+	}
+
+	public void setApproverDept(String approverDept) {
+		this.approverDept = approverDept;
+	}
+	
 }

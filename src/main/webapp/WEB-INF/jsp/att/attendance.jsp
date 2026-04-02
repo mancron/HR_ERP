@@ -1,8 +1,13 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR ERP - 출퇴근</title>
 <link rel="stylesheet"
-	href="${pageContext.request.contextPath}/css/attendance.css">
+	href="${pageContext.request.contextPath}/css/att/attendance.css">
+</head>
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 
@@ -39,10 +44,16 @@
 
 				<form action="${pageContext.request.contextPath}/att/record"
 					method="post">
+
 					<input type="hidden" name="action" value="checkout">
-					<button class="att-btn att-btn-out"
-						<c:if test="${attendance.checkIn == null or attendance.checkOut != null or isHoliday}">disabled</c:if>>
+
+					<button type="button" class="att-btn att-btn-out"
+						onclick="confirmCheckout(this.form)"
+						<c:if test="${attendance.checkIn == null or attendance.checkOut != null or isHoliday}">
+            disabled
+        </c:if>>
 						퇴근</button>
+
 				</form>
 
 			</div>
@@ -110,6 +121,7 @@
 					<td><span
 						class="status-badge
         <c:choose>
+        	<c:when test='${dto.status == "휴가"}'>status-leave</c:when>
             <c:when test='${dto.status == "결근"}'>status-absent</c:when>
             <c:when test='${dto.status == "지각"}'>status-late</c:when>
             <c:when test='${dto.status == "퇴근미처리"}'>status-no</c:when>
@@ -126,5 +138,23 @@
 	</main>
 </div>
 
-<script src="${pageContext.request.contextPath}/js/attendance.js"></script>
+<script src="${pageContext.request.contextPath}/js/att/attendance.js"></script>
 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
+
+<div id="confirmModal" class="modal">
+	<div class="modal-content">
+
+		<!-- 메시지 -->
+		<p id="confirmMessage" style="font-size: 16px; margin-bottom: 20px;"></p>
+
+		<!-- 버튼 영역 -->
+		<div style="display: flex; justify-content: flex-end; gap: 10px;">
+
+			<button id="confirmYes" class="modal-btn modal-btn-ok">확인</button>
+			<button type="button" onclick="closeConfirmModal()"
+				class="modal-btn modal-btn-cancel">취소</button>
+
+		</div>
+
+	</div>
+</div>

@@ -38,10 +38,11 @@ public class AuthenticationFilter implements Filter {
      // 1. [핵심 수정] 검증 예외 경로 (Bypass)
         // 로그인 화면 진입(/auth/login), 실제 로그인 처리(.do), 정적 리소스는 무조건 통과
         if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
-                || path.equals("/auth/login")    // 로그인 페이지 서블릿 주소 추가
-                || path.equals("/auth/login.do") // 로그인 처리 서블릿 주소
-                || path.contains("login.jsp")) { // JSP 파일 직접 접근(권장하진 않지만 예외처리)
-            
+                || path.equals("/auth/login")
+                || path.equals("/auth/login.do")
+                || path.contains("login.jsp")
+                || path.startsWith("/api/")) {  // ← 추가
+
             chain.doFilter(request, response);
             return;
         }
@@ -61,6 +62,20 @@ public class AuthenticationFilter implements Filter {
             String role = (String) session.getAttribute("userRole");
             if (!"관리자".equals(role)) {
                 res.sendError(HttpServletResponse.SC_FORBIDDEN, "관리자 권한이 필요합니다.");
+                return;
+            }
+        }
+        
+
+        // 	4. 근태/휴가 관리자 기능 권한 체크
+        if (path.startsWith("/att/leave/approve") 
+                || path.startsWith("/att/status") 
+                || path.startsWith("/att/annual/grant")) {
+
+            String role = (String) session.getAttribute("userRole");
+
+            if (!"관리자".equals(role) && !"HR관리자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "해당 기능은 관리자 또는 HR 관리자만 접근 가능합니다.");
                 return;
             }
         }

@@ -3,7 +3,10 @@ package com.hrms.att.service;
 import com.hrms.att.dao.AttendanceDAO;
 import com.hrms.att.dto.AttendanceDTO;
 import com.hrms.att.dto.AttendanceSummaryDTO;
+import com.hrms.common.db.DatabaseConnection;
+import com.hrms.sys.dao.HolidayDAO;
 
+import java.sql.Connection;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -17,6 +20,8 @@ import java.util.Locale;
 public class AttendanceService {
 
 	private AttendanceDAO dao = new AttendanceDAO();
+	private LeaveService leaveService = new LeaveService();
+	private HolidayDAO holidayDAO = new HolidayDAO();
 
 	// 1. 오늘 근태 조회
 	public AttendanceDTO getTodayAttendance(int empId) {
@@ -103,44 +108,70 @@ public class AttendanceService {
 		int lastDay = ym.lengthOfMonth();
 		LocalDate today = LocalDate.now();
 
-		for (int day = 1; day <= lastDay; day++) {
-			LocalDate date = ym.atDay(day);
-			// 👉 미래 날짜 제거 (핵심)
-			if (date.isAfter(today)) {
-				break; // 이후 날짜 전부 종료
-			}
-			DayOfWeek dow = date.getDayOfWeek();
-			AttendanceDTO found = null;
-			// DB 데이터 찾기
-			for (AttendanceDTO dto : dbList) {
-				if (dto.getWorkDate().toLocalDate().equals(date)) {
-					found = dto;
+		try (Connection conn = DatabaseConnection.getConnection()) {
+
+			for (int day = 1; day <= lastDay; day++) {
+
+				LocalDate date = ym.atDay(day);
+
+				if (date.isAfter(today))
 					break;
+
+				DayOfWeek dow = date.getDayOfWeek();
+
+				AttendanceDTO found = null;
+
+				for (AttendanceDTO dto : dbList) {
+					if (dto.getWorkDate().toLocalDate().equals(date)) {
+						found = dto;
+						break;
+					}
 				}
-			}
-			// 주말
-			if (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY) {
-				if (found != null) {
+
+				// 🔥 여기서 공휴일 체크
+				boolean isHoliday = HolidayDAO.existsByDate(date, conn);
+
+				boolean isWeekend = (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY);
+
+				// 주말 + 공휴일 동일 처리
+				if (isWeekend || isHoliday) {
+					if (found != null) {
+						applyNoCheckoutStatus(found);
+						setDayOfWeek(found, date);
+						result.add(found);
+					}
+					continue;
+				}
+
+				// 평일 처리
+				if (found == null) {
+
+					AttendanceDTO dto = new AttendanceDTO();
+					dto.setWorkDate(java.sql.Date.valueOf(date));
+
+					boolean isLeave = leaveService.existsLeaveByDate(empId, date);
+
+					if (isLeave) {
+						dto.setStatus("휴가");
+					} else {
+						dto.setStatus("-");
+					}
+
+					setDayOfWeek(dto, date);
+					result.add(dto);
+
+				} else {
 					applyNoCheckoutStatus(found);
-					setDayOfWeek(found, date); // ✅ 안전
+					setDayOfWeek(found, date);
 					result.add(found);
 				}
-				continue;
 			}
-			// 평일
-			if (found == null) {
-				AttendanceDTO absent = new AttendanceDTO();
-				absent.setWorkDate(java.sql.Date.valueOf(date));
-				absent.setStatus("결근");
-				setDayOfWeek(absent, date);
-				result.add(absent);
-			} else {
-				applyNoCheckoutStatus(found);
-				setDayOfWeek(found, date);
-				result.add(found);
-			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		return result;
+
 	}
 
 	// 월별 통계

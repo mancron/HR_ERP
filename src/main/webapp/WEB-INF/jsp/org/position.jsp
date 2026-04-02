@@ -99,30 +99,55 @@
     </div>
 </div>
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const content = document.getElementById('inactiveContent');
+        const icon = document.getElementById('toggleIcon');
+        
+        if (content) content.style.display = 'none';
+        if (icon) icon.innerText = '▼';
+    });
+
     function openModal(id) {
-        if(!id) return;
+        if (!id) return;
         const modal = document.getElementById('editModal');
         const iframe = document.getElementById('editFrame');
+        
         iframe.src = "${pageContext.request.contextPath}/org/position/edit?id=" + id;
         modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     }
 
     function closeModal() {
-        document.getElementById('editModal').style.display = 'none';
-        document.getElementById('editFrame').src = '';
+        const modal = document.getElementById('editModal');
+        const iframe = document.getElementById('editFrame');
+        
+        modal.style.display = 'none';
+        iframe.src = '';
+        document.body.style.overflow = 'auto';
         location.reload(); 
     }
 
     function toggleInactive() {
         const content = document.getElementById('inactiveContent');
         const icon = document.getElementById('toggleIcon');
-        const isHidden = (content.style.display === 'none');
-        content.style.display = isHidden ? 'block' : 'none';
-        icon.innerText = isHidden ? '▲' : '▼';
+        
+        if (!content || !icon) return;
+
+        const isHidden = (content.style.display === 'none' || content.style.display === '');
+        
+        if (isHidden) {
+            content.style.display = 'block';
+            icon.innerText = '▲';
+        } else {
+            content.style.display = 'none';
+            icon.innerText = '▼';
+        }
     }
 
     window.onclick = function(event) {
         const modal = document.getElementById('editModal');
-        if (event.target == modal) closeModal();
+        if (event.target === modal) {
+            closeModal();
+        }
     }
 </script>

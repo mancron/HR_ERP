@@ -42,7 +42,7 @@ CREATE TABLE job_position (
     is_active           TINYINT(1)   NOT NULL DEFAULT 1       COMMENT '1=활성, 0=비활성 (폐지 시 FK 참조로 DELETE 불가)',
     created_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
     PRIMARY KEY (position_id),
-    CONSTRAINT chk_position_level CHECK (position_level BETWEEN 1 AND 5)
+    CONSTRAINT chk_position_level CHECK (position_level BETWEEN 1 AND 20)
 ) COMMENT '직급 테이블 - 회사의 직급 체계';
 
 
@@ -61,7 +61,7 @@ CREATE TABLE department (
     created_at     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
     PRIMARY KEY (dept_id),
     FOREIGN KEY (parent_dept_id) REFERENCES department(dept_id) ON DELETE SET NULL,
-    CONSTRAINT chk_dept_level CHECK (dept_level BETWEEN 1 AND 5)
+    CONSTRAINT chk_dept_level CHECK (dept_level BETWEEN 1 AND 20)
 ) COMMENT '부서 테이블 (트리 구조) - 조직도 구성';
 
 

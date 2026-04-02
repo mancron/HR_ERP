@@ -75,7 +75,12 @@ public class AttendanceServlet extends HttpServlet {
         }
 
         // 처리 후 다시 화면으로 이동
-        response.sendRedirect(request.getContextPath() + "/att/record");
+        String referer = request.getHeader("Referer");
+        if (referer != null && referer.contains("/main")) {
+            response.sendRedirect(request.getContextPath() + "/main");
+        } else {
+            response.sendRedirect(request.getContextPath() + "/att/record");
+        }
     }
     
     private int getLoginEmpId(HttpServletRequest request, HttpServletResponse response) throws IOException {

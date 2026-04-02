@@ -29,9 +29,7 @@ public class HolidayService {
     private final HolidayDAO holidayDAO = new HolidayDAO();
 
     private static final Dotenv dotenv = Dotenv.configure()
-            .directory(System.getProperty("user.home") + "/git/hr_erp")
-            .filename(".env")
-            .ignoreIfMissing()
+            .ignoreIfMissing() 
             .load();
 
     private static final String API_SERVICE_KEY =
