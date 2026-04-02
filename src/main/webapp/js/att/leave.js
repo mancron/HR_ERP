@@ -261,7 +261,13 @@ function closeConfirmModal() {
     confirmCallback = null;
 }
 
-document.getElementById("confirmYes").addEventListener("click", function() {
-    if (confirmCallback) confirmCallback();
-    closeConfirmModal();
+document.addEventListener("DOMContentLoaded", function () {
+    const confirmYes = document.getElementById("confirmYes");
+
+    if (confirmYes) {
+        confirmYes.addEventListener("click", function() {
+            if (confirmCallback) confirmCallback();
+            closeConfirmModal();
+        });
+    }
 });
