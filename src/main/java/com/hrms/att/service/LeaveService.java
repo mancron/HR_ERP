@@ -4,6 +4,7 @@ import com.hrms.att.dao.LeaveDAO;
 import com.hrms.att.dto.AnnualLeaveDTO;
 import com.hrms.att.dto.LeaveDTO;
 import com.hrms.common.db.DatabaseConnection;
+import com.hrms.common.util.NotificationUtil;
 import com.hrms.sys.dao.HolidayDAO;
 
 import java.sql.Connection;
@@ -155,6 +156,29 @@ public class LeaveService {
 				throw new Exception("상태 변경 실패");
 			}
 			conn.commit(); // 성공 시 커밋
+			
+			// 신청자 ID
+			int requesterEmpId = leave.getEmpId();
+
+			// 기간 문자열
+			String period = leave.getStartDate() + " ~ " + leave.getEndDate();
+
+			if ("승인".equals(status)) {
+			    NotificationUtil.sendLeaveApproved(
+			        requesterEmpId,
+			        period,
+			        days,
+			        leaveId
+			    );
+			} else if ("반려".equals(status)) {
+			    NotificationUtil.sendLeaveRejected(
+			        requesterEmpId,
+			        period,
+			        reason,
+			        leaveId
+			    );
+			}
+			
 			return true;
 		} catch (Exception e) {
 			try {
