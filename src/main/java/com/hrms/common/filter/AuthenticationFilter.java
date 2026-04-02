@@ -66,7 +66,22 @@ public class AuthenticationFilter implements Filter {
             }
         }
         
+<<<<<<< examine
         
+=======
+        // 	4. 근태/휴가 관리자 기능 권한 체크
+        if (path.startsWith("/att/leave/approve") 
+                || path.startsWith("/att/status") 
+                || path.startsWith("/att/annual/grant")) {
+
+            String role = (String) session.getAttribute("userRole");
+
+            if (!"관리자".equals(role) && !"HR관리자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "해당 기능은 관리자 또는 HR 관리자만 접근 가능합니다.");
+                return;
+            }
+        }
+>>>>>>> master
 
         // 모든 보안 검증을 통과한 정상 요청만 다음 필터나 서블릿으로 보낸다.
         chain.doFilter(request, response);

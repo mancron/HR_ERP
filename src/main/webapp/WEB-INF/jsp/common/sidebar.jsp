@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 
+
+
 <body>
   <nav id="sidebar">
     <div class="nav-logo">🏢 HR ERP</div>
@@ -38,16 +40,23 @@
         <a href="${pageContext.request.contextPath}/emp/history" class="nav-item">인사발령 이력</a>
       </div>
     </div>
+    <c:set var="isAdmin" value="${sessionScope.userRole == '관리자' || sessionScope.userRole == 'HR관리자'}" />
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleAccordion(this)">근태 관리</div>
         <div class="nav-group-content">
           <a href="${pageContext.request.contextPath}/att/record" class="nav-item">출퇴근</a>
           <a href="${pageContext.request.contextPath}/att/leave/req" class="nav-item">휴가 신청</a>
-          <a href="${pageContext.request.contextPath}/att/leave/approve" class="nav-item">휴가 승인</a>
+          <c:if test="${isAdmin}">
+          	<a href="${pageContext.request.contextPath}/att/leave/approve" class="nav-item">휴가 승인</a>
+          </c:if>
           <a href="/att/overtime" class="nav-item">초과근무</a>
-          <a href="/att/status" class="nav-item">근태 현황·보정</a>
+          <c:if test="${isAdmin}">
+          	<a href="/att/status" class="nav-item">근태 현황·보정</a>
+          </c:if>
           <a href="/att/annual" class="nav-item">연차 현황</a>
-          <a href="/att/annual/grant" class="nav-item">연차 일괄 부여</a>
+          <c:if test="${isAdmin}">
+          	<a href="/att/annual/grant" class="nav-item">연차 일괄 부여</a>
+          </c:if>
         </div>
       </div>
     </div>
