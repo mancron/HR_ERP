@@ -20,6 +20,7 @@
       <div class="nav-group-content">
         <a href="${pageContext.request.contextPath}/main" class="nav-item">메인 대시보드</a>
         <a href="${pageContext.request.contextPath}/auth/pw-change" class="nav-item">비밀번호 변경</a>
+        <a href="${pageContext.request.contextPath}/notification" class="nav-item">알림</a>
       </div>
     </div>
 

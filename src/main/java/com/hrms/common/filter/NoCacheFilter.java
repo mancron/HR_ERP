@@ -8,6 +8,11 @@ import java.io.IOException;
 /**
  * 모든 보호 페이지에 브라우저 캐시 방지 헤더를 추가하는 필터.
  * 로그아웃 후 뒤로가기 시 캐시된 페이지가 노출되는 것을 차단한다.
+ * 
+ * 휴가 승인 기능 구현 시 추가 
+ * conn.commit();
+ * 이후
+ * NotificationUtil.sendLeaveApproved(requesterEmpId, period, days, leaveId);
  */
 @WebFilter("/*")
 public class NoCacheFilter implements Filter {
