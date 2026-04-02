@@ -15,6 +15,39 @@
         <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
         <main class="app-content">
 
+			<%-- 출퇴근 카드 --%>
+			<div class="att-card">
+			    <div class="att-date" id="attDate"></div>
+			    <div class="att-info">
+			        <c:choose>
+			            <c:when test="${not empty todayAtt and not empty todayAtt.checkIn}">
+			                출근 <strong><c:out value="${todayAtt.checkIn}" /></strong>
+			                <c:if test="${not empty todayAtt.checkOut}">
+			                    &nbsp;→&nbsp; 퇴근 <strong><c:out value="${todayAtt.checkOut}" /></strong>
+			                </c:if>
+			            </c:when>
+			            <c:otherwise>
+			                <span style="color:var(--gray-400);">오늘 출근 기록이 없습니다.</span>
+			            </c:otherwise>
+			        </c:choose>
+			    </div>
+			    <div class="att-btns">
+			        <form action="${pageContext.request.contextPath}/att/record" method="post">
+			            <input type="hidden" name="action" value="checkin">
+			            <button type="submit" class="btn btn-primary"
+			                    ${not empty todayAtt and not empty todayAtt.checkIn ? 'disabled' : ''}>
+			                출근하기
+			            </button>
+			        </form>
+			        <form action="${pageContext.request.contextPath}/att/record" method="post">
+			            <input type="hidden" name="action" value="checkout">
+			            <button type="submit" class="btn btn-secondary"
+			                    ${empty todayAtt or empty todayAtt.checkIn or not empty todayAtt.checkOut ? 'disabled' : ''}>
+			                퇴근하기
+			            </button>
+			        </form>
+			    </div>
+			</div>
             <%-- ① 요약 배지 (HR + 관리자 전용) --%>
             <div class="widget-grid widget-grid-5">
                 <div class="widget-card warn">
@@ -128,6 +161,19 @@
 
         </main>
     </div>
-    <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
+    <script src="${pageContext.request.contextPath}/js/sidebar.js">
+    function updateClock() {
+        var now = new Date();
+        var days = ['일','월','화','수','목','금','토'];
+        var str = now.getFullYear() + '년 ' +
+                  (now.getMonth()+1) + '월 ' +
+                  now.getDate() + '일 (' + days[now.getDay()] + ') ' +
+                  now.getHours().toString().padStart(2,'0') + ':' +
+                  now.getMinutes().toString().padStart(2,'0');
+        document.getElementById('attDate').textContent = str;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+    </script>
 </body>
 </html>
