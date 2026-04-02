@@ -34,8 +34,7 @@ public class AuthenticationFilter implements Filter {
         if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
                 || path.equals("/auth/login")
                 || path.equals("/auth/login.do")
-                || path.contains("login.jsp")
-                || path.equals("/index.jsp")) {
+                || path.contains("login.jsp")) {
             
             chain.doFilter(request, response);
             return;

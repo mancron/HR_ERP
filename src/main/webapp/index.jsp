@@ -1,6 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:if test="${empty sessionScope.userRole}">
+    <c:redirect url="/auth/login" /> 
+</c:if>
 <!DOCTYPE html>
 <html lang="ko">
 <head>

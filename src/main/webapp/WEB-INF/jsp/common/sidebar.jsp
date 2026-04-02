@@ -64,8 +64,8 @@
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleAccordion(this)">인사 평가</div>
         <div class="nav-group-content">
-          <a href="${pageContext.request.contextPath}/eval/write" class="nav-item">평가 작성·확정</a>
-          <a href="${pageContext.request.contextPath}/eval/status" class="nav-item">평가 현황</a>
+          <a href="${pageContext.request.contextPath}/eval/write" class="nav-item">평가 작성</a>
+          <a href="${pageContext.request.contextPath}/eval/status" class="nav-item">평가 현황·확정</a>
         </div>
       </div>
     </div>
@@ -83,7 +83,6 @@
       </div>
     </c:if>
   </nav>
-
 </body>
 
 </html>
