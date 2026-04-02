@@ -11,16 +11,17 @@
     box-sizing: border-box;
 }
 
-/* ── 에러 토스트 ── */
+/* ── 에러 토스트 (개선) ── */
 .error-toast {
     margin: 0 28px 16px;
-    padding: 12px 18px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: 8px;
-    color: #dc2626;
+    padding: 14px 20px;
+    background: #fff1f2;
+    border-left: 4px solid #ef4444;
+    border-radius: 6px;
+    color: #b91c1c;
     font-size: 13px;
     font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 /* ── 좌측: 조직도 패널 ── */
@@ -37,7 +38,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 18px;
+    margin-bottom: 15px;
 }
 
 .panel-title {
@@ -49,6 +50,29 @@
     gap: 6px;
 }
 
+/* 검색 박스 */
+.dept-search-box {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 15px;
+}
+.dept-search-box input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+}
+.dept-search-box input:focus { border-color: #3b82f6; }
+.dept-search-box button {
+    padding: 0 10px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
 .btn-add-dept {
     padding: 6px 13px;
     background-color: #3b82f6;
@@ -58,7 +82,6 @@
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    white-space: nowrap;
     transition: background 0.2s;
 }
 .btn-add-dept:hover { background-color: #2563eb; }
@@ -117,14 +140,8 @@
     color: #475569 !important; 
     text-decoration: line-through;
 }
-.icon-inactive {
-    filter: grayscale(0.6) opacity(0.8);
-}
-.closed-date {
-    margin-left: auto;
-    font-size: 11px;
-    color: #64748b;
-}
+.icon-inactive { filter: grayscale(0.6) opacity(0.8); }
+.closed-date { margin-left: auto; font-size: 11px; color: #64748b; }
 
 /* ── 우측: 상세 패널 ── */
 .dept-detail-panel {
@@ -152,10 +169,8 @@
     gap: 6px;
 }
 
-/* 폼 그리드 (기본은 2열이나 JSP 인라인 스타일이 우선 적용됨) */
 .dept-form-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
     gap: 16px 24px;
     margin-bottom: 24px;
 }
@@ -170,8 +185,7 @@
 
 .dept-form-group .required { color: #ef4444; margin-left: 2px; }
 
-.dept-form-group input[type="text"],
-.dept-form-group input[type="number"],
+.dept-form-group input,
 .dept-form-group select {
     width: 100%;
     padding: 9px 12px;
@@ -181,51 +195,33 @@
     color: #334155;
     background: #fff;
     box-sizing: border-box;
-    transition: border-color 0.15s;
 }
 
-/* [중요] 비활성화된 칸의 글자색을 진하게 수정 */
+/* 비활성화 필드 강조 */
 .dept-form-group input:disabled, 
 .dept-form-group select:disabled,
 .dept-form-group input[readonly] {
-    background-color: #f1f5f9; /* 배경색도 살짝 어둡게 해서 구분감 제공 */
-    color: #334155 !important; /* 글자색을 일반 텍스트와 거의 동일하게 진하게 설정 */
+    background-color: #f1f5f9;
+    color: #334155 !important;
     cursor: not-allowed;
     border-color: #cbd5e1;
-    opacity: 1; /* 브라우저 기본 투명도 제거 */
-    -webkit-text-fill-color: #334155; /* iOS/Safari 대응 */
+    opacity: 1;
 }
 
-.dept-form-group input:focus, .dept-form-group select:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
-}
-
-/* 버튼 및 나머지 스타일 유지 */
 .dept-btn-area { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
-.btn-dept-delete { padding: 9px 20px; background: #ef4444; color: #fff; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.btn-dept-delete:hover { background: #dc2626; }
-.btn-dept-cancel { padding: 9px 20px; background: #fff; color: #64748b; border: 1px solid #e2e8f0; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.btn-dept-cancel:hover { background: #f1f5f9; }
-.btn-dept-save { padding: 9px 24px; background: #3b82f6; color: #fff; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.btn-dept-save:hover { background: #2563eb; }
+.btn-dept-delete { padding: 9px 20px; background: #ef4444; color: #fff; border: none; border-radius: 7px; font-weight: 600; cursor: pointer; }
+.btn-dept-cancel { padding: 9px 20px; background: #fff; color: #64748b; border: 1px solid #e2e8f0; border-radius: 7px; font-weight: 600; cursor: pointer; }
+.btn-dept-save { padding: 9px 24px; background: #3b82f6; color: #fff; border: none; border-radius: 7px; font-weight: 600; cursor: pointer; }
 
-.auth-notice { font-size: 12px; color: #64748b; }
-.member-count { font-size: 14px; font-weight: 400; color: #64748b; }
 .member-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.member-table thead tr { border-bottom: 1px solid #e2e8f0; }
-.member-table th { padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; color: #94a3b8; }
-.member-table td { padding: 12px 14px; color: #334155; }
+.member-table th { padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; color: #94a3b8; border-bottom: 1px solid #e2e8f0; }
+.member-table td { padding: 12px 14px; color: #334155; border-bottom: 1px solid #f1f5f9; }
+
 .badge-active   { padding: 3px 10px; background: #dcfce7; color: #16a34a; border-radius: 20px; font-size: 12px; font-weight: 600; }
 .badge-leave    { padding: 3px 10px; background: #fef9c3; color: #ca8a04; border-radius: 20px; font-size: 12px; font-weight: 600; }
 .badge-inactive { padding: 3px 10px; background: #f1f5f9; color: #94a3b8; border-radius: 20px; font-size: 12px; font-weight: 600; }
-.empty-state { text-align: center; padding: 40px 0; color: #94a3b8; font-size: 13px; }
 
-/* 탭 스타일 */
 .dept-tabs-container { background-color: #f1f5f9; padding: 4px; border-radius: 8px; margin-bottom: 15px; }
-.dept-tabs-wrapper { display: flex; background: transparent; }
-.dept-tab { flex: 1; text-align: center; padding: 8px 0; font-size: 13px; cursor: pointer; color: #64748b; border-radius: 6px; transition: all 0.2s; }
+.dept-tabs-wrapper { display: flex; }
+.dept-tab { flex: 1; text-align: center; padding: 8px 0; font-size: 13px; cursor: pointer; color: #64748b; border-radius: 6px; }
 .dept-tab.active { background: #ffffff; color: #2563eb; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-.tab-content { display: none; }
-.tab-content.active { display: block; }
