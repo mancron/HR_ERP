@@ -62,10 +62,10 @@ public class MainDAO {
     /** 최근 알림 3건 */
     public List<Map<String, Object>> getRecentNotifications(int empId) {
         String sql =
-            "SELECT noti_type, message, is_read, created_at " +
-            "FROM notification " +
-            "WHERE emp_id = ? " +
-            "ORDER BY created_at DESC LIMIT 3";
+        		"SELECT noti_type, message, CAST(is_read AS UNSIGNED) AS is_read, created_at " +
+        				"FROM notification " +
+        				"WHERE emp_id = ? " +
+        				"ORDER BY created_at DESC LIMIT 3";
         return queryList(sql, empId);
     }
 
