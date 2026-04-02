@@ -293,6 +293,35 @@ public class DeptDAO {
         return list;
     }
 
+ // 기존 DeptDAO 클래스 내부에 추가
+    public boolean hasActiveMembersRecursive(int deptId) {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        boolean hasMembers = false;
+        try {
+            con = DatabaseConnection.getConnection();
+            // WITH RECURSIVE를 통해 해당 부서와 모든 하위 부서의 재직자 수를 카운트
+            String sql = "WITH RECURSIVE SubDepts AS (" +
+                         "    SELECT dept_id FROM department WHERE dept_id = ? " +
+                         "    UNION ALL " +
+                         "    SELECT d.dept_id FROM department d INNER JOIN SubDepts sd ON d.parent_dept_id = sd.dept_id" +
+                         ") " +
+                         "SELECT COUNT(*) FROM employee WHERE dept_id IN (SELECT dept_id FROM SubDepts) AND status = '재직'";
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, deptId);
+            rs = pstmt.executeQuery();
+            if (rs.next() && rs.getInt(1) > 0) {
+                hasMembers = true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, con);
+        }
+        return hasMembers;
+    }
+    
     private void closeResources(ResultSet rs, PreparedStatement pstmt, Connection con) {
         try {
             if (rs != null) rs.close();
