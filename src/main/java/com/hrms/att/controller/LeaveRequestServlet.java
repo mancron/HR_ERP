@@ -25,7 +25,8 @@ public class LeaveRequestServlet extends HttpServlet {
 			throws ServletException, IOException {
 
 		int empId = getLoginEmpId(request, response);
-    	if (empId == -1) return;
+		if (empId == -1)
+			return;
 
 		String monthParam = request.getParameter("month");
 
@@ -34,9 +35,9 @@ public class LeaveRequestServlet extends HttpServlet {
 		int month = now.getMonthValue();
 
 		if (monthParam != null && !monthParam.isEmpty()) {
-		    String[] parts = monthParam.split("-");
-		    year = Integer.parseInt(parts[0]);
-		    month = Integer.parseInt(parts[1]);
+			String[] parts = monthParam.split("-");
+			year = Integer.parseInt(parts[0]);
+			month = Integer.parseInt(parts[1]);
 		}
 
 		// 🔥 추가
@@ -63,7 +64,8 @@ public class LeaveRequestServlet extends HttpServlet {
 		request.setCharacterEncoding("UTF-8");
 
 		int empId = getLoginEmpId(request, response);
-    	if (empId == -1) return;
+		if (empId == -1)
+			return;
 
 		try {
 			// 1. 파라미터
@@ -89,28 +91,62 @@ public class LeaveRequestServlet extends HttpServlet {
 			// 3. Service 호출
 			String result = leaveService.applyLeave(dto);
 
-			// 4. 결과 처리
+			// 성공
 			if ("success".equals(result)) {
-				response.sendRedirect(request.getContextPath() + "/att/leave/req?msg=success");
-			} else {
-				response.sendRedirect(request.getContextPath() + "/att/leave/req?error=" + result);
+				request.setAttribute("msg", "휴가 신청이 완료되었습니다.");
+				doGet(request, response);
+				return;
 			}
+
+			// 실패
+			String errorMsg;
+
+			switch (result) {
+			case "empty_reason":
+				errorMsg = "사유를 입력하세요.";
+				break;
+			case "invalid_date":
+				errorMsg = "날짜가 올바르지 않습니다.";
+				break;
+			case "not_enough":
+				errorMsg = "연차가 부족합니다.";
+				break;
+			case "overlap":
+				errorMsg = "이미 신청된 기간입니다.";
+				break;
+			case "invalid_half":
+			    errorMsg = "반차는 하루만 선택 가능합니다.";
+			    break;
+			default:
+				errorMsg = "처리 중 오류가 발생했습니다.";
+			}
+
+			request.setAttribute("errorMsg", errorMsg);
+
+			// 🔥 입력값 유지 (UX)
+			request.setAttribute("formData", dto);
+
+			// 👉 핵심: doGet 호출
+			doGet(request, response);
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			response.sendRedirect(request.getContextPath() + "/att/leave/req?error=exception");
+
+			request.setAttribute("errorMsg", "서버 오류가 발생했습니다.");
+			request.getRequestDispatcher("/WEB-INF/jsp/error.jsp").forward(request, response);
 		}
 	}
-	
+
+	// 로그인 검증
 	private int getLoginEmpId(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        HttpSession session = request.getSession();
-        EmpDTO loginUser = (EmpDTO) session.getAttribute("loginUser");
+		HttpSession session = request.getSession();
+		EmpDTO loginUser = (EmpDTO) session.getAttribute("loginUser");
 
-        if (loginUser == null) {
-            response.sendRedirect(request.getContextPath() + "/auth/login.do");
-            return -1;
-        }
+		if (loginUser == null) {
+			response.sendRedirect(request.getContextPath() + "/auth/login.do");
+			return -1;
+		}
 
-        return loginUser.getEmp_id();
-    }
+		return loginUser.getEmp_id();
+	}
 }

@@ -104,12 +104,13 @@
 										<!-- 승인 -->
 										<form
 											action="${pageContext.request.contextPath}/leave/updateStatus"
-											method="post" onsubmit="return confirm('승인하시겠습니까?');">
+											method="post">
 
 											<input type="hidden" name="leaveId" value="${item.leaveId}">
 											<input type="hidden" name="status" value="승인">
 
-											<button type="submit" class="btn approve-btn">승인</button>
+											<button type="button" class="btn approve-btn"
+												onclick="approveLeave(this.form)">승인</button>
 										</form> <!-- 반려 -->
 										<form
 											action="${pageContext.request.contextPath}/leave/updateStatus"
@@ -145,7 +146,21 @@
 	</main>
 </div>
 <script>
-    const contextPath = "${pageContext.request.contextPath}";
+	const contextPath = "${pageContext.request.contextPath}";
 </script>
 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
 <script src="${pageContext.request.contextPath}/js/att/leave.js"></script>
+
+<div id="confirmModal" class="modal">
+	<div class="modal-content">
+
+		<p id="confirmMessage"></p>
+
+		<div
+			style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+			<button id="confirmYes" class="att-btn att-btn-in">확인</button>
+			<button onclick="closeConfirmModal()" class="att-btn att-btn-cancle">취소</button>
+		</div>
+
+	</div>
+</div>

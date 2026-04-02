@@ -36,16 +36,22 @@ public class LeaveService {
 		if (startDate.after(endDate)) {
 			return "invalid_date";
 		}
-		// 3. 잔여 연차 체크
+		// 3. 반차 검증
+		if ("반차".equals(dto.getLeaveType())) {
+		    if (!startDate.equals(endDate)) {
+		        return "invalid_half";
+		    }
+		}
+		// 4. 잔여 연차 체크
 		double remainDays = leaveDAO.getRemainDays(empId);
 		if (days > remainDays) {
 			return "not_enough";
 		}
-		// 4. 기간 중복 체크
+		// 5. 기간 중복 체크
 		if (leaveDAO.isOverlapping(empId, startDate, endDate)) {
 			return "overlap";
 		}
-		// 5. DB 저장
+		// 6. DB 저장
 		boolean result = leaveDAO.insertLeave(dto);
 		if (!result) {
 			return "fail";
@@ -169,6 +175,7 @@ public class LeaveService {
 		return false;
 	}
 	
+	//휴가 상세 데이터
 	public LeaveDTO getLeaveDetail(int leaveId) {
 	    return leaveDAO.getLeaveById(leaveId);
 	}

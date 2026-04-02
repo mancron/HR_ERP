@@ -11,34 +11,10 @@
 	href="<c:out value='${pageContext.request.contextPath}/css/att/leave.css'/>">
 </head>
 
-<!-- 알림 -->
-<c:if test="${param.msg eq 'success'}">
-	<script>
-		alert("휴가 신청이 완료되었습니다.");
-	</script>
-</c:if>
-<c:if test="${param.error eq 'not_enough'}">
-	<script>
-		alert("잔여 연차가 부족합니다.");
-	</script>
-</c:if>
-<c:if test="${param.error eq 'overlap'}">
-	<script>
-		alert("이미 해당 기간에 신청된 휴가가 있습니다.");
-	</script>
-</c:if>
-<c:if test="${param.error eq 'empty_reason'}">
-	<script>
-		alert("휴가 사유를 입력해주세요.");
-	</script>
-</c:if>
-<c:if test="${param.error eq 'invalid_date'}">
-	<script>
-		alert("시작일은 종료일보다 늦을 수 없습니다.");
-	</script>
-</c:if>
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 <div id="main-wrapper">
+	<div id="toast-data" data-error="${errorMsg}" data-msg="${msg}">
+	</div>
 	<jsp:include page="/WEB-INF/jsp/common/header.jsp" />
 	<main class="app-content">
 		<h2>휴가 신청</h2>
@@ -84,10 +60,13 @@
 						</div>
 						<div class="leave-row">
 							<div>
-								<label>시작일</label> <input type="date" name="start_date" required>
+								<label>시작일</label> <input type="date" name="start_date" required
+									value="${formData.startDate}">
 							</div>
 							<div>
-								<label>종료일</label> <input type="date" name="end_date" required>
+								<label>종료일</label> <input type="date" name="end_date" required
+									value="${formData.endDate}"><input type="hidden"
+									name="end_date" id="hiddenEndDate">
 							</div>
 						</div>
 						<br> <label>사유</label>
