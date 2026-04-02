@@ -33,21 +33,15 @@
 
             <div class="alert-container">
                 <c:choose>
-                    <%-- 1. 세션 만료 알림 (타이머/필터에 의해 튕겨온 경우) --%>
-                    <c:when test="${param.timeout eq 'y'}">
-                        <div class="alert-box alert-warning" style="background:#fffaf0; border:1px solid #fbd38d; padding:12px; border-radius:6px; margin-bottom:20px; display: flex; align-items: center;">
-                            <i class="fa-solid fa-clock-rotate-left" style="color:#9c4221; margin-right: 10px;"></i>
-                            <p style="color:#9c4221; font-size:13px; margin:0;">세션이 만료되어 자동 로그아웃 되었습니다.</p>
-                        </div>
-                    </c:when>
-
-                    <%-- 2. 계정 잠김 안내 --%>
+                    <%-- [수정] 줄 끊김 방지 디자인: 타이틀 아래로 문구 배치 --%>
                     <c:when test="${param.msg eq 'account_locked'}">
                         <div class="alert-box alert-danger" style="background:#fff5f5; border:1px solid #feb2b2; padding:15px; border-radius:8px; margin-bottom:20px; border-left: 5px solid #e53e3e; box-sizing: border-box;">
+                            <%-- 상단: 아이콘 + 타이틀 (한 줄 고정) --%>
                             <div style="display: flex; align-items: center; margin-bottom: 6px;">
                                 <i class="fa-solid fa-circle-exclamation" style="color:#c53030; margin-right: 8px; font-size: 16px;"></i>
                                 <strong style="color:#c53030; font-size:15px;">계정 잠김 안내</strong>
                             </div>
+                            <%-- 하단: 설명 문구 (가로 공간 전체 활용) --%>
                             <div style="text-align: left; color:#c53030; font-size:13px; line-height: 1.5; padding-left: 24px; word-break: keep-all;">
                                 5회 이상 로그인 실패로 계정이 잠겼습니다.<br>
                                 문의: <strong style="text-decoration: underline;">${not empty param.adminPhone ? param.adminPhone : '010-1234-5678'}</strong>
@@ -55,7 +49,7 @@
                         </div>
                     </c:when>
 
-                    <%-- 3. 비밀번호 불일치 --%>
+                    <%-- 비밀번호 불일치 --%>
                     <c:when test="${not empty param.msg and fn:startsWith(param.msg, 'login_fail_')}">
                         <div class="alert-box alert-warning" style="background:#fffaf0; border:1px solid #fbd38d; padding:12px; border-radius:6px; margin-bottom:20px; display: flex; align-items: center;">
                             <i class="fa-solid fa-triangle-exclamation" style="color:#9c4221; margin-right: 10px;"></i>
@@ -65,7 +59,6 @@
                         </div>
                     </c:when>
                     
-                    <%-- 4. 존재하지 않는 아이디 --%>
                     <c:when test="${param.msg eq 'invalid_user'}">
                         <div class="alert-box alert-danger" style="background:#fff5f5; border:1px solid #feb2b2; padding:12px; border-radius:6px; margin-bottom:20px; display: flex; align-items: center;">
                             <i class="fa-solid fa-user-xmark" style="color:#c53030; margin-right: 10px;"></i>
@@ -73,7 +66,6 @@
                         </div>
                     </c:when>
 
-                    <%-- 기본 안내 --%>
                     <c:otherwise>
                         <div class="alert-box alert-default" style="background:#ebf8ff; border:1px solid #bee3f8; padding:12px; border-radius:6px; margin-bottom:20px;">
                             <p style="color:#2a4365; font-size:13px; margin:0; text-align: center;">5회 연속 실패 시 보안을 위해 계정이 잠깁니다.</p>
@@ -94,22 +86,5 @@
             </span>
         </div>
     </div>
-
-    <%-- 세션 만료 체크 및 Alert 실행 스크립트 --%>
-    <script>
-        window.addEventListener('DOMContentLoaded', function() {
-            // URL 파라미터 확인
-            const urlParams = new URLSearchParams(window.location.search);
-            
-            if (urlParams.get('timeout') === 'y') {
-                // 1. Alert 띄우기
-                alert("보안을 위해 로그인 세션이 만료되었습니다.\n다시 로그인해 주세요.");
-                
-                // 2. 주소창에서 ?timeout=y 제거 (새로고침 시 alert 다시 안 뜨게 처리)
-                const newUrl = window.location.pathname;
-                window.history.replaceState({}, document.title, newUrl);
-            }
-        });
-    </script>
 </body>
 </html>

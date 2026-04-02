@@ -5,16 +5,8 @@
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/org/dept.css">
 
-<%-- ── 에러 및 알림 메시지 처리 ── --%>
-<c:if test="${not empty param.error}">
-    <div class="error-toast">
-        <c:choose>
-            <c:when test="${param.error == 'has_members'}">❌ 해당 부서에 재직 중인 직원(${param.count}명)이 있어 폐지할 수 없습니다.</c:when>
-            <c:when test="${param.error == 'has_children'}">❌ 하위 부서가 존재하는 부서는 폐지할 수 없습니다.</c:when>
-            <c:when test="${param.error == 'no_auth'}">🔒 권한이 없습니다. 관리자에게 문의하세요.</c:when>
-            <c:otherwise>⚠️ 처리 중 오류가 발생했습니다. 다시 시도해주세요.</c:otherwise>
-        </c:choose>
-    </div>
+<c:if test="${not empty errorMsg}">
+    <div class="error-toast">${errorMsg}</div>
 </c:if>
 
 <div class="dept-container">
@@ -29,12 +21,6 @@
                     + 부서 추가
                 </button>
             </c:if>
-        </div>
-
-        <%-- 사원 검색 박스 --%>
-        <div class="dept-search-box">
-            <input type="text" id="empSearchInput" placeholder="사원명으로 부서 찾기..." onkeyup="if(window.event.keyCode==13){searchDeptByEmp()}">
-            <button type="button" onclick="searchDeptByEmp()">🔍</button>
         </div>
 
         <c:if test="${isAdmin}">
@@ -141,6 +127,7 @@
                 <input type="hidden" name="action" id="formAction" value="save">
                 <input type="hidden" name="dept_id" value="${selectedDept.dept_id}">
 
+                <%-- [수정] 무조건 한 줄에 3개씩 배치 --%>
                 <div class="dept-form-grid" style="grid-template-columns: repeat(3, 1fr);">
                     <div class="dept-form-group">
                         <label>부서명 <span class="required">*</span></label>
@@ -167,6 +154,7 @@
                         </select>
                     </div>
 
+                    <%-- 관리자 전용 필드들 --%>
                     <c:if test="${isAdmin}">
                         <div class="dept-form-group">
                             <label>출력 순서</label>
@@ -189,11 +177,7 @@
                 <div class="dept-btn-area">
                     <c:choose>
                         <c:when test="${isAdmin}">
-                            <%-- [수정] 부서 ID가 존재하고, 상태가 '활성(1)'일 때만 폐지 버튼 노출 --%>
-                            <c:if test="${selectedDept.dept_id > 0 && selectedDept.is_active == 1}">
-                                <button type="button" class="btn-dept-delete" onclick="submitAction('delete')">부서 폐지</button>
-                            </c:if>
-                            
+                            <c:if test="${selectedDept.dept_id > 0}"><button type="button" class="btn-dept-delete" onclick="submitAction('delete')">부서 폐지</button></c:if>
                             <button type="button" class="btn-dept-cancel" onclick="location.href='${pageContext.request.contextPath}/org/dept'">취소</button>
                             <button type="button" class="btn-dept-save" onclick="submitAction('save')">저장</button>
                         </c:when>
@@ -234,28 +218,6 @@
 </div>
 
 <script>
-function searchDeptByEmp() {
-    const empName = document.getElementById('empSearchInput').value.trim();
-    if(!empName) {
-        alert("검색할 사원 이름을 입력하세요.");
-        return;
-    }
-
-    fetch(`${pageContext.request.contextPath}/org/dept?action=findDeptByEmp&empName=` + encodeURIComponent(empName))
-        .then(res => res.json())
-        .then(data => {
-            if(data.deptId > 0) {
-                location.href = `${pageContext.request.contextPath}/org/dept?deptId=` + data.deptId;
-            } else {
-                alert("해당 사원을 찾을 수 없거나 소속된 부서가 없습니다.");
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            alert("검색 중 오류가 발생했습니다.");
-        });
-}
-
 function switchDeptTab(el, tabId) {
     document.querySelectorAll('.dept-tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
@@ -269,13 +231,11 @@ function switchDeptTab(el, tabId) {
         target.classList.add('active');
     }
 }
-
 function submitAction(action) {
     if (action === 'delete' && !confirm('해당 부서를 폐지하시겠습니까?')) return;
     document.getElementById('formAction').value = action;
     document.getElementById('deptForm').submit();
 }
-
 window.onload = function() {
     const urlParams = new URLSearchParams(window.location.search);
     const hasDeptId = urlParams.has('deptId');
