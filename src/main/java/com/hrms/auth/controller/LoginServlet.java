@@ -63,7 +63,7 @@ public class LoginServlet extends HttpServlet {
                     
                 }
 
-                response.sendRedirect(request.getContextPath() + "/index.jsp");
+                response.sendRedirect(request.getContextPath() + "/main");
             } else {
                 throw new Exception("invalid_user");
             }
