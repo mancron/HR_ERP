@@ -44,10 +44,16 @@
 
 				<form action="${pageContext.request.contextPath}/att/record"
 					method="post">
+
 					<input type="hidden" name="action" value="checkout">
-					<button class="att-btn att-btn-out"
-						<c:if test="${attendance.checkIn == null or attendance.checkOut != null or isHoliday}">disabled</c:if>>
+
+					<button type="button" class="att-btn att-btn-out"
+						onclick="confirmCheckout(this.form)"
+						<c:if test="${attendance.checkIn == null or attendance.checkOut != null or isHoliday}">
+            disabled
+        </c:if>>
 						퇴근</button>
+
 				</form>
 
 			</div>
@@ -134,3 +140,21 @@
 
 <script src="${pageContext.request.contextPath}/js/att/attendance.js"></script>
 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
+
+<div id="confirmModal" class="modal">
+	<div class="modal-content">
+
+		<!-- 메시지 -->
+		<p id="confirmMessage" style="font-size: 16px; margin-bottom: 20px;"></p>
+
+		<!-- 버튼 영역 -->
+		<div style="display: flex; justify-content: flex-end; gap: 10px;">
+
+			<button id="confirmYes" class="modal-btn modal-btn-ok">확인</button>
+			<button type="button" onclick="closeConfirmModal()"
+				class="modal-btn modal-btn-cancel">취소</button>
+
+		</div>
+
+	</div>
+</div>
