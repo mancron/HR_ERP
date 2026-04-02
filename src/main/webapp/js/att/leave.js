@@ -1,6 +1,10 @@
 function showRejectForm(btn) {
     const tr = btn.closest("tr");
 
+    // 🔥 다른 열려있는 것 닫기
+    document.querySelectorAll(".reject-row").forEach(row => row.remove());
+
+    // 이미 열려있으면 닫기
     if (tr.nextElementSibling && tr.nextElementSibling.classList.contains("reject-row")) {
         tr.nextElementSibling.remove();
         return;
@@ -17,15 +21,49 @@ function showRejectForm(btn) {
                 <input type="hidden" name="leaveId" value="${leaveId}">
                 <input type="hidden" name="status" value="반려">
 
-                <input type="text" name="reason" placeholder="반려 사유를 입력하세요" required>
+                <input type="text" name="reason" class="reject-input"
+                       placeholder="반려 사유를 입력하세요" required>
 
-                <button type="submit" class="btn reject-btn">확인</button>
-                <button type="button" class="btn" onclick="this.closest('tr').remove()">취소</button>
+                <button type="button" class="btn reject-btn confirm-reject">
+                    확인
+                </button>
+
+                <button type="button" class="btn cancel-reject">
+                    취소
+                </button>
             </form>
         </td>
     `;
 
     tr.after(newRow);
+
+    // 🔥 이벤트 연결
+    const form = newRow.querySelector(".reject-form");
+    const input = newRow.querySelector(".reject-input");
+
+    // 취소
+    newRow.querySelector(".cancel-reject").addEventListener("click", function() {
+        newRow.remove();
+    });
+
+    // 확인
+    newRow.querySelector(".confirm-reject").addEventListener("click", function() {
+
+        const reason = input.value.trim();
+
+        if (!reason) {
+            showToast("반려 사유를 입력하세요.", "error");
+            return;
+        }
+
+        // 🔥 모달 확인 추가
+        openConfirmModal("정말 반려하시겠습니까?", function() {
+            form.submit();
+        });
+    });
+
+    // 🔥 입력창 자동 포커스
+    input.focus();
 }
 
 function formatDate(dateStr) {
@@ -112,7 +150,7 @@ function closeModal() {
     document.getElementById("leaveModal").style.display = "none";
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function() {
 
     initLeaveForm();
     initToast();
@@ -126,10 +164,10 @@ function initLeaveForm() {
     const halfTypeDiv = document.getElementById("halfTypeDiv");
     const startDate = document.getElementById("startDate");
     const endDate = document.getElementById("endDate");
-	const hiddenEndDate = document.getElementById("hiddenEndDate");
+    const hiddenEndDate = document.getElementById("hiddenEndDate");
 
     if (leaveType) {
-        leaveType.addEventListener("change", function () {
+        leaveType.addEventListener("change", function() {
 
             const isHalf = this.value === "반차";
 
@@ -147,7 +185,7 @@ function initLeaveForm() {
 
                 // 🔥 종료일 = 시작일 강제
                 endDate.value = startDate.value;
-				hiddenEndDate.value = startDate.value;
+                hiddenEndDate.value = startDate.value;
                 // 🔥 선택 자체를 막아버림
                 endDate.setAttribute("disabled", true);
 
@@ -159,7 +197,7 @@ function initLeaveForm() {
 
     // 🔥 시작일 바꾸면 무조건 동기화
     if (startDate) {
-        startDate.addEventListener("change", function () {
+        startDate.addEventListener("change", function() {
             if (leaveType.value === "반차") {
                 endDate.value = startDate.value;
             }
@@ -200,3 +238,30 @@ function showToast(message, type) {
         toast.remove();
     }, 3000);
 }
+
+let confirmCallback = null;
+
+function approveLeave(form) {
+    openConfirmModal("휴가를 승인하시겠습니까?", function () {
+        form.submit();
+    });
+}
+
+function openConfirmModal(message, callback) {
+    const modal = document.getElementById("confirmModal");
+
+    document.getElementById("confirmMessage").innerText = message;
+
+    modal.style.display = "flex";   // 🔥 핵심 수정
+    confirmCallback = callback;
+}
+
+function closeConfirmModal() {
+    document.getElementById("confirmModal").style.display = "none";
+    confirmCallback = null;
+}
+
+document.getElementById("confirmYes").addEventListener("click", function() {
+    if (confirmCallback) confirmCallback();
+    closeConfirmModal();
+});
