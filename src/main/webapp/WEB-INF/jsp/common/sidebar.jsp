@@ -49,7 +49,8 @@
           <c:if test="${isAdmin}">
           	<a href="${pageContext.request.contextPath}/att/leave/approve" class="nav-item">휴가 승인</a>
           </c:if>
-          <a href="/att/overtime" class="nav-item">초과근무</a>
+          <a href="${pageContext.request.contextPath}/att/overtime/req" class="nav-item">초과근무 신청</a>
+          <a href="${pageContext.request.contextPath}/att/overtime/approve" class="nav-item">초과근무 승인</a>
           <c:if test="${isAdmin}">
           	<a href="/att/status" class="nav-item">근태 현황·보정</a>
           </c:if>
