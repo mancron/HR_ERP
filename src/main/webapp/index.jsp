@@ -41,7 +41,6 @@
       </c:if>
 
     </main>
->>>>>>> branch 'master' of https://github.com/mancron/hr_erp.git
   </div>
 
 </body>
