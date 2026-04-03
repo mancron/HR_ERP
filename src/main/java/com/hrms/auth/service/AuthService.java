@@ -87,6 +87,8 @@ public class AuthService {
 
         if ("mismatch".equals(error)) {
             errorMsg = "❌ 새 비밀번호와 확인 비밀번호가 일치하지 않습니다.";
+        } else if ("weak_password".equals(error)) {
+            errorMsg = "❌ 비밀번호 정책(영문, 숫자, 특수문자 포함 8자 이상)을 확인해 주세요.";
         } else if ("fail".equals(error)) {
             errorMsg = "❌ 현재 비밀번호가 일치하지 않거나 변경에 실패했습니다.";
         }
