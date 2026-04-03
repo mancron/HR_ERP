@@ -19,7 +19,6 @@ public class AuthenticationFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        // 필터 초기화 시 필요한 로직이 있다면 작성
     }
 
     @Override
@@ -35,57 +34,104 @@ public class AuthenticationFilter implements Filter {
         // Context Path를 제외한 실제 요청 경로 추출
         String path = requestURI.substring(contextPath.length());
 
-     // 1. [핵심 수정] 검증 예외 경로 (Bypass)
-        // 로그인 화면 진입(/auth/login), 실제 로그인 처리(.do), 정적 리소스는 무조건 통과
+        // 1. 검증 예외 경로 (Bypass)
         if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
                 || path.equals("/auth/login")
                 || path.equals("/auth/login.do")
                 || path.contains("login.jsp")
-                || path.startsWith("/api/")) {  // ← 추가
+                || path.startsWith("/api/")) { 
 
             chain.doFilter(request, response);
             return;
         }
 
-        // 2. 인증 검증
+        // 2. 인증 검증 (Authentication)
         HttpSession session = req.getSession(false);
         boolean isLoggedIn = (session != null && session.getAttribute("userRole") != null);
 
         if (!isLoggedIn) {
-            // [중요] 리다이렉트 경로가 위 예외 경로(1번)에 반드시 포함되어야 함!
             res.sendRedirect(contextPath + "/auth/login"); 
             return;
         }
 
-        // 3. 인가 검증 (/sys/ 관리자 체크)
+        // --- 3. 권한 및 상태 추출 ---
+        String role = (String) session.getAttribute("userRole");
+        // 로그인 시 세션에 Boolean 타입으로 isManager를 넣었다고 가정
+        Boolean isManagerAttr = (Boolean) session.getAttribute("isManager");
+        boolean isManager = (isManagerAttr != null && isManagerAttr);
+
+        // --- 4. 인가 검증 (Authorization) 로직 ---
+
+        // [시스템] 관리자 전용
         if (path.startsWith("/sys/")) {
-            String role = (String) session.getAttribute("userRole");
             if (!"관리자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "관리자 권한이 필요합니다.");
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "시스템 관리 권한이 필요합니다.");
                 return;
             }
         }
         
-
-        // 	4. 근태/휴가 관리자 기능 권한 체크
-        if (path.startsWith("/att/leave/approve") 
-                || path.startsWith("/att/status") 
-                || path.startsWith("/att/annual/grant")) {
-
-            String role = (String) session.getAttribute("userRole");
-
-            if (!"관리자".equals(role) && !"HR담당자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "해당 기능은 관리자 또는 HR 관리자만 접근 가능합니다.");
+        // [조직 관리] 부서/직급 관리는 HR 전용
+        if (path.startsWith("/org/")) {
+            if (!"HR담당자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "조직 관리 권한이 필요합니다.");
                 return;
             }
         }
 
-        // 모든 보안 검증을 통과한 정상 요청만 다음 필터나 서블릿으로 보낸다.
+        // [직원 관리] 직원 등록 (HR 전용)
+        if (path.startsWith("/emp/reg")) {
+            if (!"HR담당자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "직원 등록 권한이 필요합니다.");
+                return;
+            }
+        }
+
+        // [직원 관리] 휴직·복직·퇴직 승인 (HR, 최종승인자, 부서장만)
+        // 주의: /emp/approvalHistory (단순 내역 조회)는 통과시키고 실제 결재 화면만 막음
+        if (path.startsWith("/emp/approval") && !path.startsWith("/emp/approvalHistory")) {
+            if (!"HR담당자".equals(role) && !"최종승인자".equals(role) && !isManager) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "결재 권한이 없습니다.");
+                return;
+            }
+        }
+
+        // [근태 관리] 휴가 승인 (HR, 부서장만)
+        if (path.startsWith("/att/leave/approve")) {
+            if (!"HR담당자".equals(role) && !isManager) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "휴가 승인 권한이 없습니다.");
+                return;
+            }
+        }
+
+        // [근태 관리] 전사 근태 보정, 연차 부여 (HR 전용)
+        if (path.startsWith("/att/status") || path.startsWith("/att/annual/grant")) {
+            if (!"HR담당자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "근태/연차 관리 권한이 필요합니다.");
+                return;
+            }
+        }
+
+        // [급여 관리] 계산, 전사 현황, 공제율 관리 (HR 전용)
+        if (path.startsWith("/sal/calc") || path.startsWith("/sal/status") || path.startsWith("/sal/deduction")) {
+            if (!"HR담당자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "급여 관리 권한이 필요합니다.");
+                return;
+            }
+        }
+
+        // [인사 평가] 실무 평가 작성 (최종승인자 불가)
+        if (path.startsWith("/eval/write")) {
+            if ("최종승인자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "최종승인자는 실무 평가를 직접 작성하지 않습니다.");
+                return;
+            }
+        }
+
+        // 모든 보안 검증을 통과한 정상 요청만 다음으로 보낸다.
         chain.doFilter(request, response);
     }
 
     @Override
     public void destroy() {
-        // 자원 해제 로직
     }
 }

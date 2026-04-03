@@ -362,6 +362,30 @@ public class DeptDAO {
         finally { closeResources(null, pstmt, con); }
     }
 
+    /**
+     * 특정 직원이 활성화된 부서의 부서장인지 확인 (로그인 권한 검증용)
+     */
+    public boolean isManager(int empId) {
+        Connection con = null; PreparedStatement pstmt = null; ResultSet rs = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            // 폐지된 부서의 부서장 권한을 갖는 것을 방지하기 위해 is_active = 1 조건 추가
+            pstmt = con.prepareStatement(
+                "SELECT COUNT(*) FROM department WHERE manager_id = ? AND is_active = 1"
+            );
+            pstmt.setInt(1, empId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0; // 카운트가 0보다 크면 부서장(true)
+            }
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+        } finally { 
+            closeResources(rs, pstmt, con); 
+        }
+        return false;
+    }
+    
     private void closeResources(ResultSet rs, PreparedStatement pstmt, Connection con) {
         try { if (rs    != null) rs.close();    } catch (Exception e) { e.printStackTrace(); }
         try { if (pstmt != null) pstmt.close(); } catch (Exception e) { e.printStackTrace(); }
