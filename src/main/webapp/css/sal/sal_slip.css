@@ -1,0 +1,156 @@
+@charset "UTF-8";
+
+
+/* ================================================
+   sal/sal-slip.css — 급여 명세서 전용 스타일
+   ================================================ */
+
+.slip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.select-sm {
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+/* 명세서 카드 */
+.slip-card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    max-width: 720px;
+    overflow: hidden;
+}
+
+/* 타이틀 바 */
+.slip-title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: #1e40af;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+}
+.slip-period { font-size: 14px; font-weight: 600; opacity: 0.85; margin-right: 6px; }
+
+/* 직원 정보 */
+.emp-info-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+.emp-info-item {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px;
+    border-right: 1px solid #e5e7eb;
+}
+.emp-info-item:last-child { border-right: none; }
+.emp-info-item .label  { font-size: 11px; color: #9ca3af; margin-bottom: 4px; }
+.emp-info-item .value  { font-size: 13px; font-weight: 600; color: #1f2937; }
+
+/* 지급/공제 2열 그리드 */
+.slip-table-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.slip-section { padding: 0; }
+.slip-section:first-child { border-right: 1px solid #e5e7eb; }
+
+/* 섹션 타이틀 */
+.slip-section-title {
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.slip-section-title.pay    { background: #eff6ff; color: #1e40af; }
+.slip-section-title.deduct { background: #fef2f2; color: #991b1b; }
+
+/* 명세 테이블 */
+.slip-table { width: 100%; border-collapse: collapse; }
+.slip-table tbody tr { border-bottom: 1px solid #f3f4f6; }
+.slip-table tbody tr:last-child { border-bottom: none; }
+.slip-table th {
+    padding: 9px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+    text-align: left;
+    width: 55%;
+}
+.slip-table td {
+    padding: 9px 16px;
+    font-size: 12px;
+    color: #1f2937;
+    text-align: right;
+}
+.slip-table tfoot .total-row th,
+.slip-table tfoot .total-row td {
+    padding: 11px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    background: #f8f9fa;
+    border-top: 1px solid #e5e7eb;
+}
+
+.sub-label { font-size: 10px; color: #ef4444; font-weight: 400; }
+
+/* 실수령액 바 */
+.net-salary-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    background: #1e40af;
+    color: #fff;
+}
+.net-label { font-size: 15px; font-weight: 600; }
+.net-value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+
+/* 배지 */
+.badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.badge-green  { background: #dcfce7; color: #166534; }
+.badge-yellow { background: #fef3c7; color: #92400e; }
+
+/* 빈 명세서 */
+.empty-slip {
+    background: #fff;
+    border-radius: 10px;
+    padding: 60px;
+    text-align: center;
+    max-width: 720px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* ── 인쇄 스타일 ── */
+@media print {
+    .no-print { display: none !important; }
+    #sidebar,
+    #main-wrapper > header { display: none !important; }
+    #main-wrapper { margin: 0 !important; padding: 0 !important; }
+    .app-content { padding: 0 !important; }
+    .slip-card { box-shadow: none; border: 1px solid #e5e7eb; }
+    body { background: #fff !important; }
+}
