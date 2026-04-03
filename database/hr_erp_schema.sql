@@ -155,9 +155,58 @@ CREATE TABLE account (
     UNIQUE KEY uk_username    (username),
     UNIQUE KEY uk_emp_account (emp_id),
     FOREIGN KEY (emp_id) REFERENCES employee(emp_id),
-    CONSTRAINT chk_role           CHECK (role IN ('관리자', 'HR담당자', '일반')),
+    CONSTRAINT chk_role           CHECK (role IN ('관리자', 'HR담당자', '일반', '최종승인자')),
     CONSTRAINT chk_login_attempts CHECK (login_attempts >= 0)
 ) COMMENT '로그인 계정 - 시스템 접근 관리';
+
+-- 휴직/복직 신청테이블
+CREATE TABLE leave_of_absence_request (
+    request_id        INT          NOT NULL AUTO_INCREMENT COMMENT '신청 ID (PK)',
+    emp_id            INT          NOT NULL               COMMENT '신청자 emp_id (FK)',
+    leave_type        VARCHAR(10)  NOT NULL               COMMENT '휴직 / 복직',
+    start_date        DATE         NOT NULL               COMMENT '시작일',
+    end_date          DATE         NULL                   COMMENT '종료일 (복직은 NULL 가능)',
+    reason            VARCHAR(500) NULL                   COMMENT '신청 사유',
+    status            VARCHAR(20)  NOT NULL DEFAULT '대기' COMMENT '대기 / 부서장승인 / HR담당자승인 / 최종승인 / 반려',
+    dept_manager_id   INT          NULL                   COMMENT '부서장 emp_id (FK)',
+    dept_approved_at  DATETIME     NULL                   COMMENT '부서장 승인일시',
+    hr_manager_id     INT          NULL                   COMMENT '인사담당자 emp_id (FK)',
+    hr_approved_at    DATETIME     NULL                   COMMENT '인사담당자 승인일시',
+    president_id          INT          NULL                   COMMENT '최종승인자 emp_id (FK)',
+    president_approved_at DATETIME     NULL                   COMMENT '최종승인자 승인일시',
+    reject_reason     VARCHAR(200) NULL                   COMMENT '반려 사유',
+    created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '신청일시',
+    PRIMARY KEY (request_id),
+    FOREIGN KEY (emp_id)          REFERENCES employee(emp_id),
+    FOREIGN KEY (dept_manager_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
+    FOREIGN KEY (hr_manager_id)   REFERENCES employee(emp_id) ON DELETE SET NULL,
+    FOREIGN KEY (president_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
+    CONSTRAINT chk_loa_type   CHECK (leave_type IN ('휴직', '복직')),
+    CONSTRAINT chk_loa_status CHECK (status IN ('대기', '부서장승인', 'HR담당자승인', '최종승인', '반려'))
+) COMMENT '휴직/복직 신청 - 3단계 승인';
+
+-- 퇴직 신청 테이블
+CREATE TABLE resign_request (
+    request_id        INT          NOT NULL AUTO_INCREMENT COMMENT '신청 ID (PK)',
+    emp_id            INT          NOT NULL               COMMENT '신청자 emp_id (FK)',
+    resign_date       DATE         NOT NULL               COMMENT '희망 퇴직일',
+    reason            VARCHAR(500) NULL                   COMMENT '신청 사유',
+    status            VARCHAR(20)  NOT NULL DEFAULT '대기' COMMENT '대기 / 부서장승인 / HR담당자승인 / 최종승인 / 반려',
+    dept_manager_id   INT          NULL                   COMMENT '부서장 emp_id (FK)',
+    dept_approved_at  DATETIME     NULL                   COMMENT '부서장 승인일시',
+    hr_manager_id     INT          NULL                   COMMENT '인사담당자 emp_id (FK)',
+    hr_approved_at    DATETIME     NULL                   COMMENT '인사담당자 승인일시',
+    president_id          INT          NULL                   COMMENT '최종승인자 emp_id (FK)',
+    president_approved_at DATETIME     NULL                   COMMENT '최종승인자 승인일시',
+    reject_reason     VARCHAR(200) NULL                   COMMENT '반려 사유',
+    created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '신청일시',
+    PRIMARY KEY (request_id),
+    FOREIGN KEY (emp_id)          REFERENCES employee(emp_id),
+    FOREIGN KEY (dept_manager_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
+    FOREIGN KEY (hr_manager_id)   REFERENCES employee(emp_id) ON DELETE SET NULL,
+    FOREIGN KEY (president_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
+    CONSTRAINT chk_resign_status CHECK (status IN ('대기', '부서장승인', 'HR담당자승인', '최종승인', '반려'))
+) COMMENT '퇴직 신청 - 3단계 승인';
 
 
 -- =============================================
