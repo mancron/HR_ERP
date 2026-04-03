@@ -40,7 +40,7 @@
         <a href="${pageContext.request.contextPath}/emp/history" class="nav-item">인사발령 이력</a>
       </div>
     </div>
-    <c:set var="isAdmin" value="${sessionScope.userRole == '관리자' || sessionScope.userRole == 'HR관리자'}" />
+    <c:set var="isAdmin" value="${sessionScope.userRole == '관리자' || sessionScope.userRole == 'HR담당자'}" />
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleAccordion(this)">근태 관리</div>
         <div class="nav-group-content">
