@@ -40,7 +40,7 @@
         <a href="${pageContext.request.contextPath}/emp/history" class="nav-item">인사발령 이력</a>
       </div>
     </div>
-    <c:set var="isAdmin" value="${sessionScope.userRole == '관리자' || sessionScope.userRole == 'HR관리자'}" />
+    <c:set var="isAdmin" value="${sessionScope.userRole == '관리자' || sessionScope.userRole == 'HR담당자'}" />
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleAccordion(this)">근태 관리</div>
         <div class="nav-group-content">
@@ -65,7 +65,7 @@
       <div class="nav-group-header" onclick="toggleAccordion(this)">급여 관리</div>
       <div class="nav-group-content">
         <a href="/sal/calc" class="nav-item">급여 계산·지급</a>
-        <a href="/sal/slip" class="nav-item">급여 명세서</a>
+        <a href="${pageContext.request.contextPath}/sal/slip" class="nav-item">급여 명세서</a>
         <c:if test="${sessionScope.userRole == 'HR담당자'}">
 	        <a href="${pageContext.request.contextPath}/sal/status" class="nav-item">급여 현황</a>
 	        <a href="${pageContext.request.contextPath}/sal/deduction" class="nav-item">공제율 관리</a>
