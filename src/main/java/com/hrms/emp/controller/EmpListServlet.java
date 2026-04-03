@@ -103,7 +103,6 @@ public class EmpListServlet extends HttpServlet {
         request.setAttribute("pageStart",  pageStart);
         request.setAttribute("pageEnd",    pageEnd);
 
-        request.getRequestDispatcher("/WEB-INF/jsp/emp/list.jsp")
-               .forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/jsp/emp/list.jsp").forward(request, response);
     }
 }

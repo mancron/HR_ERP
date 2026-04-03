@@ -101,4 +101,34 @@ public class TransferDAO {
         }
         return list;
     }
+	
+	
+	public boolean isDeptManager(Connection con, int empId) throws SQLException {
+	    String sql = "SELECT COUNT(*) FROM department WHERE manager_id = ? AND is_active = 1";
+	    PreparedStatement pstmt = null;
+	    ResultSet rs = null;
+	    try {
+	        pstmt = con.prepareStatement(sql);
+	        pstmt.setInt(1, empId);
+	        rs = pstmt.executeQuery();
+	        return rs.next() && rs.getInt(1) > 0;
+	    } finally {
+	        if (rs != null) rs.close();
+	        if (pstmt != null) pstmt.close();
+	    }
+	}
+	
+	// 발령 직책을 DB에 반영
+	public int updateDeptManager(Connection con, int deptId, int empId) throws SQLException {
+	    String sql = "UPDATE department SET manager_id = ? WHERE dept_id = ?";
+	    PreparedStatement pstmt = null;
+	    try {
+	        pstmt = con.prepareStatement(sql);
+	        pstmt.setInt(1, empId);
+	        pstmt.setInt(2, deptId);
+	        return pstmt.executeUpdate();
+	    } finally {
+	        if (pstmt != null) pstmt.close();
+	    }
+	}
 }

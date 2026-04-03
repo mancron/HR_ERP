@@ -9,45 +9,8 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/detail.css">
 <script>
     const USER_ROLE = '${userRole}';
-
-    // 권한별 편집 가능 필드 name 목록
-    const EDITABLE_FIELDS = {
-        default: ['emp_name', 'gender', 'birth_date', 'phone', 'email',
-                  'emergency_contact', 'bank_account', 'address'],
-        admin:   ['emp_name', 'gender', 'birth_date', 'phone', 'email',
-                  'emergency_contact', 'bank_account', 'address',
-                  'emp_type', 'base_salary']
-    };
-
-    function getEditableFields() {
-        return (USER_ROLE === '관리자' || USER_ROLE === 'HR담당자')
-            ? EDITABLE_FIELDS.admin
-            : EDITABLE_FIELDS.default;
-    }
-
-    function toggleEditSave() {
-        const btn = document.getElementById('btnEditSave');
-        const isViewMode = btn.dataset.mode === 'view';
-
-        if (isViewMode) {
-            // 수정 모드 진입: 편집 가능 필드 readonly 해제
-            btn.dataset.mode = 'edit';
-            btn.textContent = '  저장  ';
-            btn.classList.replace('btn-edit', 'btn-save');
-
-            getEditableFields().forEach(name => {
-                document.querySelectorAll('[name="' + name + '"]').forEach(el => {
-                    el.removeAttribute('readonly');
-                    el.disabled = false;
-                    el.classList.remove('readonly-input');
-                });
-            });
-        } else {
-            // 저장: 폼 제출
-            document.getElementById('empDetailForm').submit();
-        }
-    }
 </script>
+<script src="${pageContext.request.contextPath}/js/emp/detail.js"></script>
 </head>
 <body>
 
@@ -64,19 +27,21 @@
     <%-- 헤더 --%>
     <div class="detail-header">
         <span class="status-badge status-${empDetail.status}">${empDetail.status}</span>
-        <c:if test="${userRole == '관리자' || userRole == 'HR담당자'}">
         <div class="btn-area">
+        <c:if test="${userRole == '최종승인자' || userRole == 'HR담당자'}">
             <button type="button" class="btn-transfer"
                 onclick="location.href='${pageContext.request.contextPath}/emp/transfer?emp_no=${empDetail.emp_no}'">
                 인사발령</button>
+        </c:if>
+        <c:if test="${loginEmpId == empDetail.emp_id}">
             <button type="button" class="btn-leave"
                 onclick="location.href='${pageContext.request.contextPath}/emp/leave?emp_no=${empDetail.emp_no}'">
-                휴/복직</button>
+                휴·복직 신청</button>
             <button type="button" class="btn-resign"
                 onclick="location.href='${pageContext.request.contextPath}/emp/resign?emp_no=${empDetail.emp_no}'">
-                퇴직 처리</button>
-        </div>
+                퇴직 신청</button>
         </c:if>
+        </div>
     </div>
 
     <%-- ===== 기본 정보 ===== --%>
@@ -127,7 +92,7 @@
         </tr>
         <tr>
             <th>고용형태</th>
-            <%-- 관리자/HR담당자만 수정 모드에서 활성화됨 --%>
+            <%-- 최종승인자/HR담당자만 수정 모드에서 활성화됨 --%>
             <td><select name="emp_type" disabled class="readonly-input">
                 <option value="정규직"  <c:if test="${empDetail.emp_type == '정규직'}">selected</c:if>>정규직</option>
                 <option value="계약직"  <c:if test="${empDetail.emp_type == '계약직'}">selected</c:if>>계약직</option>

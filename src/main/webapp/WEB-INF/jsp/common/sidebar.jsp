@@ -38,6 +38,8 @@
         <a href="${pageContext.request.contextPath}/emp/list" class="nav-item">직원 목록</a>
         <a href="${pageContext.request.contextPath}/emp/reg" class="nav-item">직원 등록</a>
         <a href="${pageContext.request.contextPath}/emp/history" class="nav-item">인사발령 이력</a>
+        <a href="${pageContext.request.contextPath}/emp/approval" class="nav-item">휴직·복직·퇴직 승인</a>
+        <a href="${pageContext.request.contextPath}/emp/approvalHistory" class="nav-item">휴직·복직·퇴직 내역</a>
       </div>
     </div>
     <c:set var="isAdmin" value="${sessionScope.userRole == '관리자' || sessionScope.userRole == 'HR담당자'}" />
