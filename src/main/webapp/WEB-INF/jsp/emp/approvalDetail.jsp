@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <title>신청 상세</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/approvalDetail.css">
-<script src="${pageContext.request.contextPath}/js/approval.js"></script>
+<script src="${pageContext.request.contextPath}/js/emp/approval.js"></script>
 </head>
 <body>
 

@@ -12,6 +12,7 @@
 	href="${pageContext.request.contextPath}/css/emp/approval.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
+<script src="${pageContext.request.contextPath}/js/emp/approval.js"></script>
 </head>
 <body data-context-path="${pageContext.request.contextPath}">
 
