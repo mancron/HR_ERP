@@ -297,27 +297,6 @@
     background-color: #f44336;
 }
 
-.toast {
-    position: fixed;
-    top: 30px;
-    right: 30px;
-    padding: 14px 20px;
-    border-radius: 10px;
-    color: white;
-    font-size: 14px;
-    display: none;
-    z-index: 9999;
-    min-width: 200px;
-}
-
-.toast-success {
-    background: #28a745;
-}
-
-.toast-error {
-    background: #dc3545;
-}
-
 /* 모달 버튼 전용 */
 .att-btn {
     padding: 6px 14px;

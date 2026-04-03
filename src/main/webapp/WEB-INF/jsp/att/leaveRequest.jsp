@@ -9,13 +9,14 @@
 	href="<c:out value='${pageContext.request.contextPath}/css/att/attendance.css'/>">
 <link rel="stylesheet"
 	href="<c:out value='${pageContext.request.contextPath}/css/att/leave.css'/>">
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/css/common/toast.css">
 </head>
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 <div id="main-wrapper">
-	<div id="toast-data" data-error="${errorMsg}" data-msg="${msg}">
-	</div>
 	<jsp:include page="/WEB-INF/jsp/common/header.jsp" />
+	<jsp:include page="/WEB-INF/jsp/common/toast.jsp" />
 	<main class="app-content">
 		<h2>휴가 신청</h2>
 		<br>
@@ -137,6 +138,8 @@
 <script
 	src="<c:out value='${pageContext.request.contextPath}/js/sidebar.js'/>"></script>
 <script src="${pageContext.request.contextPath}/js/att/leave.js"></script>
+<script src="${pageContext.request.contextPath}/js/common/toast.js"></script>
+
 
 <div id="leaveModal" class="modal">
 	<div class="modal-content">
