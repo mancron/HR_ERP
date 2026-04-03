@@ -4,16 +4,19 @@ import com.hrms.att.dao.LeaveDAO;
 import com.hrms.att.dto.AnnualLeaveDTO;
 import com.hrms.att.dto.LeaveDTO;
 import com.hrms.common.db.DatabaseConnection;
+import com.hrms.common.util.NotificationUtil;
+import com.hrms.sys.dao.HolidayDAO;
 
 import java.sql.Connection;
 import java.sql.Date;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 public class LeaveService {
 
 	private LeaveDAO leaveDAO = new LeaveDAO();
+	private HolidayDAO holidayDAO = new HolidayDAO();
 
 	// 휴가 신청 처리
 	public String applyLeave(LeaveDTO dto) {
@@ -34,16 +37,22 @@ public class LeaveService {
 		if (startDate.after(endDate)) {
 			return "invalid_date";
 		}
-		// 3. 잔여 연차 체크
+		// 3. 반차 검증
+		if ("반차".equals(dto.getLeaveType())) {
+		    if (!startDate.equals(endDate)) {
+		        return "invalid_half";
+		    }
+		}
+		// 4. 잔여 연차 체크
 		double remainDays = leaveDAO.getRemainDays(empId);
 		if (days > remainDays) {
 			return "not_enough";
 		}
-		// 4. 기간 중복 체크
+		// 5. 기간 중복 체크
 		if (leaveDAO.isOverlapping(empId, startDate, endDate)) {
 			return "overlap";
 		}
-		// 5. DB 저장
+		// 6. DB 저장
 		boolean result = leaveDAO.insertLeave(dto);
 		if (!result) {
 			return "fail";
@@ -55,15 +64,37 @@ public class LeaveService {
 		return leaveDAO.getAnnualLeave(empId);
 	}
 
-	public double calculateDays(LocalDate start, LocalDate end, String leaveType) {
+	public double calculateDays(LocalDate start, LocalDate end, String type) {
 
-		long daysBetween = ChronoUnit.DAYS.between(start, end) + 1;
-
-		if ("반차".equals(leaveType)) {
+		// 반차
+		if ("반차".equals(type)) {
 			return 0.5;
 		}
 
-		return daysBetween;
+		double days = 0;
+		LocalDate date = start;
+
+		try (Connection conn = DatabaseConnection.getConnection()) {
+
+			while (!date.isAfter(end)) {
+
+				boolean isWeekend = date.getDayOfWeek() == DayOfWeek.SATURDAY
+						|| date.getDayOfWeek() == DayOfWeek.SUNDAY;
+
+				boolean isHoliday = holidayDAO.existsByDate(date, conn);
+
+				if (!isWeekend && !isHoliday) {
+					days++;
+				}
+
+				date = date.plusDays(1);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return days;
 	}
 
 	// 휴가 리스트 출력
@@ -81,12 +112,12 @@ public class LeaveService {
 		return leaveDAO.cancelLeave(leaveId, empId);
 	}
 
-	//필터 + 정렬 포함 (신규 기능)
+	// 필터 + 정렬 포함 (신규 기능)
 	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int approverId) {
 		return leaveDAO.getPendingLeaves(dept, sort, startDate, endDate, approverId);
 	}
 
-	//부서 목록 조회 (드롭다운용)
+	// 부서 목록 조회 (드롭다운용)
 	public List<String> getPendingDeptList() {
 		return leaveDAO.getPendingDeptList();
 	}
@@ -99,7 +130,7 @@ public class LeaveService {
 			conn = DatabaseConnection.getConnection();
 			conn.setAutoCommit(false); // 🔥 트랜잭션 시작
 			// 휴가 정보 조회
-			LeaveDTO leave = leaveDAO.getLeaveById(conn, leaveId);
+			LeaveDTO leave = leaveDAO.getLeaveById(leaveId);
 			if (leave == null) {
 				throw new Exception("휴가 정보 없음");
 			}
@@ -110,8 +141,9 @@ public class LeaveService {
 			// 휴가 일수 계산
 			double days = calculateDays(leave.getStartDate().toLocalDate(), leave.getEndDate().toLocalDate(),
 					leave.getLeaveType());
+			String leaveType = leave.getLeaveType();
 			// 승인일 경우만 연차 차감
-			if ("승인".equals(status)) {
+			if ("승인".equals(status) && ("연차".equals(leaveType) || "반차".equals(leaveType))) {
 				double remain = leaveDAO.getRemainDays(empId);
 				if (remain < days) {
 					throw new Exception("연차 부족");
@@ -124,6 +156,29 @@ public class LeaveService {
 				throw new Exception("상태 변경 실패");
 			}
 			conn.commit(); // 성공 시 커밋
+			
+			// 신청자 ID
+			int requesterEmpId = leave.getEmpId();
+
+			// 기간 문자열
+			String period = leave.getStartDate() + " ~ " + leave.getEndDate();
+
+			if ("승인".equals(status)) {
+			    NotificationUtil.sendLeaveApproved(
+			        requesterEmpId,
+			        period,
+			        days,
+			        leaveId
+			    );
+			} else if ("반려".equals(status)) {
+			    NotificationUtil.sendLeaveRejected(
+			        requesterEmpId,
+			        period,
+			        reason,
+			        leaveId
+			    );
+			}
+			
 			return true;
 		} catch (Exception e) {
 			try {
@@ -142,5 +197,15 @@ public class LeaveService {
 			}
 		}
 		return false;
+	}
+	
+	//휴가 상세 데이터
+	public LeaveDTO getLeaveDetail(int leaveId) {
+	    return leaveDAO.getLeaveById(leaveId);
+	}
+	
+	//특정 날짜 휴가 존재 여부 확인
+	public boolean existsLeaveByDate(int empId, LocalDate date) {
+	    return leaveDAO.existsByDate(empId, date);
 	}
 }

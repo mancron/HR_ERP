@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 
+
+
 <body>
   <nav id="sidebar">
     <div class="nav-logo">🏢 HR ERP</div>
@@ -18,6 +20,7 @@
       <div class="nav-group-content">
         <a href="${pageContext.request.contextPath}/main" class="nav-item">메인 대시보드</a>
         <a href="${pageContext.request.contextPath}/auth/pw-change" class="nav-item">비밀번호 변경</a>
+        <a href="${pageContext.request.contextPath}/notification" class="nav-item">알림</a>
       </div>
     </div>
 
@@ -39,16 +42,23 @@
         <a href="${pageContext.request.contextPath}/emp/approvalHistory" class="nav-item">휴직·복직·퇴직 내역</a>
       </div>
     </div>
+    <c:set var="isAdmin" value="${sessionScope.userRole == '관리자' || sessionScope.userRole == 'HR관리자'}" />
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleAccordion(this)">근태 관리</div>
         <div class="nav-group-content">
           <a href="${pageContext.request.contextPath}/att/record" class="nav-item">출퇴근</a>
           <a href="${pageContext.request.contextPath}/att/leave/req" class="nav-item">휴가 신청</a>
-          <a href="${pageContext.request.contextPath}/att/leave/approve" class="nav-item">휴가 승인</a>
+          <c:if test="${isAdmin}">
+          	<a href="${pageContext.request.contextPath}/att/leave/approve" class="nav-item">휴가 승인</a>
+          </c:if>
           <a href="/att/overtime" class="nav-item">초과근무</a>
-          <a href="/att/status" class="nav-item">근태 현황·보정</a>
+          <c:if test="${isAdmin}">
+          	<a href="/att/status" class="nav-item">근태 현황·보정</a>
+          </c:if>
           <a href="/att/annual" class="nav-item">연차 현황</a>
-          <a href="/att/annual/grant" class="nav-item">연차 일괄 부여</a>
+          <c:if test="${isAdmin}">
+          	<a href="/att/annual/grant" class="nav-item">연차 일괄 부여</a>
+          </c:if>
         </div>
       </div>
     </div>
@@ -58,8 +68,10 @@
       <div class="nav-group-content">
         <a href="/sal/calc" class="nav-item">급여 계산·지급</a>
         <a href="/sal/slip" class="nav-item">급여 명세서</a>
-        <a href="/sal/status" class="nav-item">급여 현황</a>
-        <a href="/sal/deduction" class="nav-item">공제율 관리</a>
+        <c:if test="${sessionScope.userRole == 'HR담당자'}">
+	        <a href="${pageContext.request.contextPath}/sal/status" class="nav-item">급여 현황</a>
+	        <a href="${pageContext.request.contextPath}/sal/deduction" class="nav-item">공제율 관리</a>
+        </c:if>
       </div>
     </div>
 

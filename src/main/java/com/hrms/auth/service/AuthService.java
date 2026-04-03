@@ -1,10 +1,13 @@
 package com.hrms.auth.service;
 
-import com.hrms.auth.dao.AccountDAO;
-import com.hrms.auth.dto.AccountDTO;
-import org.mindrot.jbcrypt.BCrypt;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.mindrot.jbcrypt.BCrypt;
+
+import com.hrms.auth.dao.AccountDAO;
+import com.hrms.auth.dto.AccountDTO;
+import com.hrms.common.util.NotificationUtil;
 
 public class AuthService {
     private AccountDAO accountDAO = new AccountDAO();
@@ -61,7 +64,17 @@ public class AuthService {
             accountDAO.handleLoginFailure(username);
             AccountDTO updated = accountDAO.getAccountByUsername(username);
             int currentAttempts = (updated != null) ? updated.getLoginAttempts() : 1;
+
+            // 지금 막 5회가 된 경우 → 알림 발송 후 잠금 예외
             if (currentAttempts >= 5) {
+                try {
+                    int[] adminIds = accountDAO.getAdminEmpIds();
+                    if (adminIds.length > 0) {
+                        NotificationUtil.sendAccountLocked(adminIds, account.getUsername());
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace(); // 알림 실패가 로그인 로직에 영향 주면 안 됨
+                }
                 throw new Exception("account_locked");
             }
             throw new Exception("login_fail_" + currentAttempts);
@@ -74,6 +87,8 @@ public class AuthService {
 
         if ("mismatch".equals(error)) {
             errorMsg = "❌ 새 비밀번호와 확인 비밀번호가 일치하지 않습니다.";
+        } else if ("weak_password".equals(error)) {
+            errorMsg = "❌ 비밀번호 정책(영문, 숫자, 특수문자 포함 8자 이상)을 확인해 주세요.";
         } else if ("fail".equals(error)) {
             errorMsg = "❌ 현재 비밀번호가 일치하지 않거나 변경에 실패했습니다.";
         }

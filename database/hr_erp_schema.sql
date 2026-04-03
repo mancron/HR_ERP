@@ -42,7 +42,7 @@ CREATE TABLE job_position (
     is_active           TINYINT(1)   NOT NULL DEFAULT 1       COMMENT '1=활성, 0=비활성 (폐지 시 FK 참조로 DELETE 불가)',
     created_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
     PRIMARY KEY (position_id),
-    CONSTRAINT chk_position_level CHECK (position_level BETWEEN 1 AND 5)
+    CONSTRAINT chk_position_level CHECK (position_level BETWEEN 1 AND 20)
 ) COMMENT '직급 테이블 - 회사의 직급 체계';
 
 
@@ -61,7 +61,7 @@ CREATE TABLE department (
     created_at     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
     PRIMARY KEY (dept_id),
     FOREIGN KEY (parent_dept_id) REFERENCES department(dept_id) ON DELETE SET NULL,
-    CONSTRAINT chk_dept_level CHECK (dept_level BETWEEN 1 AND 5)
+    CONSTRAINT chk_dept_level CHECK (dept_level BETWEEN 1 AND 20)
 ) COMMENT '부서 테이블 (트리 구조) - 조직도 구성';
 
 
@@ -323,36 +323,44 @@ CREATE TABLE deduction_rate (
 -- net_salary: 실수령액 (gross_salary - total_deduction)
 -- status: 대기/완료 (완료 후 수정 불가)
 CREATE TABLE salary (
-    salary_id            INT         NOT NULL AUTO_INCREMENT    COMMENT '급여 명세 ID (PK)',
-    emp_id               INT         NOT NULL                 COMMENT '직원 ID (FK)',
-    salary_year          INT         NOT NULL                 COMMENT '급여 연도 (2025)',
-    salary_month         INT         NOT NULL                 COMMENT '급여 월 (1~12)',
-    base_salary          INT         NOT NULL DEFAULT 0       COMMENT '기본급',
-    meal_allowance       INT         NOT NULL DEFAULT 0       COMMENT '식대',
-    transport_allowance  INT         NOT NULL DEFAULT 0       COMMENT '교통비',
-    position_allowance   INT         NOT NULL DEFAULT 0       COMMENT '직책수당',
-    overtime_pay         INT         NOT NULL DEFAULT 0       COMMENT '초과근무수당',
-    other_allowance      INT         NOT NULL DEFAULT 0       COMMENT '기타수당',
-    gross_salary         INT         NOT NULL DEFAULT 0       COMMENT '지급합계 (기본급+모든 수당)',
-    national_pension     INT         NOT NULL DEFAULT 0       COMMENT '국민연금',
-    health_insurance     INT         NOT NULL DEFAULT 0       COMMENT '건강보험',
-    long_term_care       INT         NOT NULL DEFAULT 0       COMMENT '장기요양보험',
-    employment_insurance INT         NOT NULL DEFAULT 0       COMMENT '고용보험',
-    income_tax           INT         NOT NULL DEFAULT 0       COMMENT '소득세',
-    local_income_tax     INT         NOT NULL DEFAULT 0       COMMENT '지방소득세',
-    total_deduction      INT         NOT NULL DEFAULT 0       COMMENT '공제합계 (모든 공제항목 합)',
-    net_salary           INT         NOT NULL DEFAULT 0       COMMENT '실수령액 (gross_salary - total_deduction)',
-    pay_date             DATE        NULL                     COMMENT '급여 지급일',
-    status               VARCHAR(10) NOT NULL DEFAULT '대기'   COMMENT '대기/완료 — audit_log 기록 대상',
-    created_at           DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    salary_id            INT          NOT NULL AUTO_INCREMENT COMMENT '급여 명세 ID (PK)',
+    emp_id               INT          NOT NULL               COMMENT '직원 ID (FK)',
+    salary_year          INT          NOT NULL               COMMENT '급여 연도 (2025)',
+    salary_month         INT          NOT NULL               COMMENT '급여 월 (1~12)',
+
+    -- 지급 항목
+    base_salary          INT          NOT NULL DEFAULT 0     COMMENT '기본급',
+    meal_allowance       INT          NOT NULL DEFAULT 0     COMMENT '식대',
+    transport_allowance  INT          NOT NULL DEFAULT 0     COMMENT '교통비',
+    position_allowance   INT          NOT NULL DEFAULT 0     COMMENT '직책수당',
+    overtime_pay         INT          NOT NULL DEFAULT 0     COMMENT '초과근무수당',
+    other_allowance      INT          NOT NULL DEFAULT 0     COMMENT '기타수당',
+    gross_salary         INT          NOT NULL DEFAULT 0     COMMENT '지급합계 (기본급+모든 수당)',
+
+    -- 공제 항목
+    national_pension     INT          NOT NULL DEFAULT 0     COMMENT '국민연금',
+    health_insurance     INT          NOT NULL DEFAULT 0     COMMENT '건강보험',
+    long_term_care       INT          NOT NULL DEFAULT 0     COMMENT '장기요양보험',
+    employment_insurance INT          NOT NULL DEFAULT 0     COMMENT '고용보험',
+    unpaid_leave_days    DECIMAL(4,1) NOT NULL DEFAULT 0     COMMENT '무급 공제 일수 (병가+결근 합산)',
+    unpaid_deduction     INT          NOT NULL DEFAULT 0     COMMENT '무급 공제액 (일급 × unpaid_leave_days)',
+    income_tax           INT          NOT NULL DEFAULT 0     COMMENT '소득세',
+    local_income_tax     INT          NOT NULL DEFAULT 0     COMMENT '지방소득세',
+    total_deduction      INT          NOT NULL DEFAULT 0     COMMENT '공제합계 (모든 공제항목 합)',
+    net_salary           INT          NOT NULL DEFAULT 0     COMMENT '실수령액 (gross_salary - total_deduction)',
+
+    pay_date             DATE         NULL                   COMMENT '급여 지급일',
+    status               VARCHAR(10)  NOT NULL DEFAULT '대기' COMMENT '대기/완료 — audit_log 기록 대상',
+    created_at           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+
     PRIMARY KEY (salary_id),
     UNIQUE KEY uk_emp_salary_month (emp_id, salary_year, salary_month),
     FOREIGN KEY (emp_id) REFERENCES employee(emp_id),
-    CONSTRAINT chk_salary_month CHECK (salary_month BETWEEN 1 AND 12),
+    CONSTRAINT chk_salary_month  CHECK (salary_month BETWEEN 1 AND 12),
     CONSTRAINT chk_salary_status CHECK (status IN ('대기', '완료')),
-    CONSTRAINT chk_net_salary   CHECK (net_salary >= 0),
-    CONSTRAINT chk_gross_salary CHECK (gross_salary >= 0),
-    CONSTRAINT chk_salary_total CHECK (net_salary = gross_salary - total_deduction)
+    CONSTRAINT chk_net_salary    CHECK (net_salary >= 0),
+    CONSTRAINT chk_gross_salary  CHECK (gross_salary >= 0),
+    CONSTRAINT chk_salary_total  CHECK (net_salary = gross_salary - total_deduction)
 ) COMMENT '급여 명세 (월별 스냅샷) - 월급 계산 및 지급 관리';
 
 

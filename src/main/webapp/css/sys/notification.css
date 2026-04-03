@@ -1,0 +1,151 @@
+@charset "UTF-8";
+/* ================================================
+   sys/notification.css — 알림 목록 전용 스타일
+   ================================================ */
+
+/* 툴바 */
+.noti-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.unread-cnt {
+    font-weight: 700;
+    color: inherit;
+}
+
+/* 알림 카드 */
+.noti-list {
+    padding: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    max-width: 700px;
+}
+
+/* 알림 항목 */
+.noti-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--gray-100, #f3f4f6);
+    gap: 12px;
+    transition: background 0.15s;
+}
+
+.noti-item:last-child {
+    border-bottom: none;
+}
+
+.noti-item:hover {
+    background: #f9fafb;
+}
+
+/* 미읽음 항목 강조 */
+.noti-item.unread {
+    background: var(--primary-pale, #eff6ff);
+}
+
+.noti-item.unread:hover {
+    background: #dbeafe;
+}
+
+/* 알림 본문 */
+.noti-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.noti-message {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1f2937;
+    line-height: 1.5;
+}
+
+.noti-item:not(.unread) .noti-message {
+    font-weight: 400;
+    color: #6b7280;
+}
+
+/* 메타 정보 (시간 + 읽음 버튼) */
+.noti-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.noti-time {
+    font-size: 11px;
+    color: var(--gray-400, #9ca3af);
+    white-space: nowrap;
+}
+
+/* 읽음 버튼 */
+.btn-read {
+    padding: 2px 8px;
+    font-size: 11px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: #fff;
+    color: #6b7280;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-read:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+/* 읽음 텍스트 */
+.read-label {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+/* inline form (버튼만 있는 폼) */
+.inline-form {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+/* 빈 알림 */
+.noti-empty {
+    padding: 48px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--gray-400, #9ca3af);
+}
+
+/* 배지 */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.badge-green  { background: #dcfce7; color: #166534; }
+.badge-red    { background: #fee2e2; color: #991b1b; }
+.badge-yellow { background: #fef3c7; color: #92400e; }
+.badge-blue   { background: #dbeafe; color: #1e40af; }
+.badge-purple { background: #f3e8ff; color: #6b21a8; }
+.badge-gray   { background: #f3f4f6; color: #4b5563; }

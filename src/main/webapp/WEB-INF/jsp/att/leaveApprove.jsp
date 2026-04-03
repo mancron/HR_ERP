@@ -1,8 +1,13 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR ERP - 휴가 승인</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/leave.css">
+</head>
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 
@@ -55,7 +60,7 @@
 		</form>
 		<div class="leave-right-box">
 
-			<table class="att-table leave-approve-table">
+			<table class="leave-approve-table">
 				<thead>
 					<tr>
 						<th>부서</th>
@@ -99,12 +104,13 @@
 										<!-- 승인 -->
 										<form
 											action="${pageContext.request.contextPath}/leave/updateStatus"
-											method="post" onsubmit="return confirm('승인하시겠습니까?');">
+											method="post">
 
 											<input type="hidden" name="leaveId" value="${item.leaveId}">
 											<input type="hidden" name="status" value="승인">
 
-											<button type="submit" class="btn approve-btn">승인</button>
+											<button type="button" class="btn approve-btn"
+												onclick="approveLeave(this.form)">승인</button>
 										</form> <!-- 반려 -->
 										<form
 											action="${pageContext.request.contextPath}/leave/updateStatus"
@@ -114,7 +120,8 @@
 											<input type="hidden" name="status" value="반려"> <input
 												type="hidden" name="reason">
 
-											<button type="submit" class="btn reject-btn">반려</button>
+											<button type="button" class="btn reject-btn"
+												onclick="showRejectForm(this)">반려</button>
 										</form>
 
 									</td>
@@ -138,18 +145,22 @@
 
 	</main>
 </div>
-
 <script>
-	function confirmReject(form) {
-		const reason = prompt("반려 사유를 입력하세요:");
-		if (!reason) {
-			alert("반려 사유는 필수입니다.");
-			return false;
-		}
-		form.reason.value = reason;
-		return true;
-	}
+	const contextPath = "${pageContext.request.contextPath}";
 </script>
-
 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
 <script src="${pageContext.request.contextPath}/js/att/leave.js"></script>
+
+<div id="confirmModal" class="modal">
+	<div class="modal-content">
+
+		<p id="confirmMessage"></p>
+
+		<div
+			style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+			<button id="confirmYes" class="att-btn att-btn-in">확인</button>
+			<button onclick="closeConfirmModal()" class="att-btn att-btn-cancle">취소</button>
+		</div>
+
+	</div>
+</div>
