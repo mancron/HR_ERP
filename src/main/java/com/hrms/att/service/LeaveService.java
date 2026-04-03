@@ -3,6 +3,7 @@ package com.hrms.att.service;
 import com.hrms.att.dao.LeaveDAO;
 import com.hrms.att.dto.AnnualLeaveDTO;
 import com.hrms.att.dto.LeaveDTO;
+import com.hrms.att.dto.RequestDTO;
 import com.hrms.common.db.DatabaseConnection;
 import com.hrms.common.util.NotificationUtil;
 import com.hrms.sys.dao.HolidayDAO;
@@ -11,6 +12,7 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 public class LeaveService {
@@ -103,8 +105,29 @@ public class LeaveService {
 	}
 
 	// 월별 휴가 리스트 출력
-	public List<LeaveDTO> getLeaveListByMonth(int empId, int year, int month) {
-		return leaveDAO.getLeaveListByMonth(empId, year, month);
+	public List<RequestDTO> getLeaveListByMonth(int empId, int year, int month) {
+		List<LeaveDTO> list = leaveDAO.getLeaveListByMonth(empId, year, month);
+
+	    List<RequestDTO> result = new ArrayList<RequestDTO>();
+
+	    for (LeaveDTO dto : list) {
+
+	        RequestDTO r = new RequestDTO();
+
+	        r.setId(dto.getLeaveId());
+	        r.setDate(dto.getStartDate() + " ~ " + dto.getEndDate());
+	        if ("반차".equals(dto.getLeaveType())) {
+	            r.setType(dto.getLeaveType() + " (" + dto.getHalfType() + ")");
+	        } else {
+	            r.setType(dto.getLeaveType());
+	        }
+	        r.setStatus(dto.getStatus());
+	        r.setReason(dto.getReason());
+
+	        result.add(r);
+	    }
+
+	    return result;
 	}
 
 	// 신청 취소
@@ -208,4 +231,5 @@ public class LeaveService {
 	public boolean existsLeaveByDate(int empId, LocalDate date) {
 	    return leaveDAO.existsByDate(empId, date);
 	}
+	
 }
