@@ -74,7 +74,7 @@ public class AuthenticationFilter implements Filter {
 
             String role = (String) session.getAttribute("userRole");
 
-            if (!"관리자".equals(role) && !"HR관리자".equals(role)) {
+            if (!"관리자".equals(role) && !"HR담당자".equals(role)) {
                 res.sendError(HttpServletResponse.SC_FORBIDDEN, "해당 기능은 관리자 또는 HR 관리자만 접근 가능합니다.");
                 return;
             }
