@@ -66,9 +66,9 @@
       <div class="nav-group-content">
         <a href="/sal/calc" class="nav-item">급여 계산·지급</a>
         <a href="/sal/slip" class="nav-item">급여 명세서</a>
-        <a href="/sal/status" class="nav-item">급여 현황</a>
         <c:if test="${sessionScope.userRole == 'HR담당자'}">
-        <a href="${pageContext.request.contextPath}/sal/deduction" class="nav-item">공제율 관리</a>
+	        <a href="${pageContext.request.contextPath}/sal/status" class="nav-item">급여 현황</a>
+	        <a href="${pageContext.request.contextPath}/sal/deduction" class="nav-item">공제율 관리</a>
         </c:if>
       </div>
     </div>
