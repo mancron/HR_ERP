@@ -71,6 +71,19 @@ public class TransferService {
         }
     }
     
+    public boolean isDeptManager(int empId) {
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            return transferDao.isDeptManager(con, empId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
+    
     private void closeConnection(Connection con) {
         if (con != null) {
             try {

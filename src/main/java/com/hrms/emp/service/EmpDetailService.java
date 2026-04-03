@@ -13,10 +13,6 @@ public class EmpDetailService {
     //권한별 필드 필터링 후 DB 업데이트
     public int updateEmployee(EmpDTO updateDto, String userRole) {
     	
-    	System.out.println("=== updateEmployee 진입 ===");
-        System.out.println("emp_no: " + updateDto.getEmp_no());
-        System.out.println("userRole: " + userRole);
-    	
         Connection con = null;
         try {
             con = DatabaseConnection.getConnection();

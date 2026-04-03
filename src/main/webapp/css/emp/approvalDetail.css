@@ -1,0 +1,114 @@
+@charset "UTF-8";
+
+body {
+    padding: 20px 24px;
+    font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    background: #fff;
+    margin: 0;
+}
+
+/* 헤더 */
+.detail-header {
+    margin-bottom: 16px;
+    display: block !important;
+}
+
+.detail-header h2 {
+    margin: 0 0 6px 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.detail-header .emp-info {
+    font-size: 13px;
+    color: #666;
+}
+
+/* 섹션 타이틀 */
+h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #333;
+    border-left: 3px solid #1976d2;
+    padding-left: 8px;
+    margin: 20px 0 10px;
+}
+
+/* 상세 테이블 */
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 4px;
+    table-layout: fixed;
+}
+
+.detail-table th,
+.detail-table td {
+    padding: 9px 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.detail-table th {
+    background: #f5f7fa;
+    color: #555;
+    font-weight: 600;
+    width: 18%;
+    white-space: nowrap;
+}
+
+.detail-table td {
+    width: 32%;
+}
+
+/* 상태 배지 */
+.status-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-대기       { background: #fff8e1; color: #f57f17; }
+.status-부서장승인  { background: #e3f2fd; color: #1565c0; }
+.status-인사승인    { background: #e6f4ea; color: #2e7d32; }
+.status-반려       { background: #fce4ec; color: #c62828; }
+
+/* 대기 중 텍스트 */
+.pending-text {
+    color: #aaa;
+    font-style: italic;
+}
+
+/* 반려 사유 강조 */
+.reject-reason {
+    color: #c62828;
+    font-weight: 600;
+}
+
+/* 버튼 영역 */
+.btn-area {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 24px;
+}
+
+.btn-area button {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+}
+
+.btn-back         { background: #f5f5f5; color: #333; border: 1px solid #ccc !important; }
+.btn-approve-action { background: #43a047; color: #fff; }
+.btn-reject-action  { background: #e53935; color: #fff; }
