@@ -100,7 +100,18 @@
 
         <%-- 버튼 --%>
         <div class="btn-area">
-            <button type="button" class="btn-cancel" onclick="history.back();">취소</button>
+            <c:choose>
+		        <c:when test="${mode == 'edit'}">
+		            <%-- 수정 모드: 부모창 모달 닫기 --%>
+		            <button type="button" class="btn-cancel" onclick="
+		                window.parent.document.getElementById('approvalModalIframe').src = '';
+		                window.parent.document.getElementById('approvalDetailModal').classList.remove('active');">취소</button>
+				 </c:when>
+				 <c:otherwise>
+		            <%-- 신청 모드: 이전 페이지 --%>
+		            <button type="button" class="btn-cancel" onclick="history.back();">취소</button>
+				 </c:otherwise>
+			</c:choose>
             <button type="submit" class="btn-submit">신청</button>
         </div>
     </form>
