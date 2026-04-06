@@ -207,7 +207,7 @@ function initLeaveForm() {
 let confirmCallback = null;
 
 function approveLeave(form) {
-    openConfirmModal("휴가를 승인하시겠습니까?", function () {
+    openConfirmModal("휴가를 승인하시겠습니까?", function() {
         form.submit();
     });
 }
@@ -226,7 +226,7 @@ function closeConfirmModal() {
     confirmCallback = null;
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function() {
     const confirmYes = document.getElementById("confirmYes");
 
     if (confirmYes) {
@@ -235,4 +235,12 @@ document.addEventListener("DOMContentLoaded", function () {
             closeConfirmModal();
         });
     }
+
+    closeConfirmModal();
+    confirmCallback = null;
+});
+
+window.addEventListener("pageshow", function () {
+    closeConfirmModal();
+    confirmCallback = null;
 });
