@@ -1,9 +1,12 @@
 package com.hrms.att.service;
 
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.hrms.att.dao.OvertimeDAO;
 import com.hrms.att.dto.OvertimeDTO;
+import com.hrms.att.dto.RequestDTO;
 import com.hrms.common.db.DatabaseConnection;
 import com.hrms.emp.dao.EmpDAO;
 import com.hrms.org.dao.DeptDAO;
@@ -187,5 +190,41 @@ public class OvertimeService {
                 e.printStackTrace();
             }
         }
+    }
+    
+    //초과근무 신청 리스트
+    public List<RequestDTO> getMyOvertimeList(int empId, int year, int month) {
+
+        List<OvertimeDTO> list = overtimeDAO.getMyListByMonth(empId, year, month);
+
+        List<RequestDTO> result = new ArrayList<>();
+
+        for (OvertimeDTO dto : list) {
+
+            RequestDTO r = new RequestDTO();
+
+            r.setId(dto.getOtId());
+            r.setDate(
+                    dto.getOtDate() + " " +
+                    dto.getStartTime().toString().substring(0,5) + " ~ " +
+                    dto.getEndTime().toString().substring(0,5)
+                );
+            r.setType("초과근무");
+            r.setStatus(dto.getStatus());
+            r.setReason(dto.getReason());
+
+            result.add(r);
+        }
+
+        return result;
+    }
+    
+    //초과근무 상세 정보
+    public OvertimeDTO getOvertimeDetail(int id) {
+        return overtimeDAO.findById(id);
+    }
+    
+    public boolean cancelOvertime(int id, int empId) {
+        return overtimeDAO.cancel(id, empId);
     }
 }

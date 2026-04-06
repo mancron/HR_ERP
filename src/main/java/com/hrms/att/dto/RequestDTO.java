@@ -14,6 +14,11 @@ public class RequestDTO {
     private String approverName;
     private String approveDate;
     private String rejectReason;
+    private String deptName;
+    private String position;
+
+    private String approverDept;
+    private String approverPosition;
 	public int getId() {
 		return id;
 	}
@@ -73,5 +78,29 @@ public class RequestDTO {
 	}
 	public void setApplyDate(String applyDate) {
 		this.applyDate = applyDate;
+	}
+	public String getDeptName() {
+		return deptName;
+	}
+	public void setDeptName(String deptName) {
+		this.deptName = deptName;
+	}
+	public String getPosition() {
+		return position;
+	}
+	public void setPosition(String position) {
+		this.position = position;
+	}
+	public String getApproverDept() {
+		return approverDept;
+	}
+	public void setApproverDept(String approverDept) {
+		this.approverDept = approverDept;
+	}
+	public String getApproverPosition() {
+		return approverPosition;
+	}
+	public void setApproverPosition(String approverPosition) {
+		this.approverPosition = approverPosition;
 	}
 }

@@ -1,7 +1,9 @@
 package com.hrms.att.controller;
 
 import com.hrms.att.dto.OvertimeDTO;
+import com.hrms.att.dto.RequestDTO;
 import com.hrms.att.service.OvertimeService;
+import com.hrms.emp.dto.EmpDTO;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -10,6 +12,8 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.sql.Date;
 import java.sql.Time;
+import java.time.LocalDate;
+import java.util.List;
 
 @WebServlet("/att/overtime/req")
 public class OvertimeRequestServlet extends HttpServlet {
@@ -20,7 +24,29 @@ public class OvertimeRequestServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // 신청 화면으로 이동
+        int empId = getLoginEmpId(request, response);
+        if (empId == -1) return;
+
+        String monthParam = request.getParameter("month");
+
+        LocalDate now = LocalDate.now();
+        int year = now.getYear();
+        int month = now.getMonthValue();
+
+        if (monthParam != null && !monthParam.isEmpty()) {
+            String[] parts = monthParam.split("-");
+            year = Integer.parseInt(parts[0]);
+            month = Integer.parseInt(parts[1]);
+        }
+
+        String selectedMonth = year + "-" + String.format("%02d", month);
+
+        // 🔥 Service 호출 변경
+        List<RequestDTO> list = service.getMyOvertimeList(empId, year, month);
+
+        request.setAttribute("list", list);
+        request.setAttribute("month", selectedMonth);
+
         request.getRequestDispatcher("/WEB-INF/jsp/att/overtimeRequest.jsp")
                .forward(request, response);
     }
@@ -29,6 +55,11 @@ public class OvertimeRequestServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+    	request.setCharacterEncoding("UTF-8");
+
+        int empcheckId = getLoginEmpId(request, response);
+        if (empcheckId == -1) return;
+    	
         try {
             // 1. 로그인 사용자
             HttpSession session = request.getSession();
@@ -86,5 +117,17 @@ public class OvertimeRequestServlet extends HttpServlet {
             request.getRequestDispatcher("/WEB-INF/jsp/error.jsp")
                    .forward(request, response);
         }
+    }
+    
+    private int getLoginEmpId(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HttpSession session = request.getSession();
+        EmpDTO loginUser = (EmpDTO) session.getAttribute("loginUser");
+
+        if (loginUser == null) {
+            response.sendRedirect(request.getContextPath() + "/auth/login.do");
+            return -1;
+        }
+
+        return loginUser.getEmp_id();
     }
 }

@@ -2,6 +2,7 @@ package com.hrms.att.dto;
 
 import java.sql.Date;
 import java.sql.Time;
+import java.sql.Timestamp;
 
 public class OvertimeDTO {
 
@@ -14,9 +15,16 @@ public class OvertimeDTO {
     private String reason;
     private String status;
     private int approverId;
-
-    // getter / setter
-
+    private Timestamp approvedAt;
+    private Timestamp createdAt;
+    private String empName;
+    private String position;
+    private String deptName;
+    private String approverName;
+    private String approverPosition;
+    private String approverDept;
+    
+    
     public int getOtId() {
         return otId;
     }
@@ -88,4 +96,69 @@ public class OvertimeDTO {
     public void setApproverId(int approverId) {
         this.approverId = approverId;
     }
+
+	public Timestamp getApprovedAt() {
+		return approvedAt;
+	}
+
+	public void setApprovedAt(Timestamp approvedAt) {
+		this.approvedAt = approvedAt;
+	}
+
+	public Timestamp getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(Timestamp createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public String getEmpName() {
+		return empName;
+	}
+
+	public void setEmpName(String empName) {
+		this.empName = empName;
+	}
+
+	public String getPosition() {
+		return position;
+	}
+
+	public void setPosition(String position) {
+		this.position = position;
+	}
+
+	public String getDeptName() {
+		return deptName;
+	}
+
+	public void setDeptName(String deptName) {
+		this.deptName = deptName;
+	}
+
+	public String getApproverName() {
+		return approverName;
+	}
+
+	public void setApproverName(String approverName) {
+		this.approverName = approverName;
+	}
+
+	public String getApproverPosition() {
+		return approverPosition;
+	}
+
+	public void setApproverPosition(String approverPosition) {
+		this.approverPosition = approverPosition;
+	}
+
+	public String getApproverDept() {
+		return approverDept;
+	}
+
+	public void setApproverDept(String approverDept) {
+		this.approverDept = approverDept;
+	}
+    
 }

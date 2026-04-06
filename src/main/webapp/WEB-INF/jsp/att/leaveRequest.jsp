@@ -6,7 +6,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HR ERP - 휴가 신청</title>
 <link rel="stylesheet"
-	href="<c:out value='${pageContext.request.contextPath}/css/att/attendance.css'/>">
+	href="${pageContext.request.contextPath}/css/att/common/requestList.css">
+	<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/css/att/common/requestDetail.css">
 <link rel="stylesheet"
 	href="<c:out value='${pageContext.request.contextPath}/css/att/leave.css'/>">
 <link rel="stylesheet"
@@ -98,11 +100,13 @@
 </div>
 <script>
 	const contextPath = "${pageContext.request.contextPath}";
+	const currentPath = "/att/leave";
 </script>
 <script
 	src="<c:out value='${pageContext.request.contextPath}/js/sidebar.js'/>"></script>
 <script src="${pageContext.request.contextPath}/js/att/leave.js"></script>
 <script src="${pageContext.request.contextPath}/js/att/common/toast.js"></script>
-<script src="${pageContext.request.contextPath}/js/att/common/requestDetail.js"></script>
+<script
+	src="${pageContext.request.contextPath}/js/att/common/requestDetail.js"></script>
 
 <jsp:include page="/WEB-INF/jsp/att/common/requestDetail.jsp" />

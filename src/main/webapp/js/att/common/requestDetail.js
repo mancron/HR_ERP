@@ -1,6 +1,6 @@
 function openDetail(id) {
 
-    fetch(contextPath + "/att/leave/detail?id=" + id)
+    fetch(contextPath + currentPath + "/detail?id=" + id)
         .then(res => res.json())
         .then(data => {
 
@@ -25,6 +25,25 @@ function openDetail(id) {
 
             document.getElementById("requestModal").style.display = "flex";
         });
+}
+
+function cancelRequest(id) {
+
+    if (!confirm("신청을 취소하시겠습니까?")) return;
+
+    fetch(contextPath + currentPath + "/cancel", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "id=" + id
+    })
+    .then(res => res.text())
+    .then(() => {
+        alert("취소되었습니다.");
+        location.reload();
+    })
+    .catch(err => console.error(err));
 }
 
 function closeModal() {

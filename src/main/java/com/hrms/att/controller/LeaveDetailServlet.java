@@ -15,30 +15,41 @@ import com.hrms.att.service.LeaveService;
 @WebServlet("/att/leave/detail")
 public class LeaveDetailServlet extends HttpServlet {
 
-    private LeaveService service = new LeaveService();
+	private LeaveService service = new LeaveService();
 
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
-        int id = Integer.parseInt(req.getParameter("id"));
+		int id = Integer.parseInt(req.getParameter("id"));
 
-        LeaveDTO dto = service.getLeaveDetail(id);
+		LeaveDTO dto = service.getLeaveDetail(id);
 
-        RequestDTO r = new RequestDTO();
+		RequestDTO r = new RequestDTO();
 
-        r.setId(dto.getLeaveId());
-        r.setDate(dto.getStartDate() + " ~ " + dto.getEndDate());
-        r.setType(dto.getLeaveType());
-        r.setStatus(dto.getStatus());
-        r.setReason(dto.getReason());
-        r.setApplyDate(dto.getCreatedAt() != null ? dto.getCreatedAt().toString() : "-");
+		r.setId(dto.getLeaveId());
+		r.setDate(dto.getStartDate() + " ~ " + dto.getEndDate());
+		r.setType(dto.getLeaveType());
+		r.setStatus(dto.getStatus());
+		r.setReason(dto.getReason());
+		r.setApplyDate(dto.getCreatedAt() != null ? dto.getCreatedAt().toString() : "-");
 
-        r.setEmpName(dto.getEmpName());
-        r.setApproverName(dto.getApproverName());
-        r.setApproveDate(dto.getApprovedAt() != null ? dto.getApprovedAt().toString() : "-");
-        r.setRejectReason(dto.getRejectReason());
+		// 🔥 신청자 (이름 + 부서 + 직급)
+		String empInfo = dto.getEmpName();
+		if (dto.getDeptName() != null && dto.getPosition() != null) {
+			empInfo += " (" + dto.getDeptName() + " / " + dto.getPosition() + ")";
+		}
+		r.setEmpName(empInfo != null ? empInfo : "-");
 
-        resp.setContentType("application/json;charset=UTF-8");
+		// 🔥 승인자 (이름 + 부서 + 직급)
+		String approverInfo = dto.getApproverName();
+		if (dto.getApproverDept() != null && dto.getApproverPosition() != null) {
+			approverInfo += " (" + dto.getApproverDept() + " / " + dto.getApproverPosition() + ")";
+		}
+		r.setApproverName(approverInfo != null ? approverInfo : "-");
+		r.setApproveDate(dto.getApprovedAt() != null ? dto.getApprovedAt().toString() : "-");
+		r.setRejectReason(dto.getRejectReason());
 
-        new Gson().toJson(r, resp.getWriter());
-    }
+		resp.setContentType("application/json;charset=UTF-8");
+
+		new Gson().toJson(r, resp.getWriter());
+	}
 }

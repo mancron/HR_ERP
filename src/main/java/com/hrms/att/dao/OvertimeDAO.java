@@ -3,8 +3,13 @@ package com.hrms.att.dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.hrms.att.dto.OvertimeDTO;
+import com.hrms.common.db.DatabaseConnection;
 
 public class OvertimeDAO {
 
@@ -79,4 +84,189 @@ public class OvertimeDAO {
 	    return null;
 	}
 	
+	//초과근무 신청 리스트
+	public List<OvertimeDTO> getMyList(int empId) {
+
+	    List<OvertimeDTO> list = new ArrayList<OvertimeDTO>();
+
+	    String sql = "SELECT ot_id, emp_id, ot_date, start_time, end_time, " +
+	                 "ot_hours, reason, status, approver_id, approved_at, created_at " +
+	                 "FROM overtime_request " +
+	                 "WHERE emp_id = ? " +
+	                 "ORDER BY created_at DESC";
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, empId);
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+
+	            while (rs.next()) {
+
+	                OvertimeDTO dto = new OvertimeDTO();
+
+	                dto.setOtId(rs.getInt("ot_id"));
+	                dto.setEmpId(rs.getInt("emp_id"));
+	                dto.setOtDate(rs.getDate("ot_date"));
+	                dto.setStartTime(rs.getTime("start_time"));
+	                dto.setEndTime(rs.getTime("end_time"));
+	                dto.setOtHours(rs.getDouble("ot_hours"));
+	                dto.setReason(rs.getString("reason"));
+	                dto.setStatus(rs.getString("status"));
+	                dto.setApproverId(rs.getInt("approver_id"));
+
+	                Timestamp approvedAt = rs.getTimestamp("approved_at");
+	                if (approvedAt != null) {
+	                    dto.setApprovedAt(approvedAt);
+	                }
+
+	                Timestamp createdAt = rs.getTimestamp("created_at");
+	                if (createdAt != null) {
+	                    dto.setCreatedAt(createdAt);
+	                }
+
+	                list.add(dto);
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        throw new RuntimeException("초과근무 목록 조회 실패", e);
+	    }
+
+	    return list;
+	}
+	
+	//초과근무 월별 신청 리스트
+	public List<OvertimeDTO> getMyListByMonth(int empId, int year, int month) {
+
+	    List<OvertimeDTO> list = new ArrayList<>();
+
+	    String sql = "SELECT * FROM overtime_request " +
+	                 "WHERE emp_id = ? " +
+	                 "AND YEAR(ot_date) = ? " +
+	                 "AND MONTH(ot_date) = ? " +
+	                 "AND status != '취소' " +
+	                 "ORDER BY created_at DESC";
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, empId);
+	        pstmt.setInt(2, year);
+	        pstmt.setInt(3, month);
+
+	        ResultSet rs = pstmt.executeQuery();
+
+	        while (rs.next()) {
+	            OvertimeDTO dto = new OvertimeDTO();
+
+	            dto.setOtId(rs.getInt("ot_id"));
+	            dto.setEmpId(rs.getInt("emp_id"));
+	            dto.setOtDate(rs.getDate("ot_date"));
+	            dto.setStartTime(rs.getTime("start_time"));
+	            dto.setEndTime(rs.getTime("end_time"));
+	            dto.setOtHours(rs.getDouble("ot_hours"));
+	            dto.setReason(rs.getString("reason"));
+	            dto.setStatus(rs.getString("status"));
+
+	            list.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return list;
+	}
+	
+	//초과근무 상세정보 불러오기
+	public OvertimeDTO findById(int id) {
+
+	    String sql =
+	        "SELECT o.*, " +
+	        "       e.emp_name, d.dept_name, jp.position_name, " +
+	        "       a.emp_name AS approver_name, " +
+	        "       ajp.position_name AS approver_position, " +
+	        "       ad.dept_name AS approver_dept " +
+	        "FROM overtime_request o " +
+	        "LEFT JOIN employee e ON o.emp_id = e.emp_id " +
+	        "LEFT JOIN department d ON e.dept_id = d.dept_id " +
+	        "LEFT JOIN job_position jp ON e.position_id = jp.position_id " +   // 🔥 수정
+	        "LEFT JOIN employee a ON o.approver_id = a.emp_id " +
+	        "LEFT JOIN department ad ON a.dept_id = ad.dept_id " +
+	        "LEFT JOIN job_position ajp ON a.position_id = ajp.position_id " + // 🔥 수정
+	        "WHERE o.ot_id = ?";
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, id);
+	        ResultSet rs = pstmt.executeQuery();
+
+	        if (rs.next()) {
+
+	            OvertimeDTO dto = new OvertimeDTO();
+
+	            // 기본
+	            dto.setOtId(rs.getInt("ot_id"));
+	            dto.setEmpId(rs.getInt("emp_id"));
+	            dto.setOtDate(rs.getDate("ot_date"));
+	            dto.setStartTime(rs.getTime("start_time"));
+	            dto.setEndTime(rs.getTime("end_time"));
+	            dto.setOtHours(rs.getDouble("ot_hours"));
+	            dto.setReason(rs.getString("reason"));
+	            dto.setStatus(rs.getString("status"));
+	            dto.setApproverId(rs.getInt("approver_id"));
+
+	            // 시간
+	            dto.setApprovedAt(rs.getTimestamp("approved_at"));
+	            dto.setCreatedAt(rs.getTimestamp("created_at"));
+
+	            // 신청자
+	            dto.setEmpName(rs.getString("emp_name"));
+	            dto.setDeptName(rs.getString("dept_name"));
+	            dto.setPosition(rs.getString("position_name")); // 🔥 정확
+
+	            // 승인자
+	            dto.setApproverName(rs.getString("approver_name"));
+	            dto.setApproverDept(rs.getString("approver_dept"));
+	            dto.setApproverPosition(rs.getString("approver_position"));
+
+	            return dto;
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        throw new RuntimeException("초과근무 상세 조회 실패", e);
+	    }
+
+	    return null;
+	}
+	
+	public boolean cancel(int id, int empId) {
+
+	    String sql =
+	        "UPDATE overtime_request " +
+	        "SET status = '취소' " +
+	        "WHERE ot_id = ? " +
+	        "AND emp_id = ? " +
+	        "AND status = '대기'";
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, id);
+	        pstmt.setInt(2, empId);
+
+	        int result = pstmt.executeUpdate();
+
+	        return result > 0;
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        throw new RuntimeException("초과근무 취소 실패", e);
+	    }
+	}
 }

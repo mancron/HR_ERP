@@ -7,6 +7,10 @@
 <title>HR ERP - 초과근무 신청</title>
 
 <link rel="stylesheet"
+	href="${pageContext.request.contextPath}/css/att/common/requestList.css">
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/css/att/common/requestDetail.css">
+<link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/overtime.css">
 </head>
 
@@ -19,54 +23,71 @@
 	<jsp:include page="/WEB-INF/jsp/common/header.jsp" />
 
 	<main class="app-content">
+		<h2>초과근무 신청</h2>
+		<div class="overtime-container">
 
-		<!-- 카드 형태 -->
-		<div class="att-card">
-			<h3>초과근무 신청</h3>
+			<!-- 🔥 좌측: 신청 -->
+			<div class="overtime-left">
 
-			<form action="${pageContext.request.contextPath}/att/overtime/req" method="post">
+				<div class="att-card">
 
-				<table class="form-table">
 
-					<tr>
-						<th>근무 날짜</th>
-						<td>
-							<input type="date" name="otDate" required>
-						</td>
-					</tr>
+					<form action="${pageContext.request.contextPath}/att/overtime/req"
+						method="post">
 
-					<tr>
-						<th>시작 시간</th>
-						<td>
-							<input type="time" name="startTime" required>
-						</td>
-					</tr>
+						<table class="form-table">
 
-					<tr>
-						<th>종료 시간</th>
-						<td>
-							<input type="time" name="endTime" required>
-						</td>
-					</tr>
+							<tr>
+								<th>근무 날짜</th>
+								<td><input type="date" name="otDate" required></td>
+							</tr>
 
-					<tr>
-						<th>사유</th>
-						<td>
-							<textarea name="reason" rows="4" cols="50" required></textarea>
-						</td>
-					</tr>
+							<tr>
+								<th>시작 시간</th>
+								<td><input type="time" name="startTime" required></td>
+							</tr>
 
-				</table>
+							<tr>
+								<th>종료 시간</th>
+								<td><input type="time" name="endTime" required></td>
+							</tr>
 
-				<br>
+							<tr>
+								<th>사유</th>
+								<td><textarea name="reason" rows="4" cols="50" required></textarea>
+								</td>
+							</tr>
 
-				<div class="btn-group">
-					<button type="submit" class="att-btn att-btn-in">신청</button>
-					<button type="button" class="att-btn att-btn-out"
-						onclick="history.back()">취소</button>
+						</table>
+
+						<br>
+
+						<div class="btn-group">
+							<button type="submit" class="att-btn att-btn-in">신청</button>
+						</div>
+
+					</form>
 				</div>
 
-			</form>
+			</div>
+
+			<!-- 🔥 우측: 리스트 -->
+			<div class="overtime-right">
+				<form method="get"
+					action="${pageContext.request.contextPath}/att/overtime/req"
+					style="margin-bottom: 10px;">
+					<input type="month" name="month" value="<c:out value='${month}'/>">
+					<button type="submit">조회</button>
+				</form>
+				<div class="att-card">
+					<h3>신청 내역</h3>
+
+					<!-- 공통 리스트 -->
+					<jsp:include page="/WEB-INF/jsp/att/common/requestList.jsp" />
+				</div>
+
+			</div>
+
 		</div>
 
 	</main>
@@ -74,16 +95,24 @@
 
 <!-- JS -->
 <script>
-document.querySelector("form").addEventListener("submit", function(e) {
+	document.querySelector("form").addEventListener("submit", function(e) {
 
-	const start = document.querySelector("input[name='startTime']").value;
-	const end = document.querySelector("input[name='endTime']").value;
+		const start = document.querySelector("input[name='startTime']").value;
+		const end = document.querySelector("input[name='endTime']").value;
 
-	if (start >= end) {
-		alert("종료시간이 시작시간보다 늦어야 합니다.");
-		e.preventDefault();
-	}
-});
+		if (start >= end) {
+			alert("종료시간이 시작시간보다 늦어야 합니다.");
+			e.preventDefault();
+		}
+	});
+</script>
+<script>
+	const contextPath = "${pageContext.request.contextPath}";
+	const currentPath = "/att/overtime";
 </script>
 
+<script
+	src="${pageContext.request.contextPath}/js/att/common/requestDetail.js"></script>
 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
+
+<jsp:include page="/WEB-INF/jsp/att/common/requestDetail.jsp" />
