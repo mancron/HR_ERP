@@ -418,7 +418,8 @@ public class LeaveDAO {
 	            dto.setEmpName(rs.getString("emp_name"));
 	            dto.setPosition(rs.getString("position_name"));
 	            dto.setDeptName(rs.getString("dept_name"));
-
+	            
+	            dto.setApproverId(rs.getInt("approver_id"));
 	            dto.setApproverName(rs.getString("approver_name"));
 	            dto.setApproverPosition(rs.getString("approver_position"));
 	            dto.setApproverDept(rs.getString("approver_dept"));
