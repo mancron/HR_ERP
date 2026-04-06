@@ -23,15 +23,19 @@
         <form action="${pageContext.request.contextPath}/eval/status" method="get" class="filter-form" id="filterForm">
             <select name="year">
                 <c:forEach var="y" items="${yearList}">
-                    <option value="${y}" ${selectedYear == y ? 'selected' : ''}>${y}년</option>
+                    <c:if test="${y != 0}">
+                        <option value="${y}" ${selectedYear == y ? 'selected' : ''}>${y}년</option>
+                    </c:if>
                 </c:forEach>
             </select>
             <select name="period">
+                <option value="전체"   ${selectedPeriod == '전체'   ? 'selected' : ''}>전체 기간</option>
                 <option value="상반기" ${selectedPeriod == '상반기' ? 'selected' : ''}>상반기</option>
                 <option value="하반기" ${selectedPeriod == '하반기' ? 'selected' : ''}>하반기</option>
                 <option value="연간"   ${selectedPeriod == '연간'   ? 'selected' : ''}>연간</option>
             </select>
             <select name="type">
+                <option value="전체"   ${selectedType == '전체'   ? 'selected' : ''}>전체 유형</option>
                 <option value="상위평가" ${selectedType == '상위평가' ? 'selected' : ''}>상위평가</option>
                 <option value="자기평가" ${selectedType == '자기평가' ? 'selected' : ''}>자기평가</option>
                 <option value="동료평가" ${selectedType == '동료평가' ? 'selected' : ''}>동료평가</option>
@@ -67,7 +71,10 @@
         <table class="status-table" id="statusTable">
             <thead>
                 <tr>
-                    <th>이름</th><th>부서</th><th>점수</th><th>등급</th>
+                    <th>이름</th><th>부서</th>
+                    <c:if test="${selectedPeriod == '전체'}"><th>기간</th></c:if>
+                    <c:if test="${selectedType == '전체'}"><th>유형</th></c:if>
+                    <th>점수</th><th>등급</th>
                     <th>평가 상태</th><th>평가자</th><th>확정일시</th><th>상세</th>
                 </tr>
             </thead>
@@ -76,6 +83,8 @@
                     <tr>
                         <td>${item.empName}</td>
                         <td>${item.deptName}</td>
+                        <c:if test="${selectedPeriod == '전체'}"><td>${item.evalPeriod}</td></c:if>
+                        <c:if test="${selectedType == '전체'}"><td>${item.evalType}</td></c:if>
                         <td>
                             <c:choose>
                                 <c:when test="${item.score != null}">

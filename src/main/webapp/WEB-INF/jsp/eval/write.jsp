@@ -42,48 +42,70 @@
             </c:if>
 
             <div class="form-grid">
-                <%-- 평가 유형: 변경 시 대상자 목록 AJAX 갱신 --%>
-                <div class="form-group">
-                    <label>평가 유형 *</label>
-                    <select name="evalType" id="sel_evalType" onchange="onEvalTypeChange(); checkLoadable();">
-                        <option value="상위평가" ${(empty evalData && (empty selectedEvalType || selectedEvalType == '상위평가')) || evalData.evalType == '상위평가' ? 'selected' : ''}>상위평가</option>
-                        <option value="자기평가" ${evalData.evalType == '자기평가' || selectedEvalType == '자기평가' ? 'selected' : ''}>자기평가</option>
-                        <option value="동료평가" ${evalData.evalType == '동료평가' || selectedEvalType == '동료평가' ? 'selected' : ''}>동료평가</option>
-                    </select>
-                </div>
+                <c:choose>
+                <%-- ═══ 수정 모드: 4개 필드 완전 고정 (변경 불가) ═══ --%>
+                <c:when test="${not empty evalData}">
+                    <%-- hidden으로 실제 값 전송 --%>
+                    <input type="hidden" name="evalType"   value="${evalData.evalType}">
+                    <input type="hidden" name="empId"      value="${evalData.empId}">
+                    <input type="hidden" name="evalYear"   value="${evalData.evalYear}">
+                    <input type="hidden" name="evalPeriod" value="${evalData.evalPeriod}">
 
-                <%-- 평가 대상자: evalType에 따라 동적 갱신 --%>
-                <div class="form-group">
-                    <label>평가 대상자 *</label>
-                    <select name="empId" id="sel_empId" required onchange="checkLoadable()">
-                        <option value="">대상자를 선택하세요</option>
-                        <c:forEach var="emp" items="${targetList}">
-                            <option value="${emp.empId}"
-                                ${not empty evalData && evalData.empId == emp.empId ? 'selected' : ''}>
-                                ${emp.empName} (${emp.pos})
-                            </option>
-                        </c:forEach>
-                    </select>
-                </div>
+                    <div class="form-group">
+                        <label>평가 유형</label>
+                        <input type="text" class="field-readonly" value="${evalData.evalType}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>평가 대상자</label>
+                        <input type="text" class="field-readonly" value="${evalData.empName}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>평가 연도</label>
+                        <input type="text" class="field-readonly" value="${evalData.evalYear}년" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>평가 기간</label>
+                        <input type="text" class="field-readonly" value="${evalData.evalPeriod}" readonly>
+                    </div>
+                </c:when>
 
-                <div class="form-group">
-                    <label>평가 연도 *</label>
-                    <select name="evalYear" id="sel_evalYear" onchange="checkLoadable()">
-                        <c:forEach var="y" items="${yearList}">
-                            <option value="${y}"
-                                ${not empty evalData && evalData.evalYear == y ? 'selected' : ''}>${y}년</option>
-                        </c:forEach>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>평가 기간 *</label>
-                    <select name="evalPeriod" id="sel_evalPeriod" onchange="checkLoadable()">
-                        <option value="상반기" ${not empty evalData && evalData.evalPeriod == '상반기' ? 'selected' : ''}>상반기</option>
-                        <option value="하반기" ${not empty evalData && evalData.evalPeriod == '하반기' ? 'selected' : ''}>하반기</option>
-                        <option value="연간"   ${not empty evalData && evalData.evalPeriod == '연간'   ? 'selected' : ''}>연간</option>
-                    </select>
-                </div>
+                <%-- ═══ 신규 작성 모드: 선택 가능 ═══ --%>
+                <c:otherwise>
+                    <div class="form-group">
+                        <label>평가 유형 *</label>
+                        <select name="evalType" id="sel_evalType" onchange="onEvalTypeChange(); checkLoadable();">
+                            <option value="상위평가" ${empty selectedEvalType || selectedEvalType == '상위평가' ? 'selected' : ''}>상위평가</option>
+                            <option value="자기평가" ${selectedEvalType == '자기평가' ? 'selected' : ''}>자기평가</option>
+                            <option value="동료평가" ${selectedEvalType == '동료평가' ? 'selected' : ''}>동료평가</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>평가 대상자 *</label>
+                        <select name="empId" id="sel_empId" required onchange="checkLoadable()">
+                            <option value="">대상자를 선택하세요</option>
+                            <c:forEach var="emp" items="${targetList}">
+                                <option value="${emp.empId}">${emp.empName} (${emp.pos})</option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>평가 연도 *</label>
+                        <select name="evalYear" id="sel_evalYear" onchange="checkLoadable()">
+                            <c:forEach var="y" items="${yearList}">
+                                <option value="${y}">${y}년</option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>평가 기간 *</label>
+                        <select name="evalPeriod" id="sel_evalPeriod" onchange="checkLoadable()">
+                            <option value="상반기">상반기</option>
+                            <option value="하반기">하반기</option>
+                            <option value="연간">연간</option>
+                        </select>
+                    </div>
+                </c:otherwise>
+                </c:choose>
             </div>
 
             <%-- ── 불러오기 버튼: 신규 작성 모드에서만 표시 ── --%>
@@ -201,13 +223,15 @@ function updateEvaluation() {
     badge.style.color = color;
 }
 
-// ── 평가 유형 변경 시 대상자 목록 AJAX 갱신 ─────────────
+// ── 수정 모드 여부 (JSP 서버 렌더링) ────────────────────
+const isEditMode = ${not empty evalData ? 'true' : 'false'};
+
+// ── 평가 유형 변경 시 대상자 목록 AJAX 갱신 (신규 작성만) ──
 function onEvalTypeChange() {
+    if (isEditMode) return; // 수정 모드에서는 변경 불가
     const evalType = document.getElementById('sel_evalType').value;
     const empSel   = document.getElementById('sel_empId');
-    const prevVal  = empSel.value;
 
-    // 로딩 표시
     empSel.innerHTML = '<option value="">조회 중...</option>';
     empSel.disabled  = true;
 
@@ -223,7 +247,6 @@ function onEvalTypeChange() {
             const opt = document.createElement('option');
             opt.value       = emp.empId;
             opt.textContent = emp.empName + ' (' + emp.pos + ')';
-            if (String(emp.empId) === prevVal) opt.selected = true;
             empSel.appendChild(opt);
         });
         empSel.disabled = false;
@@ -235,8 +258,9 @@ function onEvalTypeChange() {
     });
 }
 
-// ── 불러오기 버튼 활성화 (4개 조건 모두 선택 시) ─────────
+// ── 불러오기 버튼 활성화 (신규 작성 + 4개 조건 모두 선택) ─
 function checkLoadable() {
+    if (isEditMode) return;
     const empId  = document.getElementById('sel_empId')?.value;
     const year   = document.getElementById('sel_evalYear')?.value;
     const period = document.getElementById('sel_evalPeriod')?.value;

@@ -30,9 +30,10 @@ public class EvalStatusServlet extends HttpServlet {
         boolean isHr = "HR담당자".equals(userRole);
 
         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-        int    year   = request.getParameter("year")   != null ? Integer.parseInt(request.getParameter("year"))   : currentYear;
-        String period = request.getParameter("period") != null ? request.getParameter("period") : "하반기";
-        String type   = request.getParameter("type")   != null ? request.getParameter("type")   : "상위평가";
+        // period="전체" → 전체 기간 / type="전체" → 전체 유형
+        int    year   = request.getParameter("year") != null ? Integer.parseInt(request.getParameter("year")) : currentYear;
+        String period = request.getParameter("period") != null ? request.getParameter("period") : "전체";
+        String type   = request.getParameter("type")   != null ? request.getParameter("type")   : "전체";
 
         String searchTarget    = request.getParameter("searchTarget");
         String searchEvaluator = request.getParameter("searchEvaluator");
