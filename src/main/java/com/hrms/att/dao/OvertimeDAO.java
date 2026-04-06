@@ -401,7 +401,7 @@ public class OvertimeDAO {
 	        "SELECT COUNT(*) FROM overtime_request " +
 	        "WHERE emp_id = ? " +
 	        "AND ot_date = ? " +
-	        "AND status IN ('대기', '승인')";  // 🔥 핵심
+	        "AND status IN ('대기', '승인')";
 
 	    try (Connection conn = DatabaseConnection.getConnection();
 	         PreparedStatement ps = conn.prepareStatement(sql)) {
