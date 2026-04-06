@@ -70,10 +70,13 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <%-- 자기 자신은 select 비활성화 --%>
+												<%-- 자기 자신은 select 비활성화 --%>
 												<select name="newRole" class="form-control select-sm">
 												    <c:forEach var="role" items="${validRoles}">
-												        <option value="${role}"><c:out value="${role}" /></option>
+												        <option value="${role}"
+												                ${role == account.currentRole ? 'selected' : ''}>
+												            <c:out value="${role}" />
+												        </option>
 												    </c:forEach>
 												</select>
                                             </td>
