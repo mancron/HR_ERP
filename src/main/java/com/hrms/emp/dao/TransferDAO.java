@@ -33,22 +33,24 @@ public class TransferDAO {
 	 * 2. 발령 이력 테이블에 내역 삽입 (INSERT INTO personnel_history) 설계서 흐름도: [발력이력 등록] 단계
 	 */
 	public int insertPersonnelHistory(Connection con, HistoryDTO dto) throws SQLException {
-        String sql = "INSERT INTO personnel_history " +
-                     "(emp_id, change_type, change_date, from_dept_id, to_dept_id, " +
-                     "from_position_id, to_position_id, reason, approved_by) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		String sql = "INSERT INTO personnel_history " +
+	             "(emp_id, change_type, change_date, from_dept_id, to_dept_id, " +
+	             "from_position_id, from_role, to_position_id, to_role, reason, approved_by) " +
+	             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement pstmt = null;
         try {
-            pstmt = con.prepareStatement(sql);
-            pstmt.setInt(1, dto.getEmp_id());
-            pstmt.setString(2, dto.getChange_type());
-            pstmt.setObject(3, dto.getChange_date());
-            pstmt.setInt(4, dto.getFrom_dept_id());
-            pstmt.setInt(5, dto.getTo_dept_id());
-            pstmt.setInt(6, dto.getFrom_position_id());
-            pstmt.setInt(7, dto.getTo_position_id());
-            pstmt.setString(8, dto.getReason());
-            pstmt.setInt(9, dto.getApproved_by());
+        	pstmt = con.prepareStatement(sql);
+        	pstmt.setInt(1, dto.getEmp_id());
+        	pstmt.setString(2, dto.getChange_type());
+        	pstmt.setObject(3, dto.getChange_date());
+        	pstmt.setInt(4, dto.getFrom_dept_id());
+        	pstmt.setInt(5, dto.getTo_dept_id());
+        	pstmt.setInt(6, dto.getFrom_position_id());
+        	pstmt.setString(7, dto.getFrom_role());
+        	pstmt.setInt(8, dto.getTo_position_id());
+        	pstmt.setString(9, dto.getTo_role());
+        	pstmt.setString(10, dto.getReason());
+        	pstmt.setInt(11, dto.getApproved_by());
             return pstmt.executeUpdate();
         } finally {
             if (pstmt != null) pstmt.close();

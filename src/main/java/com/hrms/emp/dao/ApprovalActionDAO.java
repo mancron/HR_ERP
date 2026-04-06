@@ -5,6 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import com.hrms.emp.dto.HistoryDTO;
+
 public class ApprovalActionDAO {
 
     // 부서장 여부
@@ -292,4 +294,120 @@ public class ApprovalActionDAO {
             if (pstmt != null) pstmt.close();
         }
     }
+    
+    //휴직,복직,퇴직이 최종 승인됐을 때 인사발령 이력에 입력
+    public int insertPersonnelHistory(Connection con, HistoryDTO dto) throws SQLException {
+        String sql = "INSERT INTO personnel_history " +
+                     "(emp_id, change_type, change_date, from_dept_id, to_dept_id, " +
+                     "from_position_id, from_role, to_position_id, to_role, reason, approved_by) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, dto.getEmp_id());
+            pstmt.setString(2, dto.getChange_type());
+            pstmt.setObject(3, dto.getChange_date());
+            pstmt.setObject(4, dto.getFrom_dept_id() > 0 ? dto.getFrom_dept_id() : null, java.sql.Types.INTEGER);
+            pstmt.setObject(5, dto.getTo_dept_id() > 0 ? dto.getTo_dept_id() : null, java.sql.Types.INTEGER);
+            pstmt.setObject(6, dto.getFrom_position_id() > 0 ? dto.getFrom_position_id() : null, java.sql.Types.INTEGER);
+            pstmt.setObject(7, dto.getFrom_role(), java.sql.Types.VARCHAR);
+            pstmt.setObject(8, dto.getTo_position_id() > 0 ? dto.getTo_position_id() : null, java.sql.Types.INTEGER);
+            pstmt.setObject(9, dto.getTo_role(), java.sql.Types.VARCHAR);
+            pstmt.setString(10, dto.getReason());
+            pstmt.setObject(11, dto.getApproved_by() > 0 ? dto.getApproved_by() : null, java.sql.Types.INTEGER);
+            return pstmt.executeUpdate();
+        } finally {
+            if (pstmt != null) pstmt.close();
+        }
+    }
+    
+    // 직원의 현재 dept_id, status 조회
+    public int[] getEmpDeptAndStatus(Connection con, int empId) throws SQLException {
+        String sql = "SELECT dept_id FROM employee WHERE emp_id = ?";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, empId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) return new int[]{ rs.getInt("dept_id") };
+            return new int[]{ 0 };
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
+    
+ // 휴직/복직 신청 사유 조회
+    public String getLeaveReason(Connection con, int requestId) throws SQLException {
+        String sql = "SELECT reason FROM leave_of_absence_request WHERE request_id = ?";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, requestId);
+            rs = pstmt.executeQuery();
+            return rs.next() ? rs.getString("reason") : null;
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
+
+    // 퇴직 신청 사유 조회
+    public String getResignReason(Connection con, int requestId) throws SQLException {
+        String sql = "SELECT reason FROM resign_request WHERE request_id = ?";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, requestId);
+            rs = pstmt.executeQuery();
+            return rs.next() ? rs.getString("reason") : null;
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
+    
+    // 휴직,복직,퇴직 때 신청했던 발령 날짜 세팅
+    public String getLeaveStartDate(Connection con, int requestId) throws SQLException {
+        String sql = "SELECT start_date FROM leave_of_absence_request WHERE request_id = ?";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, requestId);
+            rs = pstmt.executeQuery();
+            return rs.next() ? rs.getString("start_date") : null;
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
+    
+    // 직원의 현재 position_id, 직책 조회
+    public int[] getEmpPositionAndRole(Connection con, int empId) throws SQLException {
+        String sql = "SELECT e.position_id, " +
+                     "(SELECT COUNT(*) FROM department WHERE manager_id = e.emp_id AND is_active = 1) AS is_manager " +
+                     "FROM employee e WHERE e.emp_id = ?";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, empId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return new int[]{
+                    rs.getInt("position_id"),
+                    rs.getInt("is_manager")  // 0이면 일반, 1이면 부서장
+                };
+            }
+            return new int[]{ 0, 0 };
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
+    
 }
