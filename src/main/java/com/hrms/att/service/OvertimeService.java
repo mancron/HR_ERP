@@ -33,16 +33,19 @@ public class OvertimeService {
 				throw new RuntimeException("부서 없음");
 			}
 
-			// ⭐ 팀장 있으면 바로 반환
-			if (dept.getManager_id() != 0) {
-				return dept.getManager_id();
+			int managerId = dept.getManager_id();
+
+			// 핵심: 자기 자신이면 스킵
+			if (managerId != 0 && managerId != empId) {
+				return managerId;
 			}
 
-			// ⭐ 없으면 상위 부서로 이동
+			// 상위 부서로 이동
 			deptId = dept.getParent_dept_id();
 		}
 
-		throw new RuntimeException("승인자 없음");
+		// 여기까지 오면 구조가 잘못된 것
+		throw new RuntimeException("승인자 없음 (조직 구조 확인 필요)");
 	}
 
 	// 신청 + 알림 (DTO 기반)
@@ -166,15 +169,14 @@ public class OvertimeService {
 				break;
 
 			case "반려":
-			    message = "초과근무가 반려되었습니다. (" 
-			            + date + " " + start + "~" + end + ")";
+				message = "초과근무가 반려되었습니다. (" + date + " " + start + "~" + end + ")";
 
-			    if (reason != null && !reason.isEmpty()) {
-			        message += " 사유: " + reason;
-			    }
+				if (reason != null && !reason.isEmpty()) {
+					message += " 사유: " + reason;
+				}
 
-			    type = "OVERTIME_REJECTED";
-			    break;
+				type = "OVERTIME_REJECTED";
+				break;
 
 			default:
 				throw new RuntimeException("잘못된 상태값");
