@@ -2,6 +2,7 @@ package com.hrms.att.controller;
 
 import com.hrms.att.dto.AnnualLeaveDTO;
 import com.hrms.att.dto.LeaveDTO;
+import com.hrms.att.dto.RequestDTO;
 import com.hrms.att.service.LeaveService;
 import com.hrms.emp.dto.EmpDTO;
 
@@ -47,7 +48,7 @@ public class LeaveRequestServlet extends HttpServlet {
 		AnnualLeaveDTO annual = leaveService.getAnnualLeave(empId);
 
 		// 리스트 조회
-		List<LeaveDTO> list = leaveService.getLeaveListByMonth(empId, year, month);
+		List<RequestDTO> list = leaveService.getLeaveListByMonth(empId, year, month);
 
 		request.setAttribute("annual", annual);
 		request.setAttribute("list", list);

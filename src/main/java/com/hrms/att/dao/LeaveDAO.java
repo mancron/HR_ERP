@@ -14,8 +14,8 @@ public class LeaveDAO {
 	// 1. 휴가 신청 (INSERT)
 	public boolean insertLeave(LeaveDTO dto) {
 		String sql = "INSERT INTO leave_request "
-				+ "(emp_id, leave_type, half_type, start_date, end_date, days, reason, status) "
-				+ "VALUES (?, ?, ?, ?, ?, ?, ?, '대기')";
+		        + "(emp_id, leave_type, half_type, start_date, end_date, days, reason, status, approver_id) "
+		        + "VALUES (?, ?, ?, ?, ?, ?, ?, '대기', ?)";
 
 		try (Connection conn = DatabaseConnection.getConnection();
 				PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -27,6 +27,7 @@ public class LeaveDAO {
 			pstmt.setDate(5, dto.getEndDate());
 			pstmt.setDouble(6, dto.getDays());
 			pstmt.setString(7, dto.getReason());
+			pstmt.setInt(8, dto.getApproverId());
 
 			return pstmt.executeUpdate() > 0;
 
@@ -222,6 +223,7 @@ public class LeaveDAO {
 		sql.append("JOIN department d ON e.dept_id = d.dept_id ");
 		sql.append("WHERE lr.status = '대기' ");
 		sql.append("AND lr.emp_id != ? ");
+		sql.append("AND lr.approver_id = ? ");
 
 		// 🔥 1. 부서 필터
 		if (dept != null && !dept.isEmpty()) {
@@ -255,13 +257,16 @@ public class LeaveDAO {
 
 			// 1. approverId 먼저 넣어야 함 (중요)
 			pstmt.setInt(idx++, approverId);
-
-			// 2. dept
+			
+			// 2. 승인자 조건 (approver_id = ?)
+			pstmt.setInt(idx++, approverId);
+			
+			// 3. dept
 			if (dept != null && !dept.isEmpty()) {
 				pstmt.setString(idx++, dept);
 			}
 
-			// 3. 날짜
+			// 4. 날짜
 			if (startDate != null && endDate != null && !startDate.isEmpty() && !endDate.isEmpty()) {
 
 				pstmt.setDate(idx++, Date.valueOf(endDate));

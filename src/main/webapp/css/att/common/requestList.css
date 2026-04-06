@@ -1,0 +1,108 @@
+@charset "UTF-8";
+
+/* =========================
+   컨테이너
+========================= */
+.request-container {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* =========================
+   테이블 (leave.css 그대로)
+========================= */
+.request-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* 헤더 */
+.request-table th {
+    background-color: #f4f6f9;
+    padding: 12px;
+    font-weight: bold;
+}
+
+/* 셀 */
+.request-table th,
+.request-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* hover */
+.request-table tbody tr:hover {
+    background-color: #fafafa;
+}
+
+/* =========================
+   기존 att-table 비율 그대로
+========================= */
+.request-table th:nth-child(1),
+.request-table td:nth-child(1) {
+    width: 60%;
+}
+
+.request-table th:nth-child(2),
+.request-table td:nth-child(2) {
+    width: 20%;
+}
+
+.request-table th:nth-child(3),
+.request-table td:nth-child(3) {
+    width: 20%;
+}
+
+/* =========================
+   상태 버튼 (상세보기용)
+========================= */
+.status-btn {
+    border: none;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+}
+
+/* 승인 */
+.status-approved {
+    background-color: #4CAF50;
+}
+
+/* 반려 */
+.status-rejected {
+    background-color: #f44336;
+}
+
+/* 대기 */
+.status-pending {
+    background-color: #ff9800;
+}
+
+/* hover 효과 */
+.status-btn:hover {
+    opacity: 0.85;
+}
+
+/* 취소 버튼 */
+.status-cancel {
+    background-color: #f44336;
+}
+
+/* =========================
+   기타
+========================= */
+.empty-row {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+}
