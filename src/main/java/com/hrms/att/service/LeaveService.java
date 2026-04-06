@@ -6,7 +6,11 @@ import com.hrms.att.dto.LeaveDTO;
 import com.hrms.att.dto.RequestDTO;
 import com.hrms.common.db.DatabaseConnection;
 import com.hrms.common.util.NotificationUtil;
+import com.hrms.emp.dao.EmpDAO;
+import com.hrms.org.dao.DeptDAO;
+import com.hrms.org.dto.DeptDTO;
 import com.hrms.sys.dao.HolidayDAO;
+import com.hrms.sys.dao.NotificationDAO;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -19,47 +23,128 @@ public class LeaveService {
 
 	private LeaveDAO leaveDAO = new LeaveDAO();
 	private HolidayDAO holidayDAO = new HolidayDAO();
+	private EmpDAO empDAO = new EmpDAO();
+	private DeptDAO deptDAO = new DeptDAO();
+	private NotificationDAO notificationDAO = new NotificationDAO();
+
+	// 승인자 찾기
+	public int findApprover(int empId) {
+
+		int deptId = empDAO.getDeptIdByEmpId(empId);
+
+		while (deptId != 0) {
+
+			DeptDTO dept = deptDAO.getDeptById(deptId);
+
+			if (dept == null) {
+				throw new RuntimeException("부서 없음");
+			}
+
+			// ⭐ 팀장 있으면 바로 반환
+			if (dept.getManager_id() != 0) {
+				return dept.getManager_id();
+			}
+
+			// ⭐ 없으면 상위 부서로 이동
+			deptId = dept.getParent_dept_id();
+		}
+
+		throw new RuntimeException("승인자 없음");
+	}
 
 	// 휴가 신청 처리
 	public String applyLeave(LeaveDTO dto) {
+
 		int empId = dto.getEmpId();
 		Date startDate = dto.getStartDate();
 		Date endDate = dto.getEndDate();
+
 		double days = calculateDays(startDate.toLocalDate(), endDate.toLocalDate(), dto.getLeaveType());
 		dto.setDays(days);
+
 		String reason = dto.getReason();
+
 		if (!"반차".equals(dto.getLeaveType())) {
 			dto.setHalfType(null);
 		}
+
 		// 1. 사유 공백 체크
 		if (reason == null || reason.trim().isEmpty()) {
 			return "empty_reason";
 		}
+
 		// 2. 날짜 검증
 		if (startDate.after(endDate)) {
 			return "invalid_date";
 		}
+
 		// 3. 반차 검증
 		if ("반차".equals(dto.getLeaveType())) {
-		    if (!startDate.equals(endDate)) {
-		        return "invalid_half";
-		    }
+			if (!startDate.equals(endDate)) {
+				return "invalid_half";
+			}
 		}
+
 		// 4. 잔여 연차 체크
 		double remainDays = leaveDAO.getRemainDays(empId);
 		if (days > remainDays) {
 			return "not_enough";
 		}
+
 		// 5. 기간 중복 체크
 		if (leaveDAO.isOverlapping(empId, startDate, endDate)) {
 			return "overlap";
 		}
-		// 6. DB 저장
-		boolean result = leaveDAO.insertLeave(dto);
-		if (!result) {
+
+		Connection conn = null;
+
+		try {
+			conn = DatabaseConnection.getConnection();
+			conn.setAutoCommit(false);
+
+			// 🔥 6. 승인자 찾기
+			int approverId = findApprover(empId);
+			dto.setApproverId(approverId);
+
+			// 🔥 7. 휴가 저장
+			boolean result = leaveDAO.insertLeave(dto);
+			if (!result) {
+				throw new Exception("휴가 저장 실패");
+			}
+
+			// 🔥 8. 신청자 이름
+			String empName = empDAO.getEmployeeById(empId).getEmp_name();
+
+			// 🔥 9. 기간 문자열
+			String period = dto.getStartDate() + " ~ " + dto.getEndDate();
+
+			// 🔥 10. 메시지 생성
+			String message = empName + " 님이 휴가를 신청했습니다. (" + period + ")";
+
+			// 🔥 11. 알림 발송
+			notificationDAO.insert(approverId, "LEAVE_PENDING", "leave_request", null, message, conn);
+
+			conn.commit();
+			return "success";
+
+		} catch (Exception e) {
+
+			try {
+				if (conn != null)
+					conn.rollback();
+			} catch (Exception ex) {
+			}
+
+			e.printStackTrace();
 			return "fail";
+
+		} finally {
+			try {
+				if (conn != null)
+					conn.close();
+			} catch (Exception e) {
+			}
 		}
-		return "success";
 	}
 
 	public AnnualLeaveDTO getAnnualLeave(int empId) {
@@ -108,26 +193,26 @@ public class LeaveService {
 	public List<RequestDTO> getLeaveListByMonth(int empId, int year, int month) {
 		List<LeaveDTO> list = leaveDAO.getLeaveListByMonth(empId, year, month);
 
-	    List<RequestDTO> result = new ArrayList<RequestDTO>();
+		List<RequestDTO> result = new ArrayList<RequestDTO>();
 
-	    for (LeaveDTO dto : list) {
+		for (LeaveDTO dto : list) {
 
-	        RequestDTO r = new RequestDTO();
+			RequestDTO r = new RequestDTO();
 
-	        r.setId(dto.getLeaveId());
-	        r.setDate(dto.getStartDate() + " ~ " + dto.getEndDate());
-	        if ("반차".equals(dto.getLeaveType())) {
-	            r.setType(dto.getLeaveType() + " (" + dto.getHalfType() + ")");
-	        } else {
-	            r.setType(dto.getLeaveType());
-	        }
-	        r.setStatus(dto.getStatus());
-	        r.setReason(dto.getReason());
+			r.setId(dto.getLeaveId());
+			r.setDate(dto.getStartDate() + " ~ " + dto.getEndDate());
+			if ("반차".equals(dto.getLeaveType())) {
+				r.setType(dto.getLeaveType() + " (" + dto.getHalfType() + ")");
+			} else {
+				r.setType(dto.getLeaveType());
+			}
+			r.setStatus(dto.getStatus());
+			r.setReason(dto.getReason());
 
-	        result.add(r);
-	    }
+			result.add(r);
+		}
 
-	    return result;
+		return result;
 	}
 
 	// 신청 취소
@@ -179,7 +264,7 @@ public class LeaveService {
 				throw new Exception("상태 변경 실패");
 			}
 			conn.commit(); // 성공 시 커밋
-			
+
 			// 신청자 ID
 			int requesterEmpId = leave.getEmpId();
 
@@ -187,21 +272,11 @@ public class LeaveService {
 			String period = leave.getStartDate() + " ~ " + leave.getEndDate();
 
 			if ("승인".equals(status)) {
-			    NotificationUtil.sendLeaveApproved(
-			        requesterEmpId,
-			        period,
-			        days,
-			        leaveId
-			    );
+				NotificationUtil.sendLeaveApproved(requesterEmpId, period, days, leaveId);
 			} else if ("반려".equals(status)) {
-			    NotificationUtil.sendLeaveRejected(
-			        requesterEmpId,
-			        period,
-			        reason,
-			        leaveId
-			    );
+				NotificationUtil.sendLeaveRejected(requesterEmpId, period, reason, leaveId);
 			}
-			
+
 			return true;
 		} catch (Exception e) {
 			try {
@@ -221,15 +296,15 @@ public class LeaveService {
 		}
 		return false;
 	}
-	
-	//휴가 상세 데이터
+
+	// 휴가 상세 데이터
 	public LeaveDTO getLeaveDetail(int leaveId) {
-	    return leaveDAO.getLeaveById(leaveId);
+		return leaveDAO.getLeaveById(leaveId);
 	}
-	
-	//특정 날짜 휴가 존재 여부 확인
+
+	// 특정 날짜 휴가 존재 여부 확인
 	public boolean existsLeaveByDate(int empId, LocalDate date) {
-	    return leaveDAO.existsByDate(empId, date);
+		return leaveDAO.existsByDate(empId, date);
 	}
-	
+
 }
