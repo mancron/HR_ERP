@@ -106,19 +106,29 @@
       </div>
     </div>
 
-    <c:if test="${isSysAdmin}">
-      <div class="nav-group">
+<%-- 시스템 관리: 관리자 전용 --%>
+<c:if test="${isSysAdmin}">
+    <div class="nav-group">
         <div class="nav-group-header" onclick="toggleAccordion(this)">시스템</div>
         <div class="nav-group-content">
-          <a href="${pageContext.request.contextPath}/sys/accountUnlock" class="nav-item">계정 잠금 해제</a>
-          <a href="${pageContext.request.contextPath}/sys/holiday" class="nav-item">공휴일 관리</a>
-          <a href="${pageContext.request.contextPath}/sys/auditLog" class="nav-item">변경 이력 조회</a>
-          <a href="${pageContext.request.contextPath}/sys/passwordReset" class="nav-item">비밀번호 초기화</a>
-          <a href="${pageContext.request.contextPath}/sys/roleChange" class="nav-item">계정 권한 변경</a>
-          <a href="${pageContext.request.contextPath}/sys/sqlQuery" class="nav-item">AI 데이터 조회</a>
+            <a href="${pageContext.request.contextPath}/sys/accountUnlock"  class="nav-item">계정 잠금 해제</a>
+            <a href="${pageContext.request.contextPath}/sys/holiday"        class="nav-item">공휴일 관리</a>
+            <a href="${pageContext.request.contextPath}/sys/auditLog"       class="nav-item">변경 이력 조회</a>
+            <a href="${pageContext.request.contextPath}/sys/passwordReset"  class="nav-item">비밀번호 초기화</a>
+            <a href="${pageContext.request.contextPath}/sys/roleChange"     class="nav-item">계정 권한 변경</a>
         </div>
-      </div>
-    </c:if>
+    </div>
+</c:if>
+
+<%-- AI 데이터 조회: 관리자 + HR담당자 + 최종승인자 --%>
+<c:if test="${isSysAdmin || isHrAdmin || isCeo}">
+    <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleAccordion(this)">데이터 조회</div>
+        <div class="nav-group-content">
+            <a href="${pageContext.request.contextPath}/sys/sqlQuery" class="nav-item">AI 데이터 조회</a>
+        </div>
+    </div>
+</c:if>
     
   </nav>
 

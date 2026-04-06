@@ -1,5 +1,7 @@
 package com.hrms.common.filter;
 
+import java.io.IOException;
+
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
@@ -10,8 +12,6 @@ import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
-import java.io.IOException;
 
 // 모든 URL 요청을 가로채서 검증한다.
 @WebFilter("/*")
@@ -64,8 +64,18 @@ public class AuthenticationFilter implements Filter {
 
         // [시스템] 관리자 전용
         if (path.startsWith("/sys/")) {
+
+            if (path.equals("/sys/sqlQuery")) {
+                if ("관리자".equals(role) || "HR담당자".equals(role) || "최종승인자".equals(role)) {
+                    chain.doFilter(request, response);
+                    return;
+                }
+                res.sendRedirect(contextPath + "/main"); // ← 수정
+                return;
+            }
+
             if (!"관리자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "시스템 관리 권한이 필요합니다.");
+                res.sendRedirect(contextPath + "/main"); // ← 수정
                 return;
             }
         }
