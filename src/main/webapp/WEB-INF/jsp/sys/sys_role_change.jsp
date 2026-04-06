@@ -70,15 +70,15 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <%-- 자기 자신은 select 비활성화 --%>
-                                                <select name="newRole"
-                                                        class="role-select"
-                                                        id="select_${account.accountId}"
-                                                        ${isSelf ? 'disabled' : ''}>
-                                                    <option value="관리자"  ${account.currentRole == '관리자'  ? 'selected' : ''}>관리자</option>
-                                                    <option value="HR담당자" ${account.currentRole == 'HR담당자' ? 'selected' : ''}>HR담당자</option>
-                                                    <option value="일반"    ${account.currentRole == '일반'    ? 'selected' : ''}>일반</option>
-                                                </select>
+												<%-- 자기 자신은 select 비활성화 --%>
+												<select name="newRole" class="form-control select-sm">
+												    <c:forEach var="role" items="${validRoles}">
+												        <option value="${role}"
+												                ${role == account.currentRole ? 'selected' : ''}>
+												            <c:out value="${role}" />
+												        </option>
+												    </c:forEach>
+												</select>
                                             </td>
                                             <td>
                                                 <c:choose>
