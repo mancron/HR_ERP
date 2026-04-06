@@ -64,6 +64,10 @@ public class TransferServlet extends HttpServlet {
     	request.setCharacterEncoding("UTF-8");
     	
     	HttpSession session = request.getSession(false);
+    	if (session == null || session.getAttribute("empId") == null) {
+    	    response.sendRedirect(request.getContextPath() + "/auth/login");
+    	    return;
+    	}
         Integer approvedBy = (Integer) session.getAttribute("empId");
     	
         String empNo = request.getParameter("emp_no");
@@ -82,7 +86,7 @@ public class TransferServlet extends HttpServlet {
         
 
         // 3. TransferService를 통해 트랜잭션 실행
-        boolean isSuccess = transferService.executeTransfer(empNo, dto);
+        boolean isSuccess = transferService.executeTransfer(empNo, dto, targetRole);
 
         if(isSuccess) {
             // 성공 시 해당 사원의 상세 페이지로 이동
