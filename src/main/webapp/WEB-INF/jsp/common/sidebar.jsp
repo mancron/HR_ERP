@@ -45,11 +45,11 @@
         <a href="${ctx}/emp/list" class="nav-item">직원 목록</a>
         <a href="${ctx}/emp/history" class="nav-item">인사발령 이력</a>
         <a href="${ctx}/emp/approvalHistory" class="nav-item">휴직·복직·퇴직 내역</a>
-        
+
         <c:if test="${isHrAdmin}">
           <a href="${ctx}/emp/reg" class="nav-item">직원 등록</a>
         </c:if>
-        
+
         <c:if test="${isHrAdmin || isCeo || isManager}">
           <a href="${ctx}/emp/approval" class="nav-item">휴직·복직·퇴직 승인</a>
         </c:if>
@@ -61,13 +61,14 @@
       <div class="nav-group-content">
         <a href="${ctx}/att/record" class="nav-item">출퇴근</a>
         <a href="${ctx}/att/leave/req" class="nav-item">휴가 신청</a>
-        <a href="${ctx}/att/overtime" class="nav-item">초과근무</a>
+        <a href="${ctx}/att/overtime/req" class="nav-item">초과근무 신청</a>
         <a href="${ctx}/att/annual" class="nav-item">연차 현황</a>
-        
+
         <c:if test="${isAdminGroup || isManager}">
           <a href="${ctx}/att/leave/approve" class="nav-item">휴가 승인</a>
+          <a href="${ctx}/att/overtime/approve" class="nav-item">초과근무 승인</a>
         </c:if>
-        
+
         <c:if test="${isHrAdmin}">
           <a href="${ctx}/att/status" class="nav-item">근태 현황·보정</a>
           <a href="${ctx}/att/annual/grant" class="nav-item">연차 일괄 부여</a>
@@ -79,7 +80,7 @@
       <div class="nav-group-header" onclick="toggleAccordion(this)">급여 관리</div>
       <div class="nav-group-content">
         <a href="${ctx}/sal/slip" class="nav-item">급여 명세서</a>
-        
+
         <c:if test="${isHrAdmin}">
           <a href="${ctx}/sal/calc" class="nav-item">급여 계산·지급</a>
           <a href="${ctx}/sal/status" class="nav-item">급여 현황</a>
