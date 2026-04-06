@@ -37,16 +37,28 @@ public class OvertimeDAO {
 	}
 
 	// 초과근무 승인, 반려
-	public void updateStatus(Connection conn, int otId, String status) {
-		String sql = "UPDATE overtime_request SET status=?, approved_at=NOW() WHERE ot_id=?";
+	public void updateStatus(Connection conn, int otId, String status, String reason) {
 
-		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-			pstmt.setString(1, status);
-			pstmt.setInt(2, otId);
-			pstmt.executeUpdate();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+	    String sql = "UPDATE overtime_request SET status = ?, reject_reason = ?, approved_at = NOW() WHERE ot_id = ?";
+
+	    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setString(1, status);
+
+	        // 🔥 반려일 때만 사유 저장
+	        if ("반려".equals(status)) {
+	            pstmt.setString(2, reason);
+	        } else {
+	            pstmt.setNull(2, java.sql.Types.VARCHAR);
+	        }
+
+	        pstmt.setInt(3, otId);
+
+	        pstmt.executeUpdate();
+
+	    } catch (Exception e) {
+	        throw new RuntimeException(e);
+	    }
 	}
 
 	// 승인 대상 조회
@@ -72,6 +84,7 @@ public class OvertimeDAO {
 					dto.setReason(rs.getString("reason"));
 					dto.setStatus(rs.getString("status"));
 					dto.setApproverId(rs.getInt("approver_id"));
+					dto.setReject_reason(rs.getString("reject_reason"));
 
 					return dto;
 				}
@@ -222,6 +235,8 @@ public class OvertimeDAO {
 				dto.setApproverName(rs.getString("approver_name"));
 				dto.setApproverDept(rs.getString("approver_dept"));
 				dto.setApproverPosition(rs.getString("approver_position"));
+				
+				dto.setReject_reason(rs.getString("reject_reason"));
 
 				return dto;
 			}

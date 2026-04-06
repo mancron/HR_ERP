@@ -23,6 +23,7 @@ public class OvertimeDTO {
     private String approverName;
     private String approverPosition;
     private String approverDept;
+    private String reject_reason;
     
     
     public int getOtId() {
@@ -160,5 +161,12 @@ public class OvertimeDTO {
 	public void setApproverDept(String approverDept) {
 		this.approverDept = approverDept;
 	}
-    
+
+	public String getReject_reason() {
+		return reject_reason;
+	}
+
+	public void setReject_reason(String reject_reason) {
+		this.reject_reason = reject_reason;
+	}
 }

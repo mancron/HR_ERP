@@ -50,6 +50,7 @@ public class OvertimeDetailServlet extends HttpServlet {
         r.setApproverName(approverInfo);
         r.setApplyDate(dto.getCreatedAt() != null ? dto.getCreatedAt().toString() : "-");
         r.setApproveDate(dto.getApprovedAt() != null ? dto.getApprovedAt().toString() : "-");
+        r.setRejectReason(dto.getReject_reason() != null ? dto.getReject_reason().toString() : "-");
 
         resp.setContentType("application/json;charset=UTF-8");
 
