@@ -1,6 +1,7 @@
 package com.hrms.att.dao;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Time;
@@ -391,5 +392,32 @@ public class OvertimeDAO {
 	    }
 
 	    return list;
+	}
+	
+	//중복 신청 체크
+	public boolean existsValidOvertime(int empId, Date otDate) {
+
+	    String sql =
+	        "SELECT COUNT(*) FROM overtime_request " +
+	        "WHERE emp_id = ? " +
+	        "AND ot_date = ? " +
+	        "AND status IN ('대기', '승인')";  // 🔥 핵심
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, empId);
+	        ps.setDate(2, otDate);
+
+	        ResultSet rs = ps.executeQuery();
+	        if (rs.next()) {
+	            return rs.getInt(1) > 0;
+	        }
+
+	    } catch (Exception e) {
+	        throw new RuntimeException(e);
+	    }
+
+	    return false;
 	}
 }

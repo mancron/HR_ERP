@@ -61,7 +61,11 @@ public class OvertimeService {
 			// 1. 승인자 찾기
 			int approverId = findApprover(dto.getEmpId());
 			dto.setApproverId(approverId);
-
+			
+			if (overtimeDAO.existsValidOvertime(dto.getEmpId(), dto.getOtDate())) {
+			    throw new RuntimeException("이미 해당 날짜에 처리 중이거나 승인된 초과근무가 있습니다.");
+			}
+			
 			// 2. 저장
 			overtimeDAO.insertOvertime(conn, dto);
 
@@ -132,6 +136,7 @@ public class OvertimeService {
 		return overtimeDAO.cancel(id, empId);
 	}
 
+	//승인 + 반려 처리
 	public boolean approveOvertime(int otId, int approverId, String status, String reason) {
 
 		Connection conn = null;
