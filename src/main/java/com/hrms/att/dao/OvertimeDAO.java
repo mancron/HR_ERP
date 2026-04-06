@@ -37,7 +37,7 @@ public class OvertimeDAO {
 	}
 
 	// 초과근무 승인, 반려
-	public void updateStatus(Connection conn, int otId, String status, String reason) {
+	public boolean updateStatus(Connection conn, int otId, String status, String reason) {
 
 	    String sql = "UPDATE overtime_request SET status = ?, reject_reason = ?, approved_at = NOW() WHERE ot_id = ?";
 
@@ -45,7 +45,7 @@ public class OvertimeDAO {
 
 	        pstmt.setString(1, status);
 
-	        // 🔥 반려일 때만 사유 저장
+	        // 반려일 때만 사유 저장
 	        if ("반려".equals(status)) {
 	            pstmt.setString(2, reason);
 	        } else {
@@ -54,7 +54,9 @@ public class OvertimeDAO {
 
 	        pstmt.setInt(3, otId);
 
-	        pstmt.executeUpdate();
+	        int result = pstmt.executeUpdate();
+
+	        return result > 0;
 
 	    } catch (Exception e) {
 	        throw new RuntimeException(e);
