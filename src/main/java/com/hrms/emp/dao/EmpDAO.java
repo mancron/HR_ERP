@@ -136,7 +136,7 @@ public class EmpDAO {
         dto.setResign_date(rs.getString("resign_date"));
         dto.setEmp_type(rs.getString("emp_type"));
         dto.setStatus(rs.getString("status"));
-        dto.setBase_salary(rs.getBigDecimal("base_salary"));
+        dto.setBase_salary(rs.getInt("base_salary"));
         dto.setBirth_date(rs.getString("birth_date"));
         dto.setGender(rs.getString("gender"));
         dto.setAddress(rs.getString("address"));
@@ -212,7 +212,7 @@ public class EmpDAO {
         pstmt.setString(7, dto.getBank_account());
         pstmt.setString(8, dto.getAddress());
         pstmt.setString(9, dto.getEmp_type());
-        pstmt.setBigDecimal(10, dto.getBase_salary());
+        pstmt.setInt(10, dto.getBase_salary());
         pstmt.setInt(11, dto.getEmp_id());
 
         return pstmt.executeUpdate();

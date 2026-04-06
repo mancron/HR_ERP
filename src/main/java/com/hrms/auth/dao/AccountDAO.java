@@ -8,11 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hrms.auth.dto.AccountDTO;
-import com.hrms.common.db.DatabaseConnection; // 수정된 패키지 경로 반영
+import com.hrms.common.db.DatabaseConnection;
 
 public class AccountDAO {
 
-    // [추가] 관리자(역할이 '관리자')인 사원의 연락처 가져오기
+    // 관리자 연락처 가져오기
     public String getAdminContact() {
         String sql = "SELECT e.phone FROM employee e " +
                      "JOIN account a ON e.emp_id = a.emp_id " +
@@ -29,7 +29,7 @@ public class AccountDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return "051-890-0000"; // DB 조회 실패 시 기본값
+        return "051-890-0000";
     }
 
     // 1. 사용자 정보 조회
@@ -48,7 +48,8 @@ public class AccountDAO {
                     dto.setUsername(rs.getString("username"));
                     dto.setPasswordHash(rs.getString("password_hash"));
                     dto.setRole(rs.getString("role"));
-                    dto.setIsActive(rs.getInt("is_active"));
+                    // 이 부분이 DTO의 isActive 필드와 정확히 매핑되어야 합니다.
+                    dto.setIsActive(rs.getInt("is_active")); 
                     dto.setLoginAttempts(rs.getInt("login_attempts"));
                     dto.setLockedAt(rs.getTimestamp("locked_at"));
                     return dto;
@@ -104,10 +105,7 @@ public class AccountDAO {
             return false;
         }
     }
-    /**
-     * role = '관리자'인 활성 계정의 emp_id 목록 조회
-     * 계정 잠금 알림 발송 대상자 조회용
-     */
+
     public int[] getAdminEmpIds() {
         String sql = "SELECT emp_id FROM account WHERE role = '관리자' AND is_active = 1";
         Connection conn = null;
@@ -122,17 +120,15 @@ public class AccountDAO {
             while (rs.next()) {
                 ids.add(rs.getInt("emp_id"));
             }
-            // List<Integer> → int[] 변환
             return ids.stream().mapToInt(Integer::intValue).toArray();
 
         } catch (SQLException e) {
             e.printStackTrace();
-            return new int[0]; // 실패 시 빈 배열 반환 (알림 실패가 로그인을 막으면 안 됨)
+            return new int[0];
         } finally {
             if (rs    != null) try { rs.close();    } catch (SQLException e) {}
             if (pstmt != null) try { pstmt.close(); } catch (SQLException e) {}
             if (conn  != null) try { conn.close();  } catch (SQLException e) {}
         }
     }
-    
 }

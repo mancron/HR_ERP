@@ -155,9 +155,58 @@ CREATE TABLE account (
     UNIQUE KEY uk_username    (username),
     UNIQUE KEY uk_emp_account (emp_id),
     FOREIGN KEY (emp_id) REFERENCES employee(emp_id),
-    CONSTRAINT chk_role           CHECK (role IN ('관리자', 'HR담당자', '일반')),
+    CONSTRAINT chk_role           CHECK (role IN ('관리자', 'HR담당자', '일반', '최종승인자')),
     CONSTRAINT chk_login_attempts CHECK (login_attempts >= 0)
 ) COMMENT '로그인 계정 - 시스템 접근 관리';
+
+-- 휴직/복직 신청테이블
+CREATE TABLE leave_of_absence_request (
+    request_id        INT          NOT NULL AUTO_INCREMENT COMMENT '신청 ID (PK)',
+    emp_id            INT          NOT NULL               COMMENT '신청자 emp_id (FK)',
+    leave_type        VARCHAR(10)  NOT NULL               COMMENT '휴직 / 복직',
+    start_date        DATE         NOT NULL               COMMENT '시작일',
+    end_date          DATE         NULL                   COMMENT '종료일 (복직은 NULL 가능)',
+    reason            VARCHAR(500) NULL                   COMMENT '신청 사유',
+    status            VARCHAR(20)  NOT NULL DEFAULT '대기' COMMENT '대기 / 부서장승인 / HR담당자승인 / 최종승인 / 반려',
+    dept_manager_id   INT          NULL                   COMMENT '부서장 emp_id (FK)',
+    dept_approved_at  DATETIME     NULL                   COMMENT '부서장 승인일시',
+    hr_manager_id     INT          NULL                   COMMENT '인사담당자 emp_id (FK)',
+    hr_approved_at    DATETIME     NULL                   COMMENT '인사담당자 승인일시',
+    president_id          INT          NULL                   COMMENT '최종승인자 emp_id (FK)',
+    president_approved_at DATETIME     NULL                   COMMENT '최종승인자 승인일시',
+    reject_reason     VARCHAR(200) NULL                   COMMENT '반려 사유',
+    created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '신청일시',
+    PRIMARY KEY (request_id),
+    FOREIGN KEY (emp_id)          REFERENCES employee(emp_id),
+    FOREIGN KEY (dept_manager_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
+    FOREIGN KEY (hr_manager_id)   REFERENCES employee(emp_id) ON DELETE SET NULL,
+    FOREIGN KEY (president_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
+    CONSTRAINT chk_loa_type   CHECK (leave_type IN ('휴직', '복직')),
+    CONSTRAINT chk_loa_status CHECK (status IN ('대기', '부서장승인', 'HR담당자승인', '최종승인', '반려'))
+) COMMENT '휴직/복직 신청 - 3단계 승인';
+
+-- 퇴직 신청 테이블
+CREATE TABLE resign_request (
+    request_id        INT          NOT NULL AUTO_INCREMENT COMMENT '신청 ID (PK)',
+    emp_id            INT          NOT NULL               COMMENT '신청자 emp_id (FK)',
+    resign_date       DATE         NOT NULL               COMMENT '희망 퇴직일',
+    reason            VARCHAR(500) NULL                   COMMENT '신청 사유',
+    status            VARCHAR(20)  NOT NULL DEFAULT '대기' COMMENT '대기 / 부서장승인 / HR담당자승인 / 최종승인 / 반려',
+    dept_manager_id   INT          NULL                   COMMENT '부서장 emp_id (FK)',
+    dept_approved_at  DATETIME     NULL                   COMMENT '부서장 승인일시',
+    hr_manager_id     INT          NULL                   COMMENT '인사담당자 emp_id (FK)',
+    hr_approved_at    DATETIME     NULL                   COMMENT '인사담당자 승인일시',
+    president_id          INT          NULL                   COMMENT '최종승인자 emp_id (FK)',
+    president_approved_at DATETIME     NULL                   COMMENT '최종승인자 승인일시',
+    reject_reason     VARCHAR(200) NULL                   COMMENT '반려 사유',
+    created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '신청일시',
+    PRIMARY KEY (request_id),
+    FOREIGN KEY (emp_id)          REFERENCES employee(emp_id),
+    FOREIGN KEY (dept_manager_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
+    FOREIGN KEY (hr_manager_id)   REFERENCES employee(emp_id) ON DELETE SET NULL,
+    FOREIGN KEY (president_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
+    CONSTRAINT chk_resign_status CHECK (status IN ('대기', '부서장승인', 'HR담당자승인', '최종승인', '반려'))
+) COMMENT '퇴직 신청 - 3단계 승인';
 
 
 -- =============================================
@@ -323,36 +372,44 @@ CREATE TABLE deduction_rate (
 -- net_salary: 실수령액 (gross_salary - total_deduction)
 -- status: 대기/완료 (완료 후 수정 불가)
 CREATE TABLE salary (
-    salary_id            INT         NOT NULL AUTO_INCREMENT    COMMENT '급여 명세 ID (PK)',
-    emp_id               INT         NOT NULL                 COMMENT '직원 ID (FK)',
-    salary_year          INT         NOT NULL                 COMMENT '급여 연도 (2025)',
-    salary_month         INT         NOT NULL                 COMMENT '급여 월 (1~12)',
-    base_salary          INT         NOT NULL DEFAULT 0       COMMENT '기본급',
-    meal_allowance       INT         NOT NULL DEFAULT 0       COMMENT '식대',
-    transport_allowance  INT         NOT NULL DEFAULT 0       COMMENT '교통비',
-    position_allowance   INT         NOT NULL DEFAULT 0       COMMENT '직책수당',
-    overtime_pay         INT         NOT NULL DEFAULT 0       COMMENT '초과근무수당',
-    other_allowance      INT         NOT NULL DEFAULT 0       COMMENT '기타수당',
-    gross_salary         INT         NOT NULL DEFAULT 0       COMMENT '지급합계 (기본급+모든 수당)',
-    national_pension     INT         NOT NULL DEFAULT 0       COMMENT '국민연금',
-    health_insurance     INT         NOT NULL DEFAULT 0       COMMENT '건강보험',
-    long_term_care       INT         NOT NULL DEFAULT 0       COMMENT '장기요양보험',
-    employment_insurance INT         NOT NULL DEFAULT 0       COMMENT '고용보험',
-    income_tax           INT         NOT NULL DEFAULT 0       COMMENT '소득세',
-    local_income_tax     INT         NOT NULL DEFAULT 0       COMMENT '지방소득세',
-    total_deduction      INT         NOT NULL DEFAULT 0       COMMENT '공제합계 (모든 공제항목 합)',
-    net_salary           INT         NOT NULL DEFAULT 0       COMMENT '실수령액 (gross_salary - total_deduction)',
-    pay_date             DATE        NULL                     COMMENT '급여 지급일',
-    status               VARCHAR(10) NOT NULL DEFAULT '대기'   COMMENT '대기/완료 — audit_log 기록 대상',
-    created_at           DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    salary_id            INT          NOT NULL AUTO_INCREMENT COMMENT '급여 명세 ID (PK)',
+    emp_id               INT          NOT NULL               COMMENT '직원 ID (FK)',
+    salary_year          INT          NOT NULL               COMMENT '급여 연도 (2025)',
+    salary_month         INT          NOT NULL               COMMENT '급여 월 (1~12)',
+
+    -- 지급 항목
+    base_salary          INT          NOT NULL DEFAULT 0     COMMENT '기본급',
+    meal_allowance       INT          NOT NULL DEFAULT 0     COMMENT '식대',
+    transport_allowance  INT          NOT NULL DEFAULT 0     COMMENT '교통비',
+    position_allowance   INT          NOT NULL DEFAULT 0     COMMENT '직책수당',
+    overtime_pay         INT          NOT NULL DEFAULT 0     COMMENT '초과근무수당',
+    other_allowance      INT          NOT NULL DEFAULT 0     COMMENT '기타수당',
+    gross_salary         INT          NOT NULL DEFAULT 0     COMMENT '지급합계 (기본급+모든 수당)',
+
+    -- 공제 항목
+    national_pension     INT          NOT NULL DEFAULT 0     COMMENT '국민연금',
+    health_insurance     INT          NOT NULL DEFAULT 0     COMMENT '건강보험',
+    long_term_care       INT          NOT NULL DEFAULT 0     COMMENT '장기요양보험',
+    employment_insurance INT          NOT NULL DEFAULT 0     COMMENT '고용보험',
+    unpaid_leave_days    DECIMAL(4,1) NOT NULL DEFAULT 0     COMMENT '무급 공제 일수 (병가+결근 합산)',
+    unpaid_deduction     INT          NOT NULL DEFAULT 0     COMMENT '무급 공제액 (일급 × unpaid_leave_days)',
+    income_tax           INT          NOT NULL DEFAULT 0     COMMENT '소득세',
+    local_income_tax     INT          NOT NULL DEFAULT 0     COMMENT '지방소득세',
+    total_deduction      INT          NOT NULL DEFAULT 0     COMMENT '공제합계 (모든 공제항목 합)',
+    net_salary           INT          NOT NULL DEFAULT 0     COMMENT '실수령액 (gross_salary - total_deduction)',
+
+    pay_date             DATE         NULL                   COMMENT '급여 지급일',
+    status               VARCHAR(10)  NOT NULL DEFAULT '대기' COMMENT '대기/완료 — audit_log 기록 대상',
+    created_at           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+
     PRIMARY KEY (salary_id),
     UNIQUE KEY uk_emp_salary_month (emp_id, salary_year, salary_month),
     FOREIGN KEY (emp_id) REFERENCES employee(emp_id),
-    CONSTRAINT chk_salary_month CHECK (salary_month BETWEEN 1 AND 12),
+    CONSTRAINT chk_salary_month  CHECK (salary_month BETWEEN 1 AND 12),
     CONSTRAINT chk_salary_status CHECK (status IN ('대기', '완료')),
-    CONSTRAINT chk_net_salary   CHECK (net_salary >= 0),
-    CONSTRAINT chk_gross_salary CHECK (gross_salary >= 0),
-    CONSTRAINT chk_salary_total CHECK (net_salary = gross_salary - total_deduction)
+    CONSTRAINT chk_net_salary    CHECK (net_salary >= 0),
+    CONSTRAINT chk_gross_salary  CHECK (gross_salary >= 0),
+    CONSTRAINT chk_salary_total  CHECK (net_salary = gross_salary - total_deduction)
 ) COMMENT '급여 명세 (월별 스냅샷) - 월급 계산 및 지급 관리';
 
 

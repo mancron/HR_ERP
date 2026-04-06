@@ -45,7 +45,10 @@ public class TransferServlet extends HttpServlet {
         List<EmpDTO> positionList = transferService.getPositionList();
         String tomorrow = LocalDate.now().plusDays(1).toString();
 
+        // 직책 추가
+        boolean isCurrentManager = transferService.isDeptManager(empDetail.getEmp_id());
         
+        request.setAttribute("isCurrentManager", isCurrentManager);
         request.setAttribute("empDetail", empDetail);
         request.setAttribute("deptList", deptList);
         request.setAttribute("positionList", positionList);
@@ -61,9 +64,14 @@ public class TransferServlet extends HttpServlet {
     	request.setCharacterEncoding("UTF-8");
     	
     	HttpSession session = request.getSession(false);
+    	if (session == null || session.getAttribute("empId") == null) {
+    	    response.sendRedirect(request.getContextPath() + "/auth/login");
+    	    return;
+    	}
         Integer approvedBy = (Integer) session.getAttribute("empId");
     	
         String empNo = request.getParameter("emp_no");
+        String targetRole = request.getParameter("target_role");
         
         HistoryDTO dto = new HistoryDTO();
         dto.setEmp_id(Integer.parseInt(request.getParameter("emp_id")));
@@ -75,9 +83,10 @@ public class TransferServlet extends HttpServlet {
         dto.setReason(request.getParameter("reason"));
         dto.setApproved_by(approvedBy != null ? approvedBy : 0);
         dto.setChange_date(LocalDate.parse(request.getParameter("transfer_date")).atStartOfDay());
+        
 
         // 3. TransferService를 통해 트랜잭션 실행
-        boolean isSuccess = transferService.executeTransfer(empNo, dto);
+        boolean isSuccess = transferService.executeTransfer(empNo, dto, targetRole);
 
         if(isSuccess) {
             // 성공 시 해당 사원의 상세 페이지로 이동

@@ -43,6 +43,8 @@ TRUNCATE TABLE employee;
 TRUNCATE TABLE department;
 TRUNCATE TABLE job_position;
 TRUNCATE TABLE public_holiday;
+TRUNCATE TABLE resign_request;
+TRUNCATE TABLE leave_of_absence_request;
 SET FOREIGN_KEY_CHECKS = 1;
 
 
@@ -56,8 +58,9 @@ VALUES
     ('대리', 2, 3300000, 170000, 100000,      0),
     ('과장', 3, 3900000, 200000, 150000, 200000),
     ('차장', 4, 4500000, 200000, 200000, 300000),
-    ('부장', 5, 5200000, 200000, 200000, 500000);
--- position_id: 사원=1, 대리=2, 과장=3, 차장=4, 부장=5
+    ('부장', 5, 5200000, 200000, 200000, 500000),
+    ('사장', 6, 8000000, 200000, 200000, 1000000);
+-- position_id: 사원=1, 대리=2, 과장=3, 차장=4, 부장=5, 사장=6
 
 
 -- =============================================
@@ -160,8 +163,63 @@ VALUES
 -- 퇴직자 (이력 보존용)
 (15, '문채원', 'EMP015', 4, 1, '2022-09-01', '2024-12-31',
   '계약직', '퇴직', 2800000, '1998-03-15', 'F',
-  NULL, NULL, NULL, NULL, NULL);
+  NULL, NULL, NULL, NULL, NULL),
+  
+  -- 사장 (최종승인자)
+(16, '김대표', 'EMP016', 1, 6, '2010-01-01', NULL,
+  '정규직', '재직', 8000000, '1970-05-01', 'M',
+  '서울시 강남구 테헤란로 1', '010-9001-0016',
+  '110-000-000001', 'ceo@example.com', '010-0000-0001');
 
+ -- 휴직/복직 데이터
+INSERT INTO leave_of_absence_request
+    (request_id, emp_id, leave_type, start_date, end_date, reason,
+     status, dept_manager_id, dept_approved_at,
+     hr_manager_id, hr_approved_at,
+     president_id, president_approved_at, reject_reason)
+VALUES
+(1, 7, '휴직', '2025-02-01', '2025-07-31', '개인 사유로 인한 휴직 신청',
+ '최종승인', 5, '2025-01-20 10:00:00', 9, '2025-01-22 14:00:00',
+ 16, '2025-01-25 09:00:00', NULL),
+
+(2, 6, '휴직', '2025-05-01', '2025-10-31', '건강 문제로 인한 휴직',
+ '대기', NULL, NULL, NULL, NULL,
+ NULL, NULL, NULL),
+
+(3, 3, '휴직', '2025-06-01', '2025-11-30', '육아로 인한 휴직 신청',
+ '부서장승인', 1, '2025-04-10 09:30:00', NULL, NULL,
+ NULL, NULL, NULL),
+
+(4, 2, '휴직', '2025-03-01', '2025-06-30', '개인 사유',
+ '반려', 1, NULL, NULL, NULL,
+ NULL, NULL, '업무 공백으로 인해 반려합니다.'),
+
+(5, 7, '복직', '2025-08-01', NULL, '휴직 종료 후 복직 신청',
+ '최종승인', 5, '2025-07-10 10:00:00', 9, '2025-07-12 11:00:00',
+ 16, '2025-07-15 09:00:00', NULL);
+ 
+ -- 퇴직 데이터
+INSERT INTO resign_request
+    (request_id, emp_id, resign_date, reason,
+     status, dept_manager_id, dept_approved_at,
+     hr_manager_id, hr_approved_at,
+     president_id, president_approved_at, reject_reason)
+VALUES
+(1, 15, '2024-12-31', '계약 만료로 인한 퇴직',
+ '최종승인', 1, '2024-12-20 10:00:00', 8, '2024-12-24 14:00:00',
+ 16, '2024-12-26 09:00:00', NULL),
+
+(2, 4, '2025-06-30', '이직으로 인한 퇴직 희망',
+ '대기', NULL, NULL, NULL, NULL,
+ NULL, NULL, NULL),
+
+(3, 14, '2025-07-31', '개인 사유',
+ '부서장승인', 13, '2025-04-15 09:00:00', NULL, NULL,
+ NULL, NULL, NULL),
+
+(4, 10, '2025-04-30', '타 회사 이직',
+ '반려', 8, NULL, NULL, NULL,
+ NULL, NULL, '현재 진행 중인 프로젝트 완료 후 재검토 요청');
 
 -- 부서장 설정
 UPDATE department SET manager_id =  1 WHERE dept_id = 4;
@@ -179,6 +237,10 @@ INSERT INTO account
     (emp_id, username, password_hash, role, last_login, is_active,
      login_attempts, password_changed_at, locked_at)
 VALUES
+-- 사장 계정 추가
+(16, 'ceo', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8ioctdHIYH.8NwF9k7eMoiqKlZ4Vy',
+  '최종승인자', '2025-03-24 09:00:00', 1, 0, '2025-01-01 09:00:00', NULL),
+
 -- 관리자
 ( 1, 'hong',    '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8ioctdHIYH.8NwF9k7eMoiqKlZ4Vy',
   '관리자',   '2025-03-24 09:05:00', 1, 0, '2025-01-10 09:00:00', NULL),

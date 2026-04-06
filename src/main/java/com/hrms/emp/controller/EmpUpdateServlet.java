@@ -1,7 +1,6 @@
 package com.hrms.emp.controller;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 
 import com.hrms.emp.dto.EmpDTO;
 import com.hrms.emp.service.EmpDetailService;
@@ -56,7 +55,7 @@ public class EmpUpdateServlet extends HttpServlet {
         // base_salary는 BigDecimal — null/빈값 방어
         String salaryParam = request.getParameter("base_salary");
         if (salaryParam != null && !salaryParam.trim().isEmpty()) {
-            dto.setBase_salary(new BigDecimal(salaryParam.trim()));
+            dto.setBase_salary(Integer.parseInt(salaryParam.trim()));
         }
 
         int result = empDetailService.updateEmployee(dto, userRole);

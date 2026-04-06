@@ -32,20 +32,17 @@ public class RoleChangeServlet extends HttpServlet {
         if (session != null) {
             String successMsg = (String) session.getAttribute("successMsg");
             String errorMsg   = (String) session.getAttribute("errorMsg");
-            if (successMsg != null) {
-                request.setAttribute("successMsg", successMsg);
-                session.removeAttribute("successMsg");
-            }
-            if (errorMsg != null) {
-                request.setAttribute("errorMsg", errorMsg);
-                session.removeAttribute("errorMsg");
-            }
+            if (successMsg != null) { request.setAttribute("successMsg", successMsg); session.removeAttribute("successMsg"); }
+            if (errorMsg   != null) { request.setAttribute("errorMsg",   errorMsg);   session.removeAttribute("errorMsg");   }
         }
 
         List<RoleChangeDTO> accountList = roleChangeService.getAllAccounts();
         request.setAttribute("accountList", accountList);
 
-        // 현재 로그인한 관리자 empId — JSP에서 자기 자신 버튼 비활성화용
+        // ── 추가: DB에서 읽은 권한 목록을 JSP에 전달 ──
+        List<String> validRoles = roleChangeService.getValidRoles();
+        request.setAttribute("validRoles", validRoles);
+
         Integer myEmpId = (session != null) ? (Integer) session.getAttribute("empId") : null;
         request.setAttribute("myEmpId", myEmpId);
 

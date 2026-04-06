@@ -14,8 +14,6 @@ public class RoleChangeService {
     private final RoleChangeDAO roleChangeDAO = new RoleChangeDAO();
 
     // 허용 권한 목록
-    private static final List<String> VALID_ROLES = Arrays.asList("관리자", "HR담당자", "일반");
-
     /**
      * 전체 계정 목록 조회
      */
@@ -27,6 +25,20 @@ public class RoleChangeService {
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException("계정 목록 조회 중 오류가 발생했습니다.", e);
+        } finally {
+            if (conn != null) try { conn.close(); } catch (SQLException e) {}
+        }
+    }
+    
+    /** DB에서 유효 권한 목록 조회 */
+    public List<String> getValidRoles() {
+        Connection conn = null;
+        try {
+            conn = DatabaseConnection.getConnection();
+            return roleChangeDAO.selectDistinctRoles(conn);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("권한 목록 조회 중 오류가 발생했습니다.", e);
         } finally {
             if (conn != null) try { conn.close(); } catch (SQLException e) {}
         }
@@ -49,12 +61,12 @@ public class RoleChangeService {
             throw new RuntimeException("자기 자신의 권한은 변경할 수 없습니다.");
         }
 
-        // 2. 유효하지 않은 권한값 차단
-        if (!VALID_ROLES.contains(newRole)) {
+        // ── 수정: DB에서 읽어온 목록으로 검증 ──
+        List<String> validRoles = getValidRoles();
+        if (!validRoles.contains(newRole)) {
             throw new RuntimeException("유효하지 않은 권한값입니다: " + newRole);
         }
 
-        // 3. 현재 권한과 동일하면 불필요한 처리 차단
         if (oldRole.equals(newRole)) {
             throw new RuntimeException("현재 권한과 동일합니다. 변경할 권한을 선택해주세요.");
         }

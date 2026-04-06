@@ -22,7 +22,7 @@ public class EmpDetailServlet extends HttpServlet {
         
     	//세션에서 필요한 값 직접 가져오기
     	HttpSession session = request.getSession();
-    	String userRole = (String) session.getAttribute("userRole"); // "관리자", "일반" 등
+    	String userRole = (String) session.getAttribute("userRole"); // "최종승인자", "일반" 등
         Integer loginEmpId = (Integer) session.getAttribute("empId");  // 로그인한 사람의 고유 ID
         
         //세션 만료시 페이지로 이동
@@ -61,7 +61,7 @@ public class EmpDetailServlet extends HttpServlet {
         boolean canAccess = false;
         
         // 권한 논리: 관리자급이거나, 일반 사원이면서 자기 자신의 정보인 경우
-        if ("관리자".equals(userRole) || "HR담당자".equals(userRole)) {
+        if ("최종승인자".equals(userRole) || "HR담당자".equals(userRole)) {
             canAccess = true;
         } else if (loginEmpId.equals(targetEmpId)) {
             canAccess = true;
@@ -81,6 +81,7 @@ public class EmpDetailServlet extends HttpServlet {
         //JSP에서 ${empDetail} 로 쓸 수 있게 세팅합니다.
         request.setAttribute("empDetail", empDetail);
         request.setAttribute("userRole", userRole); //서블릿에서 userRole세션을 꺼내 JSP에 넘길 수 있게 세팅
+        request.setAttribute("loginEmpId", loginEmpId); 
         //브라우저 대신 서버 내부에서 WEB-INF 안의 detail.jsp로 몰래 포워딩
         request.getRequestDispatcher("/WEB-INF/jsp/emp/detail.jsp").forward(request, response);
     }

@@ -9,9 +9,6 @@ import java.util.List;
 
 import com.hrms.emp.dto.EmpDTO;
 import com.hrms.emp.dto.HistoryDTO;
-import com.hrms.emp.dto.TransferDTO;
-import com.hrms.org.dto.DeptDTO;
-
 public class TransferDAO {
 
 	/**
@@ -85,7 +82,7 @@ public class TransferDAO {
         List<EmpDTO> list = new ArrayList<>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        String sql = "SELECT position_id, position_name FROM job_position ORDER BY position_id ASC";
+        String sql = "SELECT position_id, position_name FROM job_position ORDER BY position_level DESC";
         try {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
@@ -101,4 +98,47 @@ public class TransferDAO {
         }
         return list;
     }
+	
+	
+	public boolean isDeptManager(Connection con, int empId) throws SQLException {
+	    String sql = "SELECT COUNT(*) FROM department WHERE manager_id = ? AND is_active = 1";
+	    PreparedStatement pstmt = null;
+	    ResultSet rs = null;
+	    try {
+	        pstmt = con.prepareStatement(sql);
+	        pstmt.setInt(1, empId);
+	        rs = pstmt.executeQuery();
+	        return rs.next() && rs.getInt(1) > 0;
+	    } finally {
+	        if (rs != null) rs.close();
+	        if (pstmt != null) pstmt.close();
+	    }
+	}
+	
+	// 발령 직책을 DB에 반영
+	public int updateDeptManager(Connection con, int deptId, int empId) throws SQLException {
+	    String sql = "UPDATE department SET manager_id = ? WHERE dept_id = ?";
+	    PreparedStatement pstmt = null;
+	    try {
+	        pstmt = con.prepareStatement(sql);
+	        pstmt.setInt(1, empId);
+	        pstmt.setInt(2, deptId);
+	        return pstmt.executeUpdate();
+	    } finally {
+	        if (pstmt != null) pstmt.close();
+	    }
+	}
+	
+	// 기존 부서장 해제 — 발령 대상자가 기존 부서장이었을 때 manager_id를 NULL로 초기화
+	public int clearDeptManager(Connection con, int deptId) throws SQLException {
+	    String sql = "UPDATE department SET manager_id = NULL WHERE dept_id = ?";
+	    PreparedStatement pstmt = null;
+	    try {
+	        pstmt = con.prepareStatement(sql);
+	        pstmt.setInt(1, deptId);
+	        return pstmt.executeUpdate();
+	    } finally {
+	        if (pstmt != null) pstmt.close();
+	    }
+	}
 }

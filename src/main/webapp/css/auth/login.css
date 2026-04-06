@@ -1,6 +1,6 @@
 @charset "UTF-8";
 
-/* 기본 스타일 초기화 */
+/* [1] 기본 스타일 초기화 */
 body, h2, p, form, input, button {
     margin: 0;
     padding: 0;
@@ -9,14 +9,13 @@ body, h2, p, form, input, button {
 }
 
 body {
-    background-color: #2151A2; /* 배경색: 진한 파랑 */
+    background-color: #2151A2;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
 }
 
-/* 로그인 카드 컨테이너 */
 .login-card {
     background-color: white;
     width: 450px;
@@ -26,92 +25,92 @@ body {
     text-align: center;
 }
 
-/* 로고 세션 */
+/* [2] 로고 및 입력 폼 */
 .logo-area {
     margin-bottom: 50px;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
+.logo-area h2 { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 5px; }
+.logo-area p { font-size: 15px; color: #888; }
 
-.logo-area i { /* 아이콘 사용 시 */
-    margin-bottom: 15px;
-}
-
-.logo-area h2 {
-    font-size: 28px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 5px;
-}
-
-.logo-area p {
-    font-size: 15px;
-    color: #888;
-}
-
-/* 입력 폼 세션 */
-.input-group {
-    text-align: left;
-    margin-bottom: 25px;
-}
-
-.input-label {
-    display: block;
-    font-size: 16px;
-    color: #444;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.input-label .required {
-    color: #E74C3C;
-    margin-left: 3px;
-}
-
+.input-group { text-align: left; margin-bottom: 25px; }
+.input-label { display: block; font-size: 16px; color: #444; margin-bottom: 8px; font-weight: 500; }
 .input-box {
     width: 100%;
     padding: 15px;
     border: 1px solid #D1D8E0;
     border-radius: 6px;
     font-size: 16px;
-    color: #333;
     transition: border-color 0.2s;
 }
+.input-box:focus { border-color: #3498db; outline: none; }
 
-.input-box:focus {
-    border-color: #3498db;
-    outline: none;
-}
-
-/* 알림 박스 (공통 및 실패/잠금 스타일) */
+/* [3] 알림 박스 (영역 분리형 공통 구조) */
 .alert-box {
-    border-radius: 6px;
-    padding: 12px 15px;
-    text-align: left;
-    margin-bottom: 30px;
     display: flex;
     align-items: center;
-    font-size: 14px;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    border: 1px solid transparent;
 }
 
-/* 기본 경고 (노란색) */
-.alert-default {
-    background-color: #FEF9E7;
-    border: 1px solid #F9E79F;
-    color: #B7950B;
+.alert-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 45px;
+    flex-shrink: 0;
+    margin-right: 15px;
 }
-.alert-default .alert-icon { color: #F1C40F; margin-right: 10px; }
+.alert-side i { font-size: 16px; margin-bottom: 4px; }
+.alert-side .side-label { font-size: 12px; font-weight: bold; line-height: 1; }
 
-/* 실패/잠금 경고 (빨간색) */
-.alert-danger {
-    background-color: #FDEDEC;
-    border: 1px solid #E74C3C;
-    color: #E74C3C;
+.alert-content {
+    flex: 1;
+    text-align: left;
+    padding-left: 15px;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: keep-all;
 }
-.alert-danger .alert-icon { color: #E74C3C; margin-right: 10px; }
 
-/* 로그인 버튼 */
+/* [4] 상태별 컬러 세트 (유사 속성 그룹화 및 우선순위 강화) */
+
+/* 1. 위험/안내 (빨간색 - 퇴사자, 계정잠김 등) */
+.alert-danger { 
+    background: #fff5f5 !important; 
+    border-color: #feb2b2 !important; 
+    border-left: 5px solid #e53e3e !important; 
+}
+.alert-danger .alert-side, 
+.alert-danger .alert-side i,
+.alert-danger .alert-content { color: #c53030 !important; }
+
+/* 2. 경고 (노란색/주황색 - 비밀번호 실패 전용) */
+.alert-warning { 
+    background: #fffaf0 !important; 
+    border-color: #fbd38d !important; 
+    border-left: 5px solid #ed8936 !important; 
+}
+.alert-warning .alert-side, 
+.alert-warning .alert-side i,
+.alert-warning .alert-content,
+.alert-warning .alert-content strong { color: #9c4221 !important; }
+
+/* 3. 기본 (파란색 - 초기 안내) */
+.alert-default { 
+    background: #ebf8ff !important; 
+    border-color: #bee3f8 !important; 
+}
+.alert-default .alert-side, 
+.alert-default .alert-side i,
+.alert-default .alert-content { color: #2a4365 !important; }
+
+/* [5] 하단 버튼 및 정보 */
 .login-btn {
     width: 100%;
     padding: 18px;
@@ -124,12 +123,8 @@ body {
     cursor: pointer;
     transition: background-color 0.2s;
 }
+.login-btn:hover { background-color: #2980b9; }
 
-.login-btn:hover {
-    background-color: #2980b9;
-}
-
-/* 하단 문의 정보 (전화번호 안내) */
 .footer-info {
     margin-top: 35px;
     padding-top: 20px;
@@ -138,15 +133,4 @@ body {
     color: #7f8c8d;
     line-height: 1.6;
 }
-
-.footer-info .contact-title {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-}
-
-.footer-info .phone-number {
-    color: #34495e;
-    font-weight: bold;
-    font-size: 16px;
-}
+.footer-info .phone-number { color: #34495e; font-weight: bold; font-size: 16px; }

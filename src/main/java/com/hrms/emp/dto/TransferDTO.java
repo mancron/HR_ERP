@@ -13,6 +13,12 @@ public class TransferDTO {
     // 직급 정보
     private int prev_position_id;   // 기존 직급 ID
     private int target_position_id; // 변경 직급 ID
+    
+    // 직책 정보
+    private String target_role;
+    
+    private int emp_id;
+    private int approved_by;
 
     public TransferDTO() {}
 
@@ -33,4 +39,10 @@ public class TransferDTO {
     public void setPrev_position_id(int prev_position_id) { this.prev_position_id = prev_position_id; }
     public int getTarget_position_id() { return target_position_id; }
     public void setTarget_position_id(int target_position_id) { this.target_position_id = target_position_id; }
+    public String getTarget_role() { return target_role; }
+    public void setTarget_role(String target_role) { this.target_role = target_role; }
+    public int getEmp_id() { return emp_id; }
+    public void setEmp_id(int emp_id) { this.emp_id = emp_id; }
+    public int getApproved_by() { return approved_by; }
+    public void setApproved_by(int approved_by) { this.approved_by = approved_by; }
 }

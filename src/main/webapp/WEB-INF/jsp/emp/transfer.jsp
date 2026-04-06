@@ -65,6 +65,23 @@
 				</select></td>
 			</tr>
 			<tr>
+			    <th>현재 직책</th>
+			    <td>
+			        <input type="text"
+			               value="${isCurrentManager ? '부서장' : '일반'}"
+			               readonly class="readonly-input">
+			    </td>
+			    <th>발령 직책 <span class="required">*</span></th>
+			    <td>
+			        <select name="target_role">
+					    <option value="일반"
+					        <c:if test="${!isCurrentManager}">selected</c:if>>일반</option>
+					    <option value="부서장"
+					        <c:if test="${isCurrentManager}">selected</c:if>>부서장</option>
+					</select>
+			    </td>
+			</tr>
+			<tr>
 				<th>발령 적용일 <span class="required">*</span></th>
 				<td colspan="3"><input type="date" name="transfer_date" value="${tomorrow}"></td>
 			</tr>

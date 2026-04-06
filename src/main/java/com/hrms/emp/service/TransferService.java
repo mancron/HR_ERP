@@ -1,17 +1,13 @@
 package com.hrms.emp.service;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.hrms.common.db.DatabaseConnection;
-import com.hrms.emp.dao.EmpDAO;
 import com.hrms.emp.dao.TransferDAO;
 import com.hrms.emp.dto.EmpDTO;
 import com.hrms.emp.dto.HistoryDTO;
-import com.hrms.emp.dto.TransferDTO; // 발령 데이터를 담는 DTO (가정)
-import com.hrms.org.dto.DeptDTO;
 
 public class TransferService {
 
@@ -19,14 +15,28 @@ public class TransferService {
     private TransferDAO transferDao = new TransferDAO();
 
     //인사발령 실행 (트랜잭션 처리)
-    public boolean executeTransfer(String empNo, HistoryDTO dto) {
+    public boolean executeTransfer(String empNo, HistoryDTO dto, String targetRole) {
         Connection con = null;
         try {
             con = DatabaseConnection.getConnection();
             con.setAutoCommit(false);
 
+            // 1. employee 테이블 부서/직급 업데이트
             int r1 = transferDao.updateEmployeePosition(con, empNo,
-                         dto.getTo_dept_id(), dto.getTo_position_id());
+                    dto.getTo_dept_id(), dto.getTo_position_id());
+
+            // 2. 기존 부서장이었다면 기존 부서 manager_id 초기화
+            boolean isCurrentManager = transferDao.isDeptManager(con, dto.getEmp_id());
+            if (isCurrentManager) {
+                transferDao.clearDeptManager(con, dto.getFrom_dept_id());
+            }
+
+            // 3. 발령 직책이 부서장이면 새 부서 manager_id 업데이트
+            if ("부서장".equals(targetRole)) {
+                transferDao.updateDeptManager(con, dto.getTo_dept_id(), dto.getEmp_id());
+            }
+            
+            // 4. 이력 INSERT
             int r2 = transferDao.insertPersonnelHistory(con, dto);
 
             if (r1 > 0 && r2 > 0) {
@@ -71,16 +81,18 @@ public class TransferService {
         }
     }
     
-    private void closeConnection(Connection con) {
-        if (con != null) {
-            try {
-                if (!con.isClosed()) {
-                    con.setAutoCommit(true); // 커넥션 풀 반납 전 상태 복구
-                    con.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+    public boolean isDeptManager(int empId) {
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            return transferDao.isDeptManager(con, empId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
         }
     }
+    
+    
 }

@@ -39,18 +39,17 @@
 			</div>
 		</div>
 
-		<div class="nav-group">
-			<div class="nav-group-header" onclick="toggleAccordion(this)">직원
-				관리</div>
-			<div class="nav-group-content">
-				<a href="${pageContext.request.contextPath}/emp/list"
-					class="nav-item">직원 목록</a> <a
-					href="${pageContext.request.contextPath}/emp/reg" class="nav-item">직원
-					등록</a> <a href="${pageContext.request.contextPath}/emp/history"
-					class="nav-item">인사발령 이력</a>
-			</div>
-		</div>
-		<c:set var="isAdmin"
+    <div class="nav-group">
+      <div class="nav-group-header" onclick="toggleAccordion(this)">직원 관리</div>
+      <div class="nav-group-content">
+        <a href="${pageContext.request.contextPath}/emp/list" class="nav-item">직원 목록</a>
+        <a href="${pageContext.request.contextPath}/emp/reg" class="nav-item">직원 등록</a>
+        <a href="${pageContext.request.contextPath}/emp/history" class="nav-item">인사발령 이력</a>
+        <a href="${pageContext.request.contextPath}/emp/approval" class="nav-item">휴직·복직·퇴직 승인</a>
+        <a href="${pageContext.request.contextPath}/emp/approvalHistory" class="nav-item">휴직·복직·퇴직 내역</a>
+      </div>
+    </div>
+    <c:set var="isAdmin"
 			value="${sessionScope.userRole == '관리자' || sessionScope.userRole == 'HR관리자'}" />
 		<div class="nav-group">
 			<div class="nav-group-header" onclick="toggleAccordion(this)">근태
@@ -81,31 +80,26 @@
 		</div>
 		</div>
 
-		<div class="nav-group">
-			<div class="nav-group-header" onclick="toggleAccordion(this)">급여
-				관리</div>
-			<div class="nav-group-content">
-				<a href="/sal/calc" class="nav-item">급여 계산·지급</a> <a
-					href="/sal/slip" class="nav-item">급여 명세서</a> <a href="/sal/status"
-					class="nav-item">급여 현황</a> <a href="/sal/deduction"
-					class="nav-item">공제율 관리</a>
-			</div>
-		</div>
+    <div class="nav-group">
+      <div class="nav-group-header" onclick="toggleAccordion(this)">급여 관리</div>
+      <div class="nav-group-content">
+        <a href="/sal/calc" class="nav-item">급여 계산·지급</a>
+        <a href="${pageContext.request.contextPath}/sal/slip" class="nav-item">급여 명세서</a>
+        <c:if test="${sessionScope.userRole == 'HR담당자'}">
+	        <a href="${pageContext.request.contextPath}/sal/status" class="nav-item">급여 현황</a>
+	        <a href="${pageContext.request.contextPath}/sal/deduction" class="nav-item">공제율 관리</a>
+        </c:if>
+      </div>
+    </div>
 
-		<div class="nav-group">
-			<div class="nav-group-header" onclick="toggleAccordion(this)">인사
-				평가</div>
-			<div class="nav-group-content">
-				<a href="${pageContext.request.contextPath}/eval/write"
-					class="nav-item">평가 작성·확정</a>
-				<c:if
-					test="${sessionScope.userRole == '관리자' || sessionScope.userRole == 'HR담당자'}">
-					<a href="${pageContext.request.contextPath}/eval/status"
-						class="nav-item">평가 현황</a>
-				</c:if>
-			</div>
-		</div>
-		</div>
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleAccordion(this)">인사 평가</div>
+        <div class="nav-group-content">
+          <a href="${pageContext.request.contextPath}/eval/write" class="nav-item">평가 작성</a>
+          <a href="${pageContext.request.contextPath}/eval/status" class="nav-item">평가 현황·확정</a>
+        </div>
+      </div>
+    </div>
 
 		<c:if test="${sessionScope.userRole == '관리자'}">
 			<div class="nav-group">

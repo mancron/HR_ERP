@@ -1,65 +1,153 @@
 @charset "UTF-8";
 
-/* 기본 폰트 및 배경 설정 */
-body {
-    background-color: #f4f7f6; /* 약간의 회색빛이 도는 배경으로 카드를 돋보이게 함 */
-    font-family: 'Noto Sans KR', sans-serif;
-    margin: 0;
-    padding: 0;
+:root {
+    --primary-blue: #3b82f6;
+    --primary-hover: #2563eb;
+    --bg-gray: #f8fafc;
+    --border-color: #e2e8f0;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --success-green: #10b981;
 }
 
-/* 비밀번호 변경 컨테이너 */
+body {
+    background-color: var(--bg-gray);
+    font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
 .pw-change-container {
     background: white;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    max-width: 500px;
-    margin: 50px auto; /* 상단 여유를 좀 더 줌 */
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 480px;
 }
 
-.pw-change-container h3 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    color: #333;
-    font-size: 1.5rem;
+.pw-header h2 {
+    margin: 0 0 8px 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-main);
 }
 
-/* 폼 요소 스타일 */
+.pw-header p {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 30px;
+}
+
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-    color: #666;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.form-group label .required {
+    color: #ef4444;
+    margin-left: 4px;
 }
 
 .form-group input {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box; /* 패딩 때문에 너비가 넘치지 않게 함 */
+    padding: 12px 16px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 15px;
+    transition: all 0.2s;
+    box-sizing: border-box;
 }
 
-/* 버튼 스타일 */
-.submit-btn {
-    background: #2151A2;
-    color: white;
-    border: none;
-    padding: 12px 20px;
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* ✅ 체크리스트 배치 수정 (Grid 3열) */
+.validation-checklist {
+    background-color: #eff6ff;
+    padding: 18px;
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3열 배치로 3+2 구조 형성 */
+    gap: 12px 8px;
+    margin-bottom: 24px;
+}
+
+.check-item {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+/* 비밀번호 일치 항목은 조금 더 길 수 있으므로 2칸을 차지하게 설정 */
+#cond-match {
+    grid-column: span 2;
+}
+
+.check-item.valid {
+    color: var(--primary-blue);
+    font-weight: 600;
+}
+
+.check-item i {
+    font-style: normal;
+}
+
+/* 버튼 영역 */
+.btn-group {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn-cancel {
+    padding: 12px 24px;
+    background: white;
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
     cursor: pointer;
-    border-radius: 4px;
-    width: 100%;
-    font-size: 16px;
-    font-weight: bold;
-    margin-top: 10px;
-    transition: background 0.3s;
+    transition: 0.2s;
 }
 
-.submit-btn:hover {
-    background: #1a3f7d;
+.btn-submit {
+    padding: 12px 24px;
+    background: var(--primary-blue);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-submit:hover { background: var(--primary-hover); }
+.btn-submit:disabled { background: #bfdbfe; cursor: not-allowed; }
+
+.error-message-box {
+    background: #fef2f2;
+    border: 1px solid #fee2e2;
+    color: #b91c1c;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    text-align: center;
 }
