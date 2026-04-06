@@ -150,21 +150,27 @@ public class DeptDAO {
     /**
      * 부서 신규 등록 (manager_id 제외 — 인사발령에서 관리)
      */
-    public boolean insertDept(DeptDTO dept) {
-        Connection con = null; PreparedStatement pstmt = null;
+    public int insertDept(DeptDTO dept) {
+        Connection con = null; PreparedStatement pstmt = null; ResultSet rs = null;
+        String sql = "INSERT INTO department (dept_name, parent_dept_id, dept_level, sort_order, is_active) " +
+                     "VALUES (?, ?, ?, ?, 1)";
         try {
             con = DatabaseConnection.getConnection();
-            String sql =
-                "INSERT INTO department (dept_name, parent_dept_id, dept_level, sort_order, is_active) " +
-                "VALUES (?, ?, ?, ?, 1)";
-            pstmt = con.prepareStatement(sql);
+            // Statement.RETURN_GENERATED_KEYS 대신 PreparedStatement 상수를 사용하면 더 안전합니다.
+            pstmt = con.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
             pstmt.setString(1, dept.getDept_name());
             pstmt.setInt(2, dept.getParent_dept_id());
             pstmt.setInt(3, dept.getDept_level());
             pstmt.setInt(4, dept.getSort_order());
-            return pstmt.executeUpdate() > 0;
-        } catch (Exception e) { e.printStackTrace(); return false; }
-        finally { closeResources(null, pstmt, con); }
+
+            int result = pstmt.executeUpdate();
+            if (result > 0) {
+                rs = pstmt.getGeneratedKeys();
+                if (rs.next()) return rs.getInt(1); // 신규 생성된 dept_id 반환
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        finally { closeResources(rs, pstmt, con); }
+        return 0;
     }
 
     /**
@@ -172,18 +178,21 @@ public class DeptDAO {
      */
     public boolean updateDept(DeptDTO dept) {
         Connection con = null; PreparedStatement pstmt = null;
+        // is_active가 1(활성)로 들어오면 closed_at을 NULL로 밀어버립니다.
+        String sql = "UPDATE department SET dept_name = ?, parent_dept_id = ?, " +
+                     "dept_level = ?, sort_order = ?, is_active = ?, " +
+                     "closed_at = (CASE WHEN ? = 1 THEN NULL ELSE closed_at END) " +
+                     "WHERE dept_id = ?";
         try {
             con = DatabaseConnection.getConnection();
-            String sql =
-                "UPDATE department SET dept_name = ?, parent_dept_id = ?, " +
-                "dept_level = ?, sort_order = ?, is_active = ? WHERE dept_id = ?";
             pstmt = con.prepareStatement(sql);
             pstmt.setString(1, dept.getDept_name());
             pstmt.setInt(2, dept.getParent_dept_id());
             pstmt.setInt(3, dept.getDept_level());
             pstmt.setInt(4, dept.getSort_order());
             pstmt.setInt(5, dept.getIs_active());
-            pstmt.setInt(6, dept.getDept_id());
+            pstmt.setInt(6, dept.getIs_active()); // CASE 문 체크용
+            pstmt.setInt(7, dept.getDept_id());
             return pstmt.executeUpdate() > 0;
         } catch (Exception e) { e.printStackTrace(); return false; }
         finally { closeResources(null, pstmt, con); }
@@ -274,9 +283,12 @@ public class DeptDAO {
                 "    UNION ALL " +
                 "    SELECT d.dept_id FROM department d " +
                 "    INNER JOIN SubDepts sd ON d.parent_dept_id = sd.dept_id " +
+                "    WHERE d.is_active = 1 " + // 비활성 하위 부서는 탐색 제외
                 ") " +
                 "SELECT COUNT(*) FROM employee " +
-                "WHERE dept_id IN (SELECT dept_id FROM SubDepts) AND status = '재직'";
+                "WHERE dept_id IN (SELECT dept_id FROM SubDepts) " +
+                "AND status = '재직'";
+                
             pstmt = con.prepareStatement(sql);
             pstmt.setInt(1, deptId);
             rs = pstmt.executeQuery();
@@ -335,18 +347,36 @@ public class DeptDAO {
         return 0;
     }
 
-    public int findDeptIdByEmpName(String empName) {
+    public List<Map<String, Object>> findDeptIdByEmpName(String searchVal) {
+        List<Map<String, Object>> list = new ArrayList<>();
         Connection con = null; PreparedStatement pstmt = null; ResultSet rs = null;
         try {
             con = DatabaseConnection.getConnection();
-            pstmt = con.prepareStatement(
-                "SELECT dept_id FROM employee WHERE emp_name = ? AND status != '퇴직' LIMIT 1");
-            pstmt.setString(1, empName);
+            
+            // 사번(EMP로 시작)인지 이름인지에 따라 조건을 분기하는 쿼리
+            String sql = "SELECT e.dept_id, d.dept_name, p.position_name, e.emp_name, e.emp_no " +
+                         "FROM employee e " +
+                         "LEFT JOIN department d ON e.dept_id = d.dept_id " +
+                         "LEFT JOIN job_position p ON e.position_id = p.position_id " +
+                         "WHERE (e.emp_name = ? OR e.emp_no = ?) AND e.status != '퇴직'";
+
+            pstmt = con.prepareStatement(sql);
+            pstmt.setString(1, searchVal); // 이름으로 검색 시
+            pstmt.setString(2, searchVal); // 사번으로 검색 시 (둘 중 하나만 걸리면 됨)
+            
             rs = pstmt.executeQuery();
-            if (rs.next()) return rs.getInt("dept_id");
+            while (rs.next()) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("deptId",   rs.getInt("dept_id"));
+                map.put("deptName", rs.getString("dept_name"));
+                map.put("posName",  rs.getString("position_name"));
+                map.put("empName",  rs.getString("emp_name")); // 이 줄이 서버에 반영됐는지 확인!
+                map.put("empNo",    rs.getString("emp_no"));   // 이 줄이 서버에 반영됐는지 확인!
+                list.add(map);
+            }
         } catch (Exception e) { e.printStackTrace(); }
         finally { closeResources(rs, pstmt, con); }
-        return 0;
+        return list;
     }
 
     public boolean updateDeptLevel(int deptId, int newLevel) {
