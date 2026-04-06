@@ -325,13 +325,14 @@ CREATE TABLE overtime_request (
     approver_id INT          NULL                     COMMENT '승인자 emp_id (FK)',
     approved_at DATETIME     NULL                     COMMENT '승인·반려 처리 일시',
     created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    reject_reason VARCHAR(255) NULL COMMENT '반려 사유',
     PRIMARY KEY (ot_id),
     UNIQUE KEY uk_emp_ot_date (emp_id, ot_date),
     FOREIGN KEY (emp_id)      REFERENCES employee(emp_id),
     FOREIGN KEY (approver_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
     CONSTRAINT chk_ot_time_order CHECK (end_time > start_time),
     CONSTRAINT chk_ot_hours      CHECK (ot_hours > 0),
-    CONSTRAINT chk_ot_status     CHECK (status IN ('대기', '승인', '반려'))
+    CONSTRAINT chk_ot_status     CHECK (status IN ('대기', '승인', '반려','취소'))
 ) COMMENT '초과근무 신청 - 초과근무 승인 및 관리';
 
 

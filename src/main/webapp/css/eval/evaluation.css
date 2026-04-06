@@ -11,6 +11,10 @@
 .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:30px; }
 .form-group label { display:block; font-size:13px; color:#64748b; margin-bottom:8px; }
 .form-group select { width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:6px; background-color:#fff; }
+/* 수정 모드 고정 필드 */
+.field-readonly { width:100%; padding:10px 12px; border:1px solid #e2e8f0; border-radius:6px;
+                  background:#f8fafc; color:#475569; font-size:14px; box-sizing:border-box;
+                  cursor:not-allowed; }
 
 .score-item { margin-bottom:25px; }
 .score-info { display:flex; justify-content:space-between; margin-bottom:10px; font-weight:600; font-size:14px; }

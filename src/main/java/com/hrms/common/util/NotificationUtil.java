@@ -120,6 +120,7 @@ public class NotificationUtil {
     // ══════════════════════════════════════
 
     /** 계정 잠금 → 관리자들에게 알림 (복수 발송) */
+    //사용
     public static void sendAccountLocked(int[] adminEmpIds, String lockedUserName) {
         String msg = lockedUserName + " 님의 계정이 로그인 실패로 잠겼습니다.";
         for (int adminId : adminEmpIds) {
@@ -128,6 +129,7 @@ public class NotificationUtil {
     }
 
     /** 비밀번호 초기화 → 해당 직원에게 알림 */
+    //사용
     public static void sendPasswordReset(int empId, int accountId) {
         String msg = "관리자에 의해 비밀번호가 초기화되었습니다. 로그인 후 즉시 변경해주세요.";
         send(empId, "PASSWORD_RESET", "account", accountId, msg);

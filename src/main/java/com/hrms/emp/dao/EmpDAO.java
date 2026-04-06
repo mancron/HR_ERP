@@ -228,4 +228,24 @@ public class EmpDAO {
     }
 }
     
+    public int getDeptIdByEmpId(int empId) {
+        String sql = "SELECT dept_id FROM employee WHERE emp_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, empId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("dept_id");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+    
 }
