@@ -38,6 +38,18 @@ public class TextToSqlServlet extends HttpServlet {
 
         // 권한 이중 검증
         HttpSession session = request.getSession(false);
+        String role = (session != null) ? (String) session.getAttribute("userRole") : null;
+
+        // 관리자 + HR담당자 + 최종승인자 허용
+        boolean allowed = "관리자".equals(role)
+                       || "HR담당자".equals(role)
+                       || "최종승인자".equals(role);
+
+        if (!allowed) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+        
         if (session == null || !"관리자".equals(session.getAttribute("userRole"))) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "관리자만 접근할 수 있습니다.");
             return;
