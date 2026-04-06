@@ -15,216 +15,285 @@ import com.hrms.sys.dao.NotificationDAO;
 
 public class OvertimeService {
 
-    private DeptDAO deptDAO = new DeptDAO();
-    private EmpDAO empDAO = new EmpDAO();
-    private OvertimeDAO overtimeDAO = new OvertimeDAO();
-    private NotificationDAO notificationDAO = new NotificationDAO();
-    
-    //승인자 찾기
-    public int findApprover(int empId) {
+	private DeptDAO deptDAO = new DeptDAO();
+	private EmpDAO empDAO = new EmpDAO();
+	private OvertimeDAO overtimeDAO = new OvertimeDAO();
+	private NotificationDAO notificationDAO = new NotificationDAO();
 
-        int deptId = empDAO.getDeptIdByEmpId(empId);
+	// 승인자 찾기
+	public int findApprover(int empId) {
 
-        while (deptId != 0) {
+		int deptId = empDAO.getDeptIdByEmpId(empId);
 
-            DeptDTO dept = deptDAO.getDeptById(deptId);
+		while (deptId != 0) {
 
-            if (dept == null) {
-                throw new RuntimeException("부서 없음");
-            }
+			DeptDTO dept = deptDAO.getDeptById(deptId);
 
-            // ⭐ 팀장 있으면 바로 반환
-            if (dept.getManager_id() != 0) {
-                return dept.getManager_id();
-            }
+			if (dept == null) {
+				throw new RuntimeException("부서 없음");
+			}
 
-            // ⭐ 없으면 상위 부서로 이동
-            deptId = dept.getParent_dept_id();
-        }
+			// ⭐ 팀장 있으면 바로 반환
+			if (dept.getManager_id() != 0) {
+				return dept.getManager_id();
+			}
 
-        throw new RuntimeException("승인자 없음");
-    }
-    
-    //신청 + 알림
-    public void applyOvertime(OvertimeDTO dto) {
+			// ⭐ 없으면 상위 부서로 이동
+			deptId = dept.getParent_dept_id();
+		}
 
-        Connection conn = null;
+		throw new RuntimeException("승인자 없음");
+	}
 
-        try {
-            conn = DatabaseConnection.getConnection();
-            conn.setAutoCommit(false); // ⭐ 트랜잭션 시작
+	// 신청 + 알림
+	public void applyOvertime(OvertimeDTO dto) {
 
-            int approverId = findApprover(dto.getEmpId());
-            dto.setApproverId(approverId);
-            
-            // 1. 초과근무 저장
-            overtimeDAO.insertOvertime(conn, dto);
+		Connection conn = null;
 
-            // 2. 승인자에게 알림
-            notificationDAO.insert(
-                dto.getApproverId(),
-                "OVERTIME",                 // noti_type
-                "overtime_request",         // ref_table
-                null,                       // ref_id (나중에 ot_id 넣어도 좋음)
-                "초과근무 신청이 도착했습니다.",
-                conn
-            );
+		try {
+			conn = DatabaseConnection.getConnection();
+			conn.setAutoCommit(false); // ⭐ 트랜잭션 시작
 
-            conn.commit();
+			int approverId = findApprover(dto.getEmpId());
+			dto.setApproverId(approverId);
 
-        } catch (Exception e) {
-            try {
-                if (conn != null) conn.rollback();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-            throw new RuntimeException(e);
+			// 1. 초과근무 저장
+			overtimeDAO.insertOvertime(conn, dto);
 
-        } finally {
-            try {
-                if (conn != null) conn.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    
-    //승인 + 알림
-    public void approveOvertime(int otId, int loginEmpId) {
+			// 2. 승인자에게 알림
+			notificationDAO.insert(dto.getApproverId(), "OVERTIME", // noti_type
+					"overtime_request", // ref_table
+					null, // ref_id (나중에 ot_id 넣어도 좋음)
+					"초과근무 신청이 도착했습니다.", conn);
 
-        Connection conn = null;
+			conn.commit();
 
-        try {
-            conn = DatabaseConnection.getConnection();
-            conn.setAutoCommit(false);
+		} catch (Exception e) {
+			try {
+				if (conn != null)
+					conn.rollback();
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+			throw new RuntimeException(e);
 
-            // 1. 데이터 조회
-            OvertimeDTO ot = overtimeDAO.findById(conn, otId);
+		} finally {
+			try {
+				if (conn != null)
+					conn.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
-            if (ot == null) {
-                throw new RuntimeException("데이터 없음");
-            }
+	// 승인 + 알림
+	public void approveOvertime(int otId, int loginEmpId) {
 
-            // 2. 권한 체크
-            if (ot.getApproverId() != loginEmpId) {
-                throw new RuntimeException("승인 권한 없음");
-            }
+		Connection conn = null;
 
-            // 3. 상태 체크
-            if (!"대기".equals(ot.getStatus())) {
-                throw new RuntimeException("이미 처리됨");
-            }
+		try {
+			conn = DatabaseConnection.getConnection();
+			conn.setAutoCommit(false);
 
-            // 4. 승인 처리
-            overtimeDAO.updateStatus(conn, otId, "승인");
+			// 1. 데이터 조회
+			OvertimeDTO ot = overtimeDAO.findById(conn, otId);
 
-            // 5. 신청자에게 알림
-            notificationDAO.insert(
-                ot.getEmpId(),
-                "OVERTIME",
-                "overtime_request",
-                otId, // ⭐ 이거 넣으면 클릭 이동 가능
-                "초과근무가 승인되었습니다.",
-                conn
-            );
+			if (ot == null) {
+				throw new RuntimeException("데이터 없음");
+			}
 
-            conn.commit();
+			// 2. 권한 체크
+			if (ot.getApproverId() != loginEmpId) {
+				throw new RuntimeException("승인 권한 없음");
+			}
 
-        } catch (Exception e) {
-            try {
-                if (conn != null) conn.rollback();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-            throw new RuntimeException(e);
+			// 3. 상태 체크
+			if (!"대기".equals(ot.getStatus())) {
+				throw new RuntimeException("이미 처리됨");
+			}
 
-        } finally {
-            try {
-                if (conn != null) conn.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    
-    //반려 + 알림
-    public void rejectOvertime(int otId, int loginEmpId) {
+			// 4. 승인 처리
+			overtimeDAO.updateStatus(conn, otId, "승인");
 
-        Connection conn = null;
+			// 5. 신청자에게 알림
+			notificationDAO.insert(ot.getEmpId(), "OVERTIME", "overtime_request", otId, // ⭐ 이거 넣으면 클릭 이동 가능
+					"초과근무가 승인되었습니다.", conn);
 
-        try {
-            conn = DatabaseConnection.getConnection();
-            conn.setAutoCommit(false);
+			conn.commit();
 
-            OvertimeDTO ot = overtimeDAO.findById(conn, otId);
+		} catch (Exception e) {
+			try {
+				if (conn != null)
+					conn.rollback();
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+			throw new RuntimeException(e);
 
-            if (ot.getApproverId() != loginEmpId) {
-                throw new RuntimeException("권한 없음");
-            }
+		} finally {
+			try {
+				if (conn != null)
+					conn.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
-            overtimeDAO.updateStatus(conn, otId, "반려");
+	// 반려 + 알림
+	public void rejectOvertime(int otId, int loginEmpId) {
 
-            notificationDAO.insert(
-                ot.getEmpId(),
-                "OVERTIME",
-                "overtime_request",
-                otId,
-                "초과근무가 반려되었습니다.",
-                conn
-            );
+		Connection conn = null;
 
-            conn.commit();
+		try {
+			conn = DatabaseConnection.getConnection();
+			conn.setAutoCommit(false);
 
-        } catch (Exception e) {
-            try {
-                if (conn != null) conn.rollback();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-            throw new RuntimeException(e);
+			OvertimeDTO ot = overtimeDAO.findById(conn, otId);
 
-        } finally {
-            try {
-                if (conn != null) conn.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    
-    //초과근무 신청 리스트
-    public List<RequestDTO> getMyOvertimeList(int empId, int year, int month) {
+			if (ot.getApproverId() != loginEmpId) {
+				throw new RuntimeException("권한 없음");
+			}
 
-        List<OvertimeDTO> list = overtimeDAO.getMyListByMonth(empId, year, month);
+			overtimeDAO.updateStatus(conn, otId, "반려");
 
-        List<RequestDTO> result = new ArrayList<>();
+			notificationDAO.insert(ot.getEmpId(), "OVERTIME", "overtime_request", otId, "초과근무가 반려되었습니다.", conn);
 
-        for (OvertimeDTO dto : list) {
+			conn.commit();
 
-            RequestDTO r = new RequestDTO();
+		} catch (Exception e) {
+			try {
+				if (conn != null)
+					conn.rollback();
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+			throw new RuntimeException(e);
 
-            r.setId(dto.getOtId());
-            r.setDate(
-                    dto.getOtDate() + " " +
-                    dto.getStartTime().toString().substring(0,5) + " ~ " +
-                    dto.getEndTime().toString().substring(0,5)
-                );
-            r.setType("초과근무");
-            r.setStatus(dto.getStatus());
-            r.setReason(dto.getReason());
+		} finally {
+			try {
+				if (conn != null)
+					conn.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
-            result.add(r);
-        }
+	// 초과근무 신청 리스트
+	public List<RequestDTO> getMyOvertimeList(int empId, int year, int month) {
 
-        return result;
-    }
-    
-    //초과근무 상세 정보
-    public OvertimeDTO getOvertimeDetail(int id) {
-        return overtimeDAO.findById(id);
-    }
-    
-    public boolean cancelOvertime(int id, int empId) {
-        return overtimeDAO.cancel(id, empId);
-    }
+		List<OvertimeDTO> list = overtimeDAO.getMyListByMonth(empId, year, month);
+
+		List<RequestDTO> result = new ArrayList<>();
+
+		for (OvertimeDTO dto : list) {
+
+			RequestDTO r = new RequestDTO();
+
+			r.setId(dto.getOtId());
+			r.setDate(dto.getOtDate() + " " + dto.getStartTime().toString().substring(0, 5) + " ~ "
+					+ dto.getEndTime().toString().substring(0, 5));
+			r.setType("초과근무");
+			r.setStatus(dto.getStatus());
+			r.setReason(dto.getReason());
+
+			result.add(r);
+		}
+
+		return result;
+	}
+
+	// 초과근무 상세 정보
+	public OvertimeDTO getOvertimeDetail(int id) {
+		return overtimeDAO.findById(id);
+	}
+
+	public boolean cancelOvertime(int id, int empId) {
+		return overtimeDAO.cancel(id, empId);
+	}
+
+	public boolean approveOvertime(int otId, int approverId, String status, String reason) {
+
+		Connection conn = null;
+
+		try {
+			conn = DatabaseConnection.getConnection();
+			conn.setAutoCommit(false);
+
+			// 1. 데이터 조회
+			OvertimeDTO ot = overtimeDAO.findById(conn, otId);
+
+			if (ot == null) {
+				throw new RuntimeException("데이터 없음");
+			}
+
+			// 2. 권한 체크
+			if (ot.getApproverId() != approverId) {
+				throw new RuntimeException("승인 권한 없음");
+			}
+
+			// 3. 상태 체크
+			if (!"대기".equals(ot.getStatus())) {
+				throw new RuntimeException("이미 처리됨");
+			}
+
+			// 4. 상태 변경
+			overtimeDAO.updateStatus(conn, otId, status);
+
+			// 5. 알림 메시지 분기
+			String message = "";
+
+			if ("승인".equals(status)) {
+				message = "초과근무가 승인되었습니다.";
+			} else if ("반려".equals(status)) {
+				message = "초과근무가 반려되었습니다.";
+			} else if ("취소".equals(status)) {
+				message = "초과근무가 취소되었습니다.";
+			}
+
+			// 6. 알림
+			notificationDAO.insert(ot.getEmpId(), "OVERTIME", "overtime_request", otId, message, conn);
+
+			conn.commit();
+			return true;
+
+		} catch (Exception e) {
+			try {
+				if (conn != null)
+					conn.rollback();
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+			throw new RuntimeException(e);
+
+		} finally {
+			try {
+				if (conn != null)
+					conn.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public List<OvertimeDTO> getPendingOvertimes(String dept, String sort, String startDate, String endDate,
+			int approverId) {
+
+		try (Connection conn = DatabaseConnection.getConnection()) {
+			return overtimeDAO.getPendingList(conn, dept, sort, startDate, endDate, approverId);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public List<String> getPendingDeptList() {
+
+		try (Connection conn = DatabaseConnection.getConnection()) {
+			return overtimeDAO.getPendingDeptList(conn);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 }
