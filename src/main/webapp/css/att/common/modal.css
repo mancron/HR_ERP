@@ -1,0 +1,56 @@
+@charset "UTF-8";
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    background-color: rgba(0,0,0,0.5);
+
+    /* 🔥 핵심 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    width: 500px;
+
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* 모달 버튼 전용 */
+.att-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* 확인 */
+.att-btn-in {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.att-btn-in:hover {
+    background-color: #43a047;
+}
+
+/* 취소 */
+.att-btn-cancle {
+    background-color: #e0e0e0;
+}
+
+.att-btn-cancle:hover {
+    background-color: #d5d5d5;
+}

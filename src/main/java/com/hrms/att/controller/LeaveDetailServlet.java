@@ -1,35 +1,55 @@
 package com.hrms.att.controller;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.hrms.att.dto.LeaveDTO;
+import com.hrms.att.dto.RequestDTO;
 import com.hrms.att.service.LeaveService;
 
-@WebServlet("/leave/detail")
+@WebServlet("/att/leave/detail")
 public class LeaveDetailServlet extends HttpServlet {
 
-	private LeaveService leaveService = new LeaveService();
+	private LeaveService service = new LeaveService();
 
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
-		int leaveId = Integer.parseInt(req.getParameter("leaveId"));
+		int id = Integer.parseInt(req.getParameter("id"));
 
-		LeaveDTO dto = leaveService.getLeaveDetail(leaveId);
+		LeaveDTO dto = service.getLeaveDetail(id);
+
+		RequestDTO r = new RequestDTO();
+
+		r.setId(dto.getLeaveId());
+		r.setDate(dto.getStartDate() + " ~ " + dto.getEndDate());
+		r.setType(dto.getLeaveType());
+		r.setStatus(dto.getStatus());
+		r.setReason(dto.getReason());
+		r.setApplyDate(dto.getCreatedAt() != null ? dto.getCreatedAt().toString() : "-");
+
+		// 🔥 신청자 (이름 + 부서 + 직급)
+		String empInfo = dto.getEmpName();
+		if (dto.getDeptName() != null && dto.getPosition() != null) {
+			empInfo += " (" + dto.getDeptName() + " / " + dto.getPosition() + ")";
+		}
+		r.setEmpName(empInfo != null ? empInfo : "-");
+
+		// 🔥 승인자 (이름 + 부서 + 직급)
+		String approverInfo = dto.getApproverName();
+		if (dto.getApproverDept() != null && dto.getApproverPosition() != null) {
+			approverInfo += " (" + dto.getApproverDept() + " / " + dto.getApproverPosition() + ")";
+		}
+		r.setApproverName(approverInfo != null ? approverInfo : "-");
+		r.setApproveDate(dto.getApprovedAt() != null ? dto.getApprovedAt().toString() : "-");
+		r.setRejectReason(dto.getRejectReason());
 
 		resp.setContentType("application/json;charset=UTF-8");
 
-		PrintWriter out = resp.getWriter();
-
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
-
-		out.print(gson.toJson(dto));
+		new Gson().toJson(r, resp.getWriter());
 	}
 }

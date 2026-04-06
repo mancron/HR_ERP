@@ -1,0 +1,35 @@
+@charset "UTF-8";
+
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+
+    min-width: 200px;
+    padding: 15px 20px;
+
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+
+    z-index: 9999;
+}
+
+/* 나타날 때 */
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 타입별 */
+.toast.success {
+    background-color: #4caf50;
+}
+
+.toast.error {
+    background-color: #f44336;
+}

@@ -153,7 +153,6 @@ function closeModal() {
 document.addEventListener("DOMContentLoaded", function() {
 
     initLeaveForm();
-    initToast();
 
 });
 
@@ -205,44 +204,10 @@ function initLeaveForm() {
     }
 }
 
-// 🔹 Toast 처리
-function initToast() {
-
-    const toastData = document.getElementById("toast-data");
-    if (!toastData) return;
-
-    const errorMsg = toastData.dataset.error;
-    const successMsg = toastData.dataset.msg;
-
-    if (errorMsg && errorMsg.trim() !== "") {
-        showToast(errorMsg, "error");
-    } else if (successMsg && successMsg.trim() !== "") {
-        showToast(successMsg, "success");
-    }
-}
-
-// 🔹 Toast 생성 함수
-function showToast(message, type) {
-
-    const toast = document.createElement("div");
-    toast.className = `toast toast-${type}`;
-    toast.innerText = message;
-
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.display = "block";
-    }, 10);
-
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
-}
-
 let confirmCallback = null;
 
 function approveLeave(form) {
-    openConfirmModal("휴가를 승인하시겠습니까?", function () {
+    openConfirmModal("휴가를 승인하시겠습니까?", function() {
         form.submit();
     });
 }
@@ -261,7 +226,7 @@ function closeConfirmModal() {
     confirmCallback = null;
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function() {
     const confirmYes = document.getElementById("confirmYes");
 
     if (confirmYes) {
@@ -270,4 +235,12 @@ document.addEventListener("DOMContentLoaded", function () {
             closeConfirmModal();
         });
     }
+
+    closeConfirmModal();
+    confirmCallback = null;
+});
+
+window.addEventListener("pageshow", function () {
+    closeConfirmModal();
+    confirmCallback = null;
 });

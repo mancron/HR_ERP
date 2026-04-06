@@ -19,8 +19,8 @@
 </head>
 
 <body>
-  <nav id="sidebar">
-    <div class="nav-logo">🏢 HR ERP</div>
+	<nav id="sidebar">
+		<div class="nav-logo">🏢 HR ERP</div>
 
     <div class="nav-group open">
       <div class="nav-group-header" onclick="toggleAccordion(this)">공통·인증</div>

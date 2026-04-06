@@ -4,9 +4,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HR ERP - 휴가 승인</title>
+<title>HR ERP - 초과근무 승인</title>
 <link rel="stylesheet"
-	href="${pageContext.request.contextPath}/css/att/leaveApprove.css">
+	href="${pageContext.request.contextPath}/css/att/overtimeApprove.css">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/common/modal.css">
 </head>
@@ -18,12 +18,13 @@
 
 	<main class="app-content">
 
-		<h2 class="page-title">휴가 승인 관리</h2>
+		<h2 class="page-title">초과근무 승인 관리</h2>
+
 		<form method="get"
-			action="${pageContext.request.contextPath}/att/leave/approve"
+			action="${pageContext.request.contextPath}/att/overtime/approve"
 			class="filter-box">
 
-			<!-- 🔹 부서 선택 -->
+			<!-- 부서 -->
 			<select name="dept">
 				<option value="">전체 부서</option>
 
@@ -34,7 +35,7 @@
 				</c:forEach>
 			</select>
 
-			<!-- 🔹 정렬 선택 -->
+			<!-- 정렬 -->
 			<select name="sort">
 				<option value="">정렬 선택</option>
 
@@ -50,16 +51,17 @@
 					오름차순</option>
 
 				<option value="position_desc"
-					<c:if test="${sort eq 'position_desc'}">selected</c:if>>
-					직급 내림차순</option>
+					<c:if test="${sort eq 'position_desc'}">selected</c:if>>직급
+					내림차순</option>
 			</select>
-			<!-- 기간 조회 -->
+
+			<!-- 기간 -->
 			<input type="date" name="startDate" value="${startDate}"> ~ <input
 				type="date" name="endDate" value="${endDate}">
 
 			<button type="submit" class="btn approve-btn">조회</button>
-
 		</form>
+
 		<div class="leave-right-box">
 
 			<table class="leave-approve-table">
@@ -68,9 +70,8 @@
 						<th>부서</th>
 						<th>직급</th>
 						<th>신청자</th>
-						<th>기간</th>
-						<th>유형</th>
-						<th>일수</th>
+						<th>근무일</th>
+						<th>근무시간</th>
 						<th>사유</th>
 						<th>상태</th>
 						<th>처리</th>
@@ -88,43 +89,31 @@
 									<td><c:out value="${item.position}" /></td>
 									<td><c:out value="${item.empName}" /></td>
 
-									<td><c:out value="${item.startDate}" /> ~ <c:out
-											value="${item.endDate}" /></td>
+									<td><c:out value="${item.otDate}" /></td>
+									<td><c:out value="${item.startTime}" /> ~ <c:out
+											value="${item.endTime}" /> (<c:out value="${item.otHours}" />시간)
+									</td>
 
-									<td><c:out value="${item.leaveType}" /> <c:if
-											test="${item.leaveType eq '반차'}">
-            - <c:out value="${item.halfType}" />
-										</c:if></td>
-
-									<td><c:out value="${item.days}" /></td>
 									<td><c:out value="${item.reason}" /></td>
 
 									<td><span class="status pending"> <c:out
 												value="${item.status}" />
 									</span></td>
+
 									<td class="action-cell">
 										<!-- 승인 -->
 										<form
-											action="${pageContext.request.contextPath}/leave/updateStatus"
+											action="${pageContext.request.contextPath}/overtime/updateStatus"
 											method="post">
 
-											<input type="hidden" name="leaveId" value="${item.leaveId}">
+											<input type="hidden" name="overtimeId" value="${item.otId}">
 											<input type="hidden" name="status" value="승인">
 
 											<button type="button" class="btn approve-btn"
-												onclick="approveLeave(this.form)">승인</button>
+												onclick="approveOvertime(this.form)">승인</button>
 										</form> <!-- 반려 -->
-										<form
-											action="${pageContext.request.contextPath}/leave/updateStatus"
-											method="post" onsubmit="return confirmReject(this);">
-
-											<input type="hidden" name="leaveId" value="${item.leaveId}">
-											<input type="hidden" name="status" value="반려"> <input
-												type="hidden" name="reason">
-
-											<button type="button" class="btn reject-btn"
-												onclick="showRejectForm(this)">반려</button>
-										</form>
+										<button type="button" class="btn reject-btn"
+											onclick="showRejectForm(this)">반려</button>
 
 									</td>
 
@@ -134,24 +123,25 @@
 
 						<c:otherwise>
 							<tr>
-								<td colspan="9" class="empty-row">승인 대기 중인 휴가가 없습니다.</td>
+								<td colspan="8" class="empty-row">승인 대기 중인 초과근무가 없습니다.</td>
 							</tr>
 						</c:otherwise>
 
 					</c:choose>
 				</tbody>
-
 			</table>
 
 		</div>
 
 	</main>
 </div>
+
 <script>
 	const contextPath = "${pageContext.request.contextPath}";
 </script>
+
 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
-<script src="${pageContext.request.contextPath}/js/att/leave.js"></script>
+<script src="${pageContext.request.contextPath}/js/att/overtime.js"></script>
 
 <div id="confirmModal" class="modal">
 	<div class="modal-content">
