@@ -300,16 +300,29 @@ public class EvaluationDAO {
             "SELECT e.eval_id, emp.emp_name, "
             + "COALESCE(d.dept_name,'미지정') AS dept_name, "
             + "e.total_score, e.grade, e.eval_status, e.evaluator_id, "
-            + "evalr.emp_name AS evaluator_name, e.confirmed_at, e.eval_comment "
+            + "evalr.emp_name AS evaluator_name, e.confirmed_at, e.eval_comment, "
+            + "e.eval_year, e.eval_period, e.eval_type "
             + "FROM evaluation e "
             + "JOIN employee emp ON e.emp_id = emp.emp_id "
             + "LEFT JOIN department d ON emp.dept_id = d.dept_id "
             + "LEFT JOIN employee evalr ON e.evaluator_id = evalr.emp_id "
-            + "WHERE e.eval_year=? AND e.eval_period=? AND e.eval_type=? "
+            + "WHERE 1=1 "
         );
         List<Object> params = new ArrayList<>();
-        params.add(year); params.add(period); params.add(type);
 
+        sql.append("AND e.eval_year=? ");
+        params.add(year);
+
+        // period="전체" or null → 전체 기간
+        if (period != null && !period.isEmpty() && !"전체".equals(period)) {
+            sql.append("AND e.eval_period=? ");
+            params.add(period);
+        }
+        // type="전체" or null → 전체 유형
+        if (type != null && !type.isEmpty() && !"전체".equals(type)) {
+            sql.append("AND e.eval_type=? ");
+            params.add(type);
+        }
         if (searchTarget != null && !searchTarget.trim().isEmpty()) {
             sql.append("AND emp.emp_name LIKE ? ");
             params.add("%" + searchTarget.trim() + "%");
@@ -318,7 +331,7 @@ public class EvaluationDAO {
             sql.append("AND evalr.emp_name LIKE ? ");
             params.add("%" + searchEvaluator.trim() + "%");
         }
-        sql.append("ORDER BY e.created_at DESC");
+        sql.append("ORDER BY e.eval_year DESC, e.created_at DESC");
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
@@ -338,6 +351,9 @@ public class EvaluationDAO {
                     map.put("confirmedAt",   rs.getTimestamp("confirmed_at"));
                     map.put("evalComment",   evalComment);
                     map.put("isRejected",    evalComment != null && evalComment.startsWith("[반려]"));
+                    map.put("evalYear",      rs.getInt("eval_year"));
+                    map.put("evalPeriod",    rs.getString("eval_period"));
+                    map.put("evalType",      rs.getString("eval_type"));
                     list.add(map);
                 }
             }
@@ -355,12 +371,17 @@ public class EvaluationDAO {
         summary.put("S", 0); summary.put("A", 0); summary.put("B", 0);
         summary.put("C", 0); summary.put("D", 0); summary.put("미완료", 0);
 
-        String sqlGrade = "SELECT grade, COUNT(*) AS cnt FROM evaluation "
-                + "WHERE eval_year=? AND eval_period=? AND eval_type=? AND eval_status='최종확정' "
-                + "GROUP BY grade";
+        StringBuilder sqlGrade = new StringBuilder(
+                "SELECT grade, COUNT(*) AS cnt FROM evaluation WHERE eval_status='최종확정' ");
+        List<Object> params = new ArrayList<>();
+        sqlGrade.append("AND eval_year=? "); params.add(year);
+        if (period != null && !"전체".equals(period) && !period.isEmpty()) { sqlGrade.append("AND eval_period=? "); params.add(period); }
+        if (type   != null && !"전체".equals(type)   && !type.isEmpty())   { sqlGrade.append("AND eval_type=? ");   params.add(type); }
+        sqlGrade.append("GROUP BY grade");
+
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sqlGrade)) {
-            pstmt.setInt(1, year); pstmt.setString(2, period); pstmt.setString(3, type);
+             PreparedStatement pstmt = conn.prepareStatement(sqlGrade.toString())) {
+            for (int i = 0; i < params.size(); i++) pstmt.setObject(i + 1, params.get(i));
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     String grade = rs.getString("grade");
