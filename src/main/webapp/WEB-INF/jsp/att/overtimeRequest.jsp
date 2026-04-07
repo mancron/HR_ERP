@@ -12,6 +12,7 @@
 	href="${pageContext.request.contextPath}/css/att/common/requestDetail.css">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/overtime.css">
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 
 <!-- 사이드바 -->
