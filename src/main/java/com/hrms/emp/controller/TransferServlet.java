@@ -73,13 +73,17 @@ public class TransferServlet extends HttpServlet {
         String empNo = request.getParameter("emp_no");
         String targetRole = request.getParameter("target_role");
         
+        
         HistoryDTO dto = new HistoryDTO();
         dto.setEmp_id(Integer.parseInt(request.getParameter("emp_id")));
+        boolean isCurrentManager = transferService.isDeptManager(dto.getEmp_id());
         dto.setChange_type(request.getParameter("transfer_type"));
         dto.setFrom_dept_id(Integer.parseInt(request.getParameter("prev_dept_id")));
         dto.setTo_dept_id(Integer.parseInt(request.getParameter("target_dept")));
         dto.setFrom_position_id(Integer.parseInt(request.getParameter("prev_position_id")));
         dto.setTo_position_id(Integer.parseInt(request.getParameter("target_position")));
+        dto.setFrom_role(isCurrentManager ? "부서장" : "일반");
+        dto.setTo_role(targetRole);
         dto.setReason(request.getParameter("reason"));
         dto.setApproved_by(approvedBy != null ? approvedBy : 0);
         dto.setChange_date(LocalDate.parse(request.getParameter("transfer_date")).atStartOfDay());

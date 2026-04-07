@@ -118,13 +118,10 @@ public class LeaveService {
 			// 🔥 9. 기간 문자열
 			String period = dto.getStartDate() + " ~ " + dto.getEndDate();
 
-			// 🔥 10. 메시지 생성
-			String message = empName + " 님이 휴가를 신청했습니다. (" + period + ")";
-
-			// 🔥 11. 알림 발송
-			notificationDAO.insert(approverId, "LEAVE_PENDING", "leave_request", null, message, conn);
-
 			conn.commit();
+
+			NotificationUtil.sendLeavePending(approverId, empName, period, dto.getLeaveId());
+
 			return "success";
 
 		} catch (Exception e) {
@@ -233,44 +230,63 @@ public class LeaveService {
 	// 휴가 승인 반려 처리
 	// 휴가 데이터 수정 + 잔여 연차 값 업데이트 트랜잭션 처리
 	public boolean approveLeave(int leaveId, int approverId, String status, String reason) {
+
 		Connection conn = null;
+
 		try {
 			conn = DatabaseConnection.getConnection();
-			conn.setAutoCommit(false); // 🔥 트랜잭션 시작
-			// 휴가 정보 조회
+			conn.setAutoCommit(false);
+
+			// 🔥 1. 휴가 정보 조회
 			LeaveDTO leave = leaveDAO.getLeaveById(leaveId);
 			if (leave == null) {
 				throw new Exception("휴가 정보 없음");
 			}
-			if (leave.getEmpId() == approverId) {
+
+			int requesterEmpId = leave.getEmpId();
+
+			// 🔥 2. 자기 승인 방지
+			if (requesterEmpId == approverId) {
 				throw new Exception("자신의 휴가는 승인할 수 없습니다.");
 			}
-			int empId = leave.getEmpId();
-			// 휴가 일수 계산
+
+			// 🔥 3. 승인 권한 체크 (중요)
+			if (leave.getApproverId() != approverId) {
+				throw new Exception("승인 권한이 없습니다.");
+			}
+
+			// 🔥 4. 이미 처리된 건 막기
+			if (!"대기".equals(leave.getStatus())) {
+				throw new Exception("이미 처리된 요청입니다.");
+			}
+
+			// 🔥 5. 데이터 미리 확보 (commit 전에!)
+			String period = leave.getStartDate() + " ~ " + leave.getEndDate();
 			double days = calculateDays(leave.getStartDate().toLocalDate(), leave.getEndDate().toLocalDate(),
 					leave.getLeaveType());
+
 			String leaveType = leave.getLeaveType();
-			// 승인일 경우만 연차 차감
+
+			// 🔥 6. 승인 시 연차 차감
 			if ("승인".equals(status) && ("연차".equals(leaveType) || "반차".equals(leaveType))) {
-				double remain = leaveDAO.getRemainDays(empId);
+
+				double remain = leaveDAO.getRemainDays(requesterEmpId);
 				if (remain < days) {
 					throw new Exception("연차 부족");
 				}
-				leaveDAO.updateAnnualLeave(conn, empId, days);
+
+				leaveDAO.updateAnnualLeave(conn, requesterEmpId, days);
 			}
-			// 상태 변경 (승인/반려 공통)
+
+			// 🔥 7. 상태 변경
 			boolean result = leaveDAO.updateLeaveStatus(conn, leaveId, approverId, status, reason);
 			if (!result) {
 				throw new Exception("상태 변경 실패");
 			}
-			conn.commit(); // 성공 시 커밋
 
-			// 신청자 ID
-			int requesterEmpId = leave.getEmpId();
+			conn.commit(); // ✅ 먼저 커밋
 
-			// 기간 문자열
-			String period = leave.getStartDate() + " ~ " + leave.getEndDate();
-
+			// 🔔 8. 알림 (커밋 이후!)
 			if ("승인".equals(status)) {
 				NotificationUtil.sendLeaveApproved(requesterEmpId, period, days, leaveId);
 			} else if ("반려".equals(status)) {
@@ -278,13 +294,18 @@ public class LeaveService {
 			}
 
 			return true;
+
 		} catch (Exception e) {
+
 			try {
 				if (conn != null)
-					conn.rollback(); // 실패 시 롤백
+					conn.rollback();
 			} catch (Exception ex) {
 			}
+
 			e.printStackTrace();
+			return false;
+
 		} finally {
 			try {
 				if (conn != null) {
@@ -294,7 +315,6 @@ public class LeaveService {
 			} catch (Exception e) {
 			}
 		}
-		return false;
 	}
 
 	// 휴가 상세 데이터
