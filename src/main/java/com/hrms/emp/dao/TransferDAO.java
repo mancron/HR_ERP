@@ -144,4 +144,53 @@ public class TransferDAO {
 	        if (pstmt != null) pstmt.close();
 	    }
 	}
+	
+	// 해당 부서의 현재 부서장 emp_id 조회 (없으면 0 반환)
+	public int getCurrentDeptManagerId(Connection con, int deptId) throws SQLException {
+	    String sql = "SELECT manager_id FROM department WHERE dept_id = ?";
+	    PreparedStatement pstmt = null;
+	    ResultSet rs = null;
+	    try {
+	        pstmt = con.prepareStatement(sql);
+	        pstmt.setInt(1, deptId);
+	        rs = pstmt.executeQuery();
+	        if (rs.next()) {
+	            int managerId = rs.getInt("manager_id");
+	            return rs.wasNull() ? 0 : managerId;
+	        }
+	        return 0;
+	    } finally {
+	        if (rs != null) rs.close();
+	        if (pstmt != null) pstmt.close();
+	    }
+	}
+
+	// 기존 부서장의 현재 부서/직급/직책 정보 조회 (이력 기록용)
+	public HistoryDTO getEmpInfoForHistory(Connection con, int empId) throws SQLException {
+	    String sql = "SELECT e.dept_id, e.position_id, " +
+	                 "(SELECT COUNT(*) FROM department WHERE manager_id = e.emp_id AND is_active = 1) AS is_manager " +
+	                 "FROM employee e WHERE e.emp_id = ?";
+	    PreparedStatement pstmt = null;
+	    ResultSet rs = null;
+	    try {
+	        pstmt = con.prepareStatement(sql);
+	        pstmt.setInt(1, empId);
+	        rs = pstmt.executeQuery();
+	        if (rs.next()) {
+	            HistoryDTO dto = new HistoryDTO();
+	            dto.setEmp_id(empId);
+	            dto.setFrom_dept_id(rs.getInt("dept_id"));
+	            dto.setTo_dept_id(rs.getInt("dept_id")); // 부서 이동 없음
+	            dto.setFrom_position_id(rs.getInt("position_id"));
+	            dto.setTo_position_id(rs.getInt("position_id")); // 직급 변동 없음
+	            dto.setFrom_role("부서장");
+	            dto.setTo_role("일반"); // 부서장 → 일반으로 강등
+	            return dto;
+	        }
+	        return null;
+	    } finally {
+	        if (rs != null) rs.close();
+	        if (pstmt != null) pstmt.close();
+	    }
+	}
 }
