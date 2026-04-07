@@ -43,16 +43,14 @@
       <div class="nav-group-header" onclick="toggleAccordion(this)">직원 관리</div>
       <div class="nav-group-content">
         <a href="${ctx}/emp/list" class="nav-item">직원 목록</a>
-        <a href="${ctx}/emp/history" class="nav-item">인사발령 이력</a>
-        <a href="${ctx}/emp/approvalHistory" class="nav-item">휴직·복직·퇴직 내역</a>
-
         <c:if test="${isHrAdmin}">
           <a href="${ctx}/emp/reg" class="nav-item">직원 등록</a>
         </c:if>
-
-        <c:if test="${isHrAdmin || isCeo || isManager}">
-          <a href="${ctx}/emp/approval" class="nav-item">휴직·복직·퇴직 승인</a>
+        <c:if test="${isHrAdmin || isAdminGroup || isCeo}">
+          <a href="${ctx}/emp/history" class="nav-item">인사발령 이력</a>
         </c:if>
+        <a href="${ctx}/emp/approval" class="nav-item">휴직·복직·퇴직 승인</a>
+        <a href="${ctx}/emp/approvalHistory" class="nav-item">휴직·복직·퇴직 내역</a>
       </div>
     </div>
 

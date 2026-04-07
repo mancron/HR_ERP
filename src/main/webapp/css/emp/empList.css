@@ -99,8 +99,8 @@
   transform: scale(0.97);
 }
 
-/* + 직원 등록 버튼 (있을 경우) */
-.btn-register {
+/* 내 정보 버튼 */
+.btn-myInfo {
   background: #10b981;
   color: #fff;
   border: none;
