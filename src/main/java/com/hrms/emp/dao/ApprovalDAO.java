@@ -64,7 +64,8 @@ public class ApprovalDAO {
             String status, String keyword, String deptName, String leaveType)
             throws SQLException {
         StringBuilder sql = new StringBuilder(LEAVE_SELECT)
-            .append("WHERE (r.dept_manager_id = ? OR r.emp_id = ?) ")
+            .append("WHERE (r.dept_manager_id = ? OR e.dept_id IN " +
+                    "(SELECT dept_id FROM department WHERE manager_id = ?)) ")
             .append(IN_PROGRESS);
         if (!"all".equals(status))                     sql.append("AND r.status = ? ");
         if (keyword   != null && !keyword.isEmpty())   sql.append("AND e.emp_name LIKE ? ");
@@ -98,7 +99,8 @@ public class ApprovalDAO {
             String status, String keyword, String deptName)
             throws SQLException {
         StringBuilder sql = new StringBuilder(RESIGN_SELECT)
-            .append("WHERE (r.dept_manager_id = ? OR r.emp_id = ?) ")
+            .append("WHERE (r.dept_manager_id = ? OR e.dept_id IN " +
+                    "(SELECT dept_id FROM department WHERE manager_id = ?)) ")
             .append(IN_PROGRESS);
         if (!"all".equals(status))                    sql.append("AND r.status = ? ");
         if (keyword  != null && !keyword.isEmpty())   sql.append("AND e.emp_name LIKE ? ");

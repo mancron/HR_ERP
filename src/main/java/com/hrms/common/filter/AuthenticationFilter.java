@@ -98,12 +98,12 @@ public class AuthenticationFilter implements Filter {
 
         // [직원 관리] 휴직·복직·퇴직 승인 (HR, 최종승인자, 부서장만)
         // 주의: /emp/approvalHistory (단순 내역 조회)는 통과시키고 실제 결재 화면만 막음
-        if (path.startsWith("/emp/approval") && !path.startsWith("/emp/approvalHistory")) {
-            if (!"HR담당자".equals(role) && !"최종승인자".equals(role) && !isManager) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "결재 권한이 없습니다.");
-                return;
-            }
-        }
+//        if (path.startsWith("/emp/approval") && !path.startsWith("/emp/approvalHistory")) {
+//            if (!"HR담당자".equals(role) && !"최종승인자".equals(role) && !isManager) {
+//                res.sendError(HttpServletResponse.SC_FORBIDDEN, "결재 권한이 없습니다.");
+//                return;
+//            }
+//        }
 
         // [근태 관리] 휴가 승인 (HR, 부서장만)
         if (path.startsWith("/att/leave/approve")) {
