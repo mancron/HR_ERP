@@ -1,0 +1,101 @@
+@charset "UTF-8";
+
+.leave-right-box {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+/* =========================
+   승인 테이블
+========================= */
+.leave-approve-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* 헤더 */
+.leave-approve-table th {
+    background-color: #f4f6f9;
+    padding: 12px;
+    font-weight: bold;
+}
+
+/* 셀 */
+.leave-approve-table th,
+.leave-approve-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+
+    /* 🔥 핵심: 가운데 정렬 */
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* hover */
+.leave-approve-table tbody tr:hover {
+    background-color: #fafafa;
+}
+
+.status.pending {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+/* =========================
+   버튼
+========================= */
+.btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 2px;
+}
+
+.approve-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.reject-btn,
+.cancel-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+/* =========================
+   셀 스타일
+========================= */
+.reason-cell {
+    max-width: 200px;
+    word-break: break-word;
+    text-align: center;
+}
+
+/* 버튼 영역 */
+.action-cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+/* =========================
+   기타
+========================= */
+.empty-row {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+}
+
+.reject-row input[name="reason"] {
+    height: 36px;
+    padding: 0 10px;
+    font-size: 14px;
+    box-sizing: border-box;
+}

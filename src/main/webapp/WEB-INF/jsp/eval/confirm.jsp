@@ -6,10 +6,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>평가 상세 및 확정</title>
-    <%-- 외부 통합 CSS 로드 (CSS-1 해결) --%>
-    <link rel="stylesheet" href="${ctxPath}/css/eval/evaluation.css">
+<meta charset="UTF-8">
+<title>평가 확정</title>
+<link rel="stylesheet" href="${ctxPath}/css/eval/evaluation.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+<style>
+    body { margin:0; background:#fff; font-family:'Pretendard','Apple SD Gothic Neo',sans-serif; }
+    .cw  { padding:22px 26px; }
+    .ct  { font-size:16px; font-weight:700; color:#1e293b; margin-bottom:16px;
+           display:flex; align-items:center; gap:8px; }
+    .ro  { width:100%; padding:8px 11px; border:1px solid #e2e8f0; border-radius:6px;
+           background:#f8fafc; color:#64748b; font-size:13px; box-sizing:border-box; }
+    .ig  { display:grid; grid-template-columns:1fr 1fr; gap:10px 16px; margin-bottom:16px; }
+    .ig .form-group label { display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px; }
+    .sro { opacity:0.6; pointer-events:none; width:100%; }
+    .ba  { display:flex; justify-content:flex-end; gap:10px;
+           margin-top:18px; padding-top:14px; border-top:1px solid #f1f5f9; }
+    .stag { display:inline-block; padding:3px 11px; border-radius:20px; font-size:12px; font-weight:600; }
+    .sc   { background:#dcfce7; color:#16a34a; }
+    .sw   { background:#fef9c3; color:#ca8a04; }
+    .sr   { background:#fee2e2; color:#dc2626; }
+    #rmsg { font-size:13px; color:#dc2626; margin-top:6px; text-align:right; min-height:18px; }
+</style>
 </head>
 <body style="margin:0; background:#fff; font-family:'Pretendard',sans-serif;">
 

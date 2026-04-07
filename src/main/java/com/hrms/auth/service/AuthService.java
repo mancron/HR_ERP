@@ -2,10 +2,17 @@ package com.hrms.auth.service;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.mindrot.jbcrypt.BCrypt;
+
 import com.hrms.auth.dao.AccountDAO;
 import com.hrms.auth.dto.AccountDTO;
+import com.hrms.auth.dto.LoginResultDTO;
 import com.hrms.common.util.NotificationUtil;
+import com.hrms.emp.dao.EmpDAO;
+import com.hrms.emp.dto.EmpDTO;
+import com.hrms.org.dao.DeptDAO;
+import com.hrms.org.dao.PosDAO;
 
 public class AuthService {
     private AccountDAO accountDAO = new AccountDAO();
@@ -59,14 +66,17 @@ public class AuthService {
     /**
      * 로그인 로직: 비활성화 체크 -> 잠금 체크 -> 비밀번호 검증
      */
-    public AccountDTO login(String username, String password) throws Exception {
+    /**
+     * 로그인 로직: 비활성화 체크 -> 잠금 체크 -> 비밀번호 검증 및 정보 조립
+     */
+    public LoginResultDTO login(String username, String password) throws Exception {
         AccountDTO account = accountDAO.getAccountByUsername(username);
         
         if (account == null) {
             throw new Exception("invalid_user");
         }
         
-        // 1. [최우선] 비활성화 계정 체크 (is_active = 0)
+        // 1. 비활성화 계정 체크 (is_active = 0)
         if (account.getIsActive() == 0) {
             throw new Exception("retired_user");
         }
@@ -79,9 +89,34 @@ public class AuthService {
         // 3. 비밀번호 검증
         if (BCrypt.checkpw(password, account.getPasswordHash())) {
             accountDAO.handleLoginSuccess(username);
-            return account;
+            
+            // --- [핵심] 서블릿에 있던 로직을 서비스로 이동하여 데이터 조립 ---
+            EmpDAO empDao = new EmpDAO();
+            EmpDTO empInfo = empDao.getEmployeeById(account.getEmpId());
+            
+            if (empInfo != null) {
+                if (empInfo.getDept_name() == null || empInfo.getDept_name().isEmpty()) {
+                    empInfo.setDept_name(new DeptDAO().getDeptNameById(empInfo.getDept_id()));
+                }
+                if (empInfo.getPosition_name() == null || empInfo.getPosition_name().isEmpty()) {
+                    empInfo.setPosition_name(new PosDAO().getPositionNameById(empInfo.getPosition_id()));
+                }
+            }
+
+            // 추가된 부서장 여부 체크 로직
+            DeptDAO deptDao = new DeptDAO();
+            boolean isManager = deptDao.isManager(account.getEmpId());
+
+            // 4. 결과를 LoginResultDTO 하나로 포장
+            LoginResultDTO result = new LoginResultDTO();
+            result.setAccount(account);
+            result.setEmpInfo(empInfo);
+            result.setManager(isManager);
+
+            return result;
+            
         } else {
-            // 실패 시 처리
+            // 실패 시 처리 (기존 로직 동일)
             accountDAO.handleLoginFailure(username);
             AccountDTO updated = accountDAO.getAccountByUsername(username);
             int currentAttempts = (updated != null) ? updated.getLoginAttempts() : 1;

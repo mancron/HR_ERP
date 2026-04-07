@@ -3,6 +3,7 @@ package com.hrms.emp.service;
 import java.sql.Connection;
 import com.hrms.common.db.DatabaseConnection;
 import com.hrms.emp.dao.ApprovalActionDAO;
+import com.hrms.emp.dto.HistoryDTO;
 
 public class ApprovalActionService {
 
@@ -49,7 +50,7 @@ public class ApprovalActionService {
 			    if ("대기".equals(currentStatus) && isHrManager && !isSelf) {
 			        result = dao.approveHrManagerForPresident(con, type, requestId, loginEmpId);
 			        if (result > 0)
-			            applyFinalApproval(con, type, requestId);
+			            applyFinalApproval(con, type, requestId, loginEmpId);
 			    } else {
 			        con.rollback();
 			        return "현재 상태에서 승인할 수 없습니다.";
@@ -78,7 +79,7 @@ public class ApprovalActionService {
 				} else if ("부서장승인".equals(currentStatus) && isPresident && !isSelf) {
 					result = dao.approvePresident(con, type, requestId, loginEmpId);
 					if (result > 0)
-						applyFinalApproval(con, type, requestId);
+						applyFinalApproval(con, type, requestId, loginEmpId);
 
 				} else {
 					con.rollback();
@@ -110,7 +111,7 @@ public class ApprovalActionService {
 				} else if ("HR담당자승인".equals(currentStatus) && isPresident && !isSelf) {
 					result = dao.approvePresident(con, type, requestId, loginEmpId);
 					if (result > 0)
-						applyFinalApproval(con, type, requestId);
+						applyFinalApproval(con, type, requestId, loginEmpId);
 
 				} else {
 					con.rollback();
@@ -224,15 +225,54 @@ public class ApprovalActionService {
 	}
 
 	// 최종 승인 후 employee 테이블 실제 반영
-	private void applyFinalApproval(Connection con, String type, int requestId) throws Exception {
-		int empId = dao.getEmpId(con, type, requestId);
-		if ("leave".equals(type)) {
-			String leaveType = dao.getLeaveType(con, requestId);
-			String newStatus = "휴직".equals(leaveType) ? "휴직" : "재직";
-			dao.updateEmployeeStatus(con, empId, newStatus);
-		} else {
-			String resignDate = dao.getResignDate(con, requestId);
-			dao.updateEmployeeResign(con, empId, resignDate);
-		}
+	private void applyFinalApproval(Connection con, String type, int requestId, int loginEmpId) throws Exception {
+	    int empId = dao.getEmpId(con, type, requestId);
+	    int[] deptInfo = dao.getEmpDeptAndStatus(con, empId);
+	    int currentDeptId = deptInfo[0];
+	    int[] posAndRole = dao.getEmpPositionAndRole(con, empId);
+	    int currentPositionId = posAndRole[0];
+	    String currentRole = posAndRole[1] > 0 ? "부서장" : "일반";
+
+	    HistoryDTO history = new HistoryDTO();
+	    history.setEmp_id(empId);
+	    history.setFrom_dept_id(currentDeptId);
+	    history.setFrom_position_id(currentPositionId);
+	    history.setFrom_role(currentRole);
+	    history.setApproved_by(loginEmpId);
+
+	    if ("leave".equals(type)) {
+	        String leaveType = dao.getLeaveType(con, requestId);
+	        String newStatus = "휴직".equals(leaveType) ? "휴직" : "재직";
+	        String startDate = dao.getLeaveStartDate(con, requestId);
+	        history.setChange_type(leaveType);
+	        history.setChange_date(java.time.LocalDate.parse(startDate).atStartOfDay());
+	        history.setReason(dao.getLeaveReason(con, requestId));
+	        // leave는 to = from 그대로 (부서/직급 변동 없음)
+	        history.setTo_dept_id(currentDeptId);
+	        history.setTo_position_id(currentPositionId);
+	        history.setTo_role(currentRole);
+
+	        dao.insertPersonnelHistory(con, history);
+	        dao.updateEmployeeStatus(con, empId, newStatus);
+
+	    } else {
+	        String resignDate = dao.getResignDate(con, requestId);
+	        history.setChange_type("퇴직");
+	        history.setChange_date(java.time.LocalDate.parse(resignDate).atStartOfDay());
+	        history.setReason(dao.getResignReason(con, requestId));
+	        // 퇴직 후 소속 없음
+	        history.setTo_dept_id(0);
+	        history.setTo_position_id(0);
+	        history.setTo_role(null);
+
+	        // ① 이력 먼저 (from 정보 살아있을 때)
+	        dao.insertPersonnelHistory(con, history);
+	        // ② 퇴직 처리
+	        dao.updateEmployeeResign(con, empId, resignDate);
+	        // ③ 부서/직급 NULL
+	        dao.clearEmployeeDeptAndPosition(con, empId);
+	        // ④ 부서장이었으면 department.manager_id NULL
+	        dao.clearDeptManagerIfResign(con, empId);
+	    }
 	}
 }

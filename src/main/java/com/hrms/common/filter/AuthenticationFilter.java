@@ -1,5 +1,10 @@
 package com.hrms.common.filter;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
@@ -11,81 +16,203 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-import java.io.IOException;
-
-// 모든 URL 요청을 가로채서 검증한다.
 @WebFilter("/*")
 public class AuthenticationFilter implements Filter {
 
+    private static final Set<String> ADMIN_ALLOWED_PREFIXES = new HashSet<>(Arrays.asList(
+        "/main",
+        "/auth/",
+        "/notification",
+        "/att/record",
+        "/att/leave/req",
+        "/att/overtime/req",
+        "/att/annual",
+        "/sal/slip",
+        "/eval/write",
+        "/eval/status",
+        "/emp/list",
+        "/emp/approvalHistory",
+        "/sys/"
+    ));
+
+    private static final Set<String> ADMIN_MANAGER_EXTRA_PREFIXES = new HashSet<>(Arrays.asList(
+        "/att/leave/approve",
+        "/att/overtime/approve",
+        "/emp/approval",
+        "/emp/approvalHistory"
+    ));
+
+    private static final Set<String> CEO_ALLOWED_POST_PREFIXES = new HashSet<>(Arrays.asList(
+        "/emp/approval",
+        "/auth/",
+        "/att/record"
+    ));
+
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
-        // 필터 초기화 시 필요한 로직이 있다면 작성
-    }
+    public void init(FilterConfig filterConfig) throws ServletException {}
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
-        HttpServletRequest req = (HttpServletRequest) request;
-        HttpServletResponse res = (HttpServletResponse) response;
+        HttpServletRequest  req  = (HttpServletRequest)  request;
+        HttpServletResponse res  = (HttpServletResponse) response;
 
-        String requestURI = req.getRequestURI();
+        String requestURI  = req.getRequestURI();
         String contextPath = req.getContextPath();
-        
-        // Context Path를 제외한 실제 요청 경로 추출
-        String path = requestURI.substring(contextPath.length());
+        String path        = requestURI.substring(contextPath.length());
+        String method      = req.getMethod();
 
-     // 1. [핵심 수정] 검증 예외 경로 (Bypass)
-        // 로그인 화면 진입(/auth/login), 실제 로그인 처리(.do), 정적 리소스는 무조건 통과
-        if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
-                || path.equals("/auth/login")
-                || path.equals("/auth/login.do")
-                || path.contains("login.jsp")
-                || path.startsWith("/api/")) {  // ← 추가
-
+        if (path.startsWith("/css/")      ||
+            path.startsWith("/js/")       ||
+            path.startsWith("/images/")   ||
+            path.equals("/auth/login")    ||
+            path.equals("/auth/login.do") ||
+            path.contains("login.jsp")    ||
+            path.startsWith("/api/")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 2. 인증 검증
-        HttpSession session = req.getSession(false);
-        boolean isLoggedIn = (session != null && session.getAttribute("userRole") != null);
+        HttpSession session    = req.getSession(false);
+        boolean     isLoggedIn = (session != null && session.getAttribute("userRole") != null);
 
         if (!isLoggedIn) {
-            // [중요] 리다이렉트 경로가 위 예외 경로(1번)에 반드시 포함되어야 함!
-            res.sendRedirect(contextPath + "/auth/login"); 
+            res.sendRedirect(contextPath + "/auth/login");
             return;
         }
 
-        // 3. 인가 검증 (/sys/ 관리자 체크)
+        String  role          = (String)  session.getAttribute("userRole");
+        Boolean isManagerAttr = (Boolean) session.getAttribute("isManager");
+        boolean isManager     = (isManagerAttr != null && isManagerAttr);
+
+        // [관리자] 허용 경로 외 전면 차단
+        if ("관리자".equals(role)) {
+            boolean allowed = ADMIN_ALLOWED_PREFIXES.stream()
+                                .anyMatch(p -> path.startsWith(p));
+            if (!allowed && isManager) {
+                allowed = ADMIN_MANAGER_EXTRA_PREFIXES.stream()
+                            .anyMatch(p -> path.startsWith(p));
+            }
+            if (!allowed) {
+                res.sendRedirect(contextPath + "/main");
+                return;
+            }
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // [시스템] sqlQuery는 HR담당자·CEO, 나머지는 차단
         if (path.startsWith("/sys/")) {
-            String role = (String) session.getAttribute("userRole");
-            if (!"관리자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "관리자 권한이 필요합니다.");
-                return;
-            }
-        }
-        
-
-        // 	4. 근태/휴가 관리자 기능 권한 체크
-        if (path.startsWith("/att/leave/approve") 
-                || path.startsWith("/att/status") 
-                || path.startsWith("/att/annual/grant")) {
-
-            String role = (String) session.getAttribute("userRole");
-
-            if (!"관리자".equals(role) && !"HR담당자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "해당 기능은 관리자 또는 HR 관리자만 접근 가능합니다.");
+            if (path.startsWith("/sys/sqlQuery")) {
+                if (!"HR담당자".equals(role) && !"최종승인자".equals(role)) {
+                    res.sendRedirect(contextPath + "/main");
+                    return;
+                }
+            } else {
+                res.sendRedirect(contextPath + "/main");
                 return;
             }
         }
 
-        // 모든 보안 검증을 통과한 정상 요청만 다음 필터나 서블릿으로 보낸다.
+        // [CEO] 읽기 전용 강제
+        if ("최종승인자".equals(role)) {
+            if ("POST".equalsIgnoreCase(method) ||
+                "PUT".equalsIgnoreCase(method)  ||
+                "DELETE".equalsIgnoreCase(method)) {
+                boolean ceoPostAllowed = CEO_ALLOWED_POST_PREFIXES.stream()
+                                            .anyMatch(p -> path.startsWith(p));
+                if (!ceoPostAllowed) {
+                    res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                    return;
+                }
+            }
+        }
+
+        // [조직 관리] GET은 전 직원, 쓰기는 HR담당자 전용
+        if (path.startsWith("/org/")) {
+            if (!"GET".equalsIgnoreCase(method) && !"HR담당자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                return;
+            }
+        }
+
+        // [직원 관리] 직원 등록 — HR담당자 전용 (접근 자체 차단)
+        if (path.startsWith("/emp/reg")) {
+            if (!"HR담당자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                return;
+            }
+        }
+
+        // [직원 관리] 휴직·복직·퇴직 승인 (HR, 최종승인자, 부서장만)
+        // 주의: /emp/approvalHistory (단순 내역 조회)는 통과시키고 실제 결재 화면만 막음
+//        if (path.startsWith("/emp/approval") && !path.startsWith("/emp/approvalHistory")) {
+//            if (!"HR담당자".equals(role) && !"최종승인자".equals(role) && !isManager) {
+//                res.sendError(HttpServletResponse.SC_FORBIDDEN, "결재 권한이 없습니다.");
+//                return;
+//            }
+//        }
+
+        // [근태 관리] 초과근무 승인 — HR담당자·부서장
+        if (path.startsWith("/att/overtime/approve")) {
+            if (!"HR담당자".equals(role) && !isManager) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                return;
+            }
+        }
+
+        // [근태 관리] 전사 근태 현황 — HR담당자·CEO
+        if (path.startsWith("/att/status")) {
+            if (!"HR담당자".equals(role) && !"최종승인자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                return;
+            }
+        }
+
+        // [근태 관리] 연차 일괄 부여 — HR담당자 전용
+        if (path.startsWith("/att/annual/grant")) {
+            if (!"HR담당자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                return;
+            }
+        }
+
+        // [급여 관리] 급여 계산·지급 — HR담당자 전용
+        if (path.startsWith("/sal/calc")) {
+            if (!"HR담당자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                return;
+            }
+        }
+
+        // [급여 관리] 전사 급여 현황 — HR담당자·CEO
+        if (path.startsWith("/sal/status")) {
+            if (!"HR담당자".equals(role) && !"최종승인자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                return;
+            }
+        }
+
+        // [급여 관리] 공제율 관리 — HR담당자 전용
+        if (path.startsWith("/sal/deduction")) {
+            if (!"HR담당자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                return;
+            }
+        }
+
+        // [인사 평가] 평가 작성 — CEO 불가
+        if (path.startsWith("/eval/write")) {
+            if ("최종승인자".equals(role)) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                return;
+            }
+        }
+
         chain.doFilter(request, response);
     }
 
     @Override
-    public void destroy() {
-        // 자원 해제 로직
-    }
+    public void destroy() {}
 }

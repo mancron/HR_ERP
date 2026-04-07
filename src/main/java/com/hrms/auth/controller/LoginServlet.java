@@ -2,11 +2,9 @@ package com.hrms.auth.controller;
 
 import com.hrms.auth.dao.AccountDAO;
 import com.hrms.auth.dto.AccountDTO;
+import com.hrms.auth.dto.LoginResultDTO;
 import com.hrms.auth.service.AuthService;
-import com.hrms.emp.dao.EmpDAO;
 import com.hrms.emp.dto.EmpDTO;
-import com.hrms.org.dao.DeptDAO;
-import com.hrms.org.dao.PosDAO;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -19,6 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LoginServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private AuthService authService = new AuthService();
+    
+    // [유지] 중복 로그인 체크를 위한 메모리 맵
     private static final Map<String, String> loginUsers = new ConcurrentHashMap<>();
 
     @Override
@@ -35,33 +35,34 @@ public class LoginServlet extends HttpServlet {
         HttpSession session = request.getSession();
 
         try {
-            AccountDTO account = authService.login(user, pass);
+            // [팀장님 변경안 반영] LoginResultDTO로 결과 수신
+            LoginResultDTO result = authService.login(user, pass);
             
-            if (account != null) {
+            if (result != null && result.getAccount() != null) {
+                AccountDTO account = result.getAccount();
+                EmpDTO empInfo = result.getEmpInfo();
                 String sEmpId = String.valueOf(account.getEmpId());
 
+                // [우리 기능 유지] 중복 로그인 검증
                 if (loginUsers.containsKey(sEmpId)) {
                     throw new Exception("already_logged_in");
                 }
 
-                EmpDAO empDao = new EmpDAO();
-                EmpDTO empInfo = empDao.getEmployeeById(account.getEmpId());
+                // [팀장님 변경안 반영] 세션 정보 세팅
+                session.setAttribute("empId", account.getEmpId());
+                session.setAttribute("userName", account.getUsername());
+                session.setAttribute("userRole", account.getRole());
+                
+                // [팀장님 변경안 반영] 부서장 권한 세팅 (isManager)
+                session.setAttribute("isManager", result.isManager());
                 
                 if (empInfo != null) {
-                    if (empInfo.getDept_name() == null || empInfo.getDept_name().isEmpty()) {
-                        empInfo.setDept_name(new DeptDAO().getDeptNameById(empInfo.getDept_id()));
-                    }
-                    if (empInfo.getPosition_name() == null || empInfo.getPosition_name().isEmpty()) {
-                        empInfo.setPosition_name(new PosDAO().getPositionNameById(empInfo.getPosition_id()));
-                    }
-
-                    session.setAttribute("empId", account.getEmpId());
-                    session.setAttribute("userName", account.getUsername());
-                    session.setAttribute("userRole", account.getRole());
                     session.setAttribute("loginUser", empInfo);
-
+                    
+                    // [우리 기능 유지] 로그인 성공 시 중복 로그인 체크 맵에 등록
                     loginUsers.put(sEmpId, session.getId());
                 }
+                
                 response.sendRedirect(request.getContextPath() + "/main");
             } else {
                 throw new Exception("invalid_auth");
@@ -69,10 +70,9 @@ public class LoginServlet extends HttpServlet {
             
         } catch (Exception e) {
             String errorCode = e.getMessage();
-            
             if (errorCode == null) errorCode = "invalid_auth";
             
-            // [체크!] 퇴사자(retired_user)와 미존재계정(invalid_user)을 허용 리스트에 유지
+            // [우리 기능 유지] 퇴사자, 미존재 계정, 잠금 등 상세 에러 분기 유지
             boolean isKnownError = errorCode.equals("already_logged_in") || 
                                  errorCode.equals("account_locked") || 
                                  errorCode.equals("retired_user") || 

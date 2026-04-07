@@ -3,6 +3,7 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/eval/evaluation.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 
 <%-- ── iframe 모달 오버레이 ── --%>
 <div id="confirmOverlay" style="display:none; position:fixed; top:0; left:0;

@@ -115,24 +115,28 @@ ALTER TABLE department
 CREATE TABLE personnel_history (
     history_id       INT          NOT NULL AUTO_INCREMENT    COMMENT '이력 ID (PK)',
     emp_id           INT          NOT NULL                 COMMENT '대상 직원 ID (FK)',
-    change_type      VARCHAR(20)  NOT NULL                 COMMENT '발령/승진/전보/퇴직/복직',
+    change_type      VARCHAR(20)  NOT NULL                 COMMENT '발령/승진/전보/퇴직/복직/휴직',
     from_dept_id     INT          NULL                     COMMENT '이전 부서 ID (FK)',
-    to_dept_id       INT          NULL                     COMMENT '발령 부서 ID (FK)',
+    to_dept_id       INT          NULL                     COMMENT '변경 부서 ID (FK)',
     from_position_id INT          NULL                     COMMENT '이전 직급 ID (FK)',
     to_position_id   INT          NULL                     COMMENT '변경 직급 ID (FK)',
+    from_role        VARCHAR(50)  NULL                     COMMENT '이전 직책',
+    to_role          VARCHAR(50)  NULL                     COMMENT '변경 직책',
     change_date      DATE         NOT NULL                 COMMENT '발령 적용일',
-    reason           VARCHAR(200) NULL                     COMMENT '발령 사유',
+    reason           VARCHAR(300) NULL                     COMMENT '발령/휴직 상세 사유',
     approved_by      INT          NULL                     COMMENT '승인자 emp_id (FK)',
     created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    
     PRIMARY KEY (history_id),
-    FOREIGN KEY (emp_id)           REFERENCES employee(emp_id),
-    FOREIGN KEY (from_dept_id)     REFERENCES department(dept_id)       ON DELETE SET NULL,
-    FOREIGN KEY (to_dept_id)       REFERENCES department(dept_id)       ON DELETE SET NULL,
-    FOREIGN KEY (from_position_id) REFERENCES job_position(position_id) ON DELETE SET NULL,
-    FOREIGN KEY (to_position_id)   REFERENCES job_position(position_id) ON DELETE SET NULL,
-    FOREIGN KEY (approved_by)      REFERENCES employee(emp_id)          ON DELETE SET NULL,
-    CONSTRAINT chk_change_type CHECK (change_type IN ('발령', '승진', '전보', '퇴직', '복직'))
-) COMMENT '인사발령 이력 - 부서이동, 승진, 전보 등 모든 인사이동 추적';
+    CONSTRAINT fk_ph_emp_id        FOREIGN KEY (emp_id)           REFERENCES employee(emp_id),
+    CONSTRAINT fk_ph_from_dept     FOREIGN KEY (from_dept_id)     REFERENCES department(dept_id)       ON DELETE SET NULL,
+    CONSTRAINT fk_ph_to_dept       FOREIGN KEY (to_dept_id)       REFERENCES department(dept_id)       ON DELETE SET NULL,
+    CONSTRAINT fk_ph_from_pos      FOREIGN KEY (from_position_id) REFERENCES job_position(position_id) ON DELETE SET NULL,
+    CONSTRAINT fk_ph_to_pos        FOREIGN KEY (to_position_id)   REFERENCES job_position(position_id) ON DELETE SET NULL,
+    CONSTRAINT fk_ph_approved_by   FOREIGN KEY (approved_by)      REFERENCES employee(emp_id)          ON DELETE SET NULL,
+    
+    CONSTRAINT chk_ph_change_type  CHECK (change_type IN ('발령', '승진', '전보', '퇴직', '복직', '휴직'))
+) COMMENT '인사발령 및 상태 변경 이력 관리';
 
 
 -- 로그인 계정 테이블: 시스템 접근 관리
@@ -325,13 +329,13 @@ CREATE TABLE overtime_request (
     approver_id INT          NULL                     COMMENT '승인자 emp_id (FK)',
     approved_at DATETIME     NULL                     COMMENT '승인·반려 처리 일시',
     created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    reject_reason VARCHAR(255) NULL COMMENT '반려 사유',
     PRIMARY KEY (ot_id),
-    UNIQUE KEY uk_emp_ot_date (emp_id, ot_date),
     FOREIGN KEY (emp_id)      REFERENCES employee(emp_id),
     FOREIGN KEY (approver_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
     CONSTRAINT chk_ot_time_order CHECK (end_time > start_time),
     CONSTRAINT chk_ot_hours      CHECK (ot_hours > 0),
-    CONSTRAINT chk_ot_status     CHECK (status IN ('대기', '승인', '반려'))
+    CONSTRAINT chk_ot_status     CHECK (status IN ('대기', '승인', '반려','취소'))
 ) COMMENT '초과근무 신청 - 초과근무 승인 및 관리';
 
 
@@ -527,7 +531,7 @@ CREATE INDEX idx_attendance_status ON attendance(status);
 CREATE INDEX idx_leave_status      ON leave_request(status);
 CREATE INDEX idx_leave_emp_date    ON leave_request(emp_id, start_date, end_date);
 CREATE INDEX idx_ot_status         ON overtime_request(status);
-
+CREATE INDEX idx_ot_emp_id 		   ON overtime_request(emp_id);
 -- 급여 관련 인덱스
 CREATE INDEX idx_salary_period     ON salary(salary_year, salary_month);
 CREATE INDEX idx_salary_emp        ON salary(emp_id);
@@ -730,6 +734,11 @@ LIMIT 20;
 -- ================================================
 -- HR ERP AI 조회용 뷰
 -- ================================================
+
+-- Ai 전용 계정삭제
+DROP USER 'ai_reader'@'%';
+
+FLUSH PRIVILEGES;
 -- AI 전용 계정 생성 (비밀번호는 원하는 대로 변경)
 CREATE USER 'ai_reader'@'%' IDENTIFIED BY '123456!';
 
