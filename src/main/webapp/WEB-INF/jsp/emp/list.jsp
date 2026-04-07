@@ -60,10 +60,10 @@
           </select>
 
           <button type="submit" >검색</button>
-          <button type="button" class="btn-my-info btn-detail"
-        data-empno="${sessionScope.loginUser.emp_no}">
-    내 정보
-</button>
+          <button type="button" class="btn-myInfo"
+       		 data-empno="${sessionScope.loginUser.emp_no}">
+  		  	 내 정보
+		  </button>
         </div>
       </form>
 
