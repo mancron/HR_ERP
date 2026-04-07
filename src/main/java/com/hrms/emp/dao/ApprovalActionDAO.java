@@ -410,4 +410,30 @@ public class ApprovalActionDAO {
         }
     }
     
+    
+    // 퇴직 시 employee의 dept_id, position_id NULL 처리
+    public void clearEmployeeDeptAndPosition(Connection con, int empId) throws SQLException {
+        String sql = "UPDATE employee SET dept_id = NULL, position_id = NULL WHERE emp_id = ?";
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, empId);
+            pstmt.executeUpdate();
+        } finally {
+            if (pstmt != null) pstmt.close();
+        }
+    }
+
+    // 퇴직자가 부서장이었으면 department.manager_id NULL 초기화
+    public void clearDeptManagerIfResign(Connection con, int empId) throws SQLException {
+        String sql = "UPDATE department SET manager_id = NULL WHERE manager_id = ?";
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, empId);
+            pstmt.executeUpdate();
+        } finally {
+            if (pstmt != null) pstmt.close();
+        }
+    }
 }

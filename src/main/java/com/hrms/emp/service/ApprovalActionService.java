@@ -227,45 +227,53 @@ public class ApprovalActionService {
 	// 최종 승인 후 employee 테이블 실제 반영
 	private void applyFinalApproval(Connection con, String type, int requestId, int loginEmpId) throws Exception {
 	    int empId = dao.getEmpId(con, type, requestId);
-
-	    // 현재 부서 조회 (이력 기록용)
 	    int[] deptInfo = dao.getEmpDeptAndStatus(con, empId);
 	    int currentDeptId = deptInfo[0];
-	    
-	    // 현재 직급/직책 조회 추가 ← 이 부분 추가
 	    int[] posAndRole = dao.getEmpPositionAndRole(con, empId);
 	    int currentPositionId = posAndRole[0];
 	    String currentRole = posAndRole[1] > 0 ? "부서장" : "일반";
 
-	    // HistoryDTO 조립
 	    HistoryDTO history = new HistoryDTO();
 	    history.setEmp_id(empId);
 	    history.setFrom_dept_id(currentDeptId);
-	    history.setTo_dept_id(currentDeptId);
-	    history.setFrom_position_id(currentPositionId); 
-	    history.setTo_position_id(currentPositionId);  
-	    history.setFrom_role(currentRole);              
-	    history.setTo_role(currentRole);                
+	    history.setFrom_position_id(currentPositionId);
+	    history.setFrom_role(currentRole);
 	    history.setApproved_by(loginEmpId);
 
 	    if ("leave".equals(type)) {
 	        String leaveType = dao.getLeaveType(con, requestId);
 	        String newStatus = "휴직".equals(leaveType) ? "휴직" : "재직";
 	        String startDate = dao.getLeaveStartDate(con, requestId);
-	        history.setChange_type(leaveType); // "휴직" 또는 "복직"
+	        history.setChange_type(leaveType);
 	        history.setChange_date(java.time.LocalDate.parse(startDate).atStartOfDay());
 	        history.setReason(dao.getLeaveReason(con, requestId));
+	        // leave는 to = from 그대로 (부서/직급 변동 없음)
+	        history.setTo_dept_id(currentDeptId);
+	        history.setTo_position_id(currentPositionId);
+	        history.setTo_role(currentRole);
+
+	        dao.insertPersonnelHistory(con, history);
 	        dao.updateEmployeeStatus(con, empId, newStatus);
+
 	    } else {
 	        String resignDate = dao.getResignDate(con, requestId);
 	        history.setChange_type("퇴직");
 	        history.setChange_date(java.time.LocalDate.parse(resignDate).atStartOfDay());
 	        history.setReason(dao.getResignReason(con, requestId));
-	        dao.updateEmployeeResign(con, empId, resignDate);
-	    }
+	        // 퇴직 후 소속 없음
+	        history.setTo_dept_id(0);
+	        history.setTo_position_id(0);
+	        history.setTo_role(null);
 
-	    // personnel_history INSERT
-	    dao.insertPersonnelHistory(con, history);
+	        // ① 이력 먼저 (from 정보 살아있을 때)
+	        dao.insertPersonnelHistory(con, history);
+	        // ② 퇴직 처리
+	        dao.updateEmployeeResign(con, empId, resignDate);
+	        // ③ 부서/직급 NULL
+	        dao.clearEmployeeDeptAndPosition(con, empId);
+	        // ④ 부서장이었으면 department.manager_id NULL
+	        dao.clearDeptManagerIfResign(con, empId);
+	    }
 	}
 	
 	
