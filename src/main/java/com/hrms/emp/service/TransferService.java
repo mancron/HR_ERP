@@ -33,6 +33,21 @@ public class TransferService {
 
             // 3. 발령 직책이 부서장이면 새 부서 manager_id 업데이트
             if ("부서장".equals(targetRole)) {
+                // 기존 부서장이 있는지 확인
+                int prevManagerId = transferDao.getCurrentDeptManagerId(con, dto.getTo_dept_id());
+
+                if (prevManagerId > 0 && prevManagerId != dto.getEmp_id()) {
+                    // 기존 부서장의 정보 조회 후 이력 기록
+                    HistoryDTO prevManagerHistory = transferDao.getEmpInfoForHistory(con, prevManagerId);
+                    if (prevManagerHistory != null) {
+                        prevManagerHistory.setChange_type("발령");
+                        prevManagerHistory.setChange_date(dto.getChange_date());
+                        prevManagerHistory.setReason("부서장 변경으로 인한 직책 해제");
+                        prevManagerHistory.setApproved_by(dto.getApproved_by());
+                        transferDao.insertPersonnelHistory(con, prevManagerHistory);
+                    }
+                }
+
                 transferDao.updateDeptManager(con, dto.getTo_dept_id(), dto.getEmp_id());
             }
             
