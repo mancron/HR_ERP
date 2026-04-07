@@ -5,7 +5,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>HR ERP - 대시보드 (HR담당자)</title>
+    <title>HR ERP - 대시보드 (부서장)</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/main/dashboard.css">
 </head>
@@ -49,30 +49,18 @@
                 </div>
             </div>
 
-            <%-- ② 업무 지표 배지 — 결재대기 + 급여처리 --%>
+            <%-- ② 팀 결재 대기 배지 + 본인 연차 --%>
             <div class="widget-grid widget-grid-3">
                 <div class="widget-card warn">
-                    <div class="widget-label">휴가 결재 대기</div>
+                    <div class="widget-label">팀 휴가 결재 대기</div>
                     <div class="widget-value"><c:out value="${dashboard.pendingLeaveCount}" />건</div>
-                    <a href="${pageContext.request.contextPath}/att/leave/approve" class="card-link">처리하기 →</a>
+                    <a href="${pageContext.request.contextPath}/att/leave/approve" class="card-link">처리 →</a>
                 </div>
                 <div class="widget-card warn">
-                    <div class="widget-label">초과근무 결재 대기</div>
+                    <div class="widget-label">팀 초과근무 결재 대기</div>
                     <div class="widget-value"><c:out value="${dashboard.pendingOtCount}" />건</div>
-                    <a href="${pageContext.request.contextPath}/att/overtime/approve" class="card-link">처리하기 →</a>
+                    <a href="${pageContext.request.contextPath}/att/overtime/approve" class="card-link">처리 →</a>
                 </div>
-                <div class="widget-card">
-                    <div class="widget-label">이번달 급여 처리</div>
-                    <div class="widget-value">
-                        <c:out value="${dashboard.salaryDoneCount}" /> /
-                        <c:out value="${dashboard.salaryTotalCount}" />명
-                    </div>
-                    <div class="widget-sub">완료</div>
-                </div>
-            </div>
-
-            <%-- ③ 본인 급여·연차 — HR담당자도 직원이므로 표시 --%>
-            <div class="widget-grid widget-grid-3 personal-section">
                 <div class="widget-card">
                     <div class="widget-label">내 잔여 연차</div>
                     <div class="widget-value primary"><c:out value="${dashboard.remainDays}" />일</div>
@@ -81,6 +69,10 @@
                         부여 <c:out value="${dashboard.totalDays}" />
                     </div>
                 </div>
+            </div>
+
+            <%-- ③ 본인 급여·근무시간 --%>
+            <div class="widget-grid widget-grid-2 personal-section">
                 <div class="widget-card">
                     <div class="widget-label">내 이번달 실수령액</div>
                     <div class="widget-value salary-wrap">
@@ -114,10 +106,11 @@
                 </div>
             </div>
 
-            <%-- ④ 결재 대기 목록 — 부서별 근태는 /att/status 에서 확인 --%>
-            <div class="bottom-grid bottom-grid-1">
+            <%-- ④ 팀 결재 대기 목록 + 내 신청 현황 --%>
+            <div class="bottom-grid bottom-grid-2">
+
                 <div class="info-card">
-                    <div class="info-card-title">⏳ 결재 대기</div>
+                    <div class="info-card-title">⏳ 팀 결재 대기</div>
                     <c:choose>
                         <c:when test="${empty dashboard.pendingLeaves and empty dashboard.pendingOts}">
                             <p class="empty-txt">대기 중인 결재가 없습니다.</p>
@@ -125,14 +118,13 @@
                         <c:otherwise>
                             <table class="mini-table">
                                 <thead>
-                                    <tr><th>구분</th><th>이름</th><th>부서</th><th>내용</th><th>기간</th></tr>
+                                    <tr><th>구분</th><th>이름</th><th>내용</th><th>기간</th></tr>
                                 </thead>
                                 <tbody>
                                     <c:forEach var="lv" items="${dashboard.pendingLeaves}">
                                         <tr>
                                             <td><span class="req-type">휴가</span></td>
                                             <td><c:out value="${lv.emp_name}" /></td>
-                                            <td><c:out value="${lv.dept_name}" /></td>
                                             <td><c:out value="${lv.leave_type}" /></td>
                                             <td><c:out value="${lv.startDt}" />~<c:out value="${lv.endDt}" /></td>
                                         </tr>
@@ -141,7 +133,6 @@
                                         <tr>
                                             <td><span class="req-type">초과</span></td>
                                             <td><c:out value="${ot.emp_name}" /></td>
-                                            <td><c:out value="${ot.dept_name}" /></td>
                                             <td><c:out value="${ot.ot_hours}" />h</td>
                                             <td><c:out value="${ot.otDt}" /></td>
                                         </tr>
@@ -151,6 +142,33 @@
                         </c:otherwise>
                     </c:choose>
                 </div>
+
+                <div class="info-card">
+                    <div class="info-card-title">📋 내 신청 현황</div>
+                    <c:choose>
+                        <c:when test="${empty dashboard.recentRequests}">
+                            <p class="empty-txt">신청 내역이 없습니다.</p>
+                        </c:when>
+                        <c:otherwise>
+                            <ul class="req-list">
+                                <c:forEach var="req" items="${dashboard.recentRequests}">
+                                    <li>
+                                        <span class="req-type"><c:out value="${req.type}" /></span>
+                                        <c:out value="${req.startDt}" />
+                                        <c:if test="${not empty req.endDt}">
+                                            ~ <c:out value="${req.endDt}" />
+                                        </c:if>
+                                        <span class="req-status status-${req.status}">
+                                            → <c:out value="${req.status}" />
+                                        </span>
+                                    </li>
+                                </c:forEach>
+                            </ul>
+                        </c:otherwise>
+                    </c:choose>
+                    <a href="${pageContext.request.contextPath}/att/leave/req" class="card-link">휴가 신청하기 →</a>
+                </div>
+
             </div>
 
         </main>

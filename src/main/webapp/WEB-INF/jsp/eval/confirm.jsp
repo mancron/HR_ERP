@@ -7,6 +7,7 @@
 <meta charset="UTF-8">
 <title>평가 확정</title>
 <link rel="stylesheet" href="${ctxPath}/css/eval/evaluation.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 <style>
     body { margin:0; background:#fff; font-family:'Pretendard','Apple SD Gothic Neo',sans-serif; }
     .cw  { padding:22px 26px; }
