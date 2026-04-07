@@ -531,7 +531,7 @@ CREATE INDEX idx_attendance_status ON attendance(status);
 CREATE INDEX idx_leave_status      ON leave_request(status);
 CREATE INDEX idx_leave_emp_date    ON leave_request(emp_id, start_date, end_date);
 CREATE INDEX idx_ot_status         ON overtime_request(status);
-CREATE INDEX idx_ot_emp_id 		   ON overtime_request(emp_id)
+CREATE INDEX idx_ot_emp_id 		   ON overtime_request(emp_id);
 -- 급여 관련 인덱스
 CREATE INDEX idx_salary_period     ON salary(salary_year, salary_month);
 CREATE INDEX idx_salary_emp        ON salary(emp_id);
