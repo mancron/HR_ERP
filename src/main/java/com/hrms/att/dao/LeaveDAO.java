@@ -569,5 +569,25 @@ public class LeaveDAO {
 
 	    return list;
 	}
+	
+	//연차 부여 연차 조정
+	public void adjustTotalDays(Connection conn, int empId, double adjustDays) throws Exception {
+
+	    String sql =
+	        "UPDATE annual_leave " +
+	        "SET total_days = total_days + ?, " +
+	        "    remain_days = remain_days + ? " +
+	        "WHERE emp_id = ? " +
+	        "AND leave_year = YEAR(NOW())";
+
+	    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setDouble(1, adjustDays);
+	        ps.setDouble(2, adjustDays);
+	        ps.setInt(3, empId);
+
+	        ps.executeUpdate();
+	    }
+	}
 
 }

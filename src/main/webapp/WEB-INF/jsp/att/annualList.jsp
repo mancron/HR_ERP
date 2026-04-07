@@ -7,55 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HR ERP - 연차 현황</title>
 <link rel="stylesheet"
-	href="${pageContext.request.contextPath}/css/att/attendance.css">
-<style>
-.annual-table {
-	width: 100%;
-	border-collapse: collapse;
-	margin-top: 20px;
-}
+	href="${pageContext.request.contextPath}/css/att/annual.css">
 
-.annual-table th, .annual-table td {
-	padding: 12px;
-	text-align: center;
-	border-bottom: 1px solid #eee;
-}
-
-.progress {
-	width: 100px;
-	height: 8px;
-	background: #eee;
-	border-radius: 5px;
-	margin: 0 auto;
-}
-
-.bar {
-	height: 100%;
-	border-radius: 5px;
-}
-
-.bar-blue {
-	background: #3b82f6;
-}
-
-.bar-orange {
-	background: #f59e0b;
-}
-
-.annual-btn {
-	padding: 5px 10px;
-	border: 1px solid #ccc;
-	background: white;
-	cursor: pointer;
-	border-radius: 5px;
-}
-
-.filter-box {
-	display: flex;
-	gap: 10px;
-	align-items: center;
-}
-</style>
 </head>
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
@@ -68,7 +21,9 @@
 		<h2>연차 현황</h2>
 
 		<!-- 🔍 필터 -->
-		<form method="get" action="${pageContext.request.contextPath}/att/annual" class="filter-box">
+		<form method="get"
+			action="${pageContext.request.contextPath}/att/annual"
+			class="filter-box">
 
 			<!-- 연도 -->
 			<select name="year">
@@ -127,8 +82,9 @@
 							</div> ${fn:substringBefore(rate, '.')}%</td>
 
 						<td>
-							<button class="annual-btn"
-								onclick="openAdjustModal(${item.empId})">조정</button>
+							<button type="button"
+								onclick="openAdjustModal(${item.empId}, ${item.totalDays})">
+								조정</button>
 						</td>
 					</tr>
 				</c:forEach>
@@ -145,18 +101,24 @@
 
 		<h3>연차 조정</h3>
 
-		<form method="post"
-			action="${pageContext.request.contextPath}/annual/adjust">
+		<!-- 현재 연차 -->
+		<div>
+			현재 연차: <span id="currentTotal"></span>일
+		</div>
 
+		<form method="post"
+			action="${pageContext.request.contextPath}/att/annual/adjust">
+
+			<!-- 사번 -->
 			<input type="hidden" name="empId" id="empId">
 
+			<!-- 연차 입력 -->
 			<div>
-				부여 연차: <input type="number" step="0.5" name="totalDays">
+				변경 연차: <input type="number" step="0.5" name="totalDays" required>
 			</div>
 
-			<div>
-				사용 연차: <input type="number" step="0.5" name="usedDays">
-			</div>
+			<!-- 변경량 표시 -->
+			<div id="diff" style="margin-top: 5px; font-weight: bold;"></div>
 
 			<br>
 
@@ -168,15 +130,5 @@
 	</div>
 </div>
 
-<script>
-function openAdjustModal(empId) {
-	document.getElementById("empId").value = empId;
-	document.getElementById("adjustModal").style.display = "block";
-}
-
-function closeModal() {
-	document.getElementById("adjustModal").style.display = "none";
-}
-</script>
-
 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
+<script src="${pageContext.request.contextPath}/js/att/annual.js"></script>
