@@ -18,42 +18,46 @@ public class HistoryServlet extends HttpServlet {
 
     private HistoryService historyService = new HistoryService();
 
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // 세션 체크
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("empId") == null) {
             response.sendRedirect(request.getContextPath() + "/auth/login");
             return;
         }
-        String userRole = (String) session.getAttribute("userRole");
 
-        // 최종승인자/HR담당자만 접근 가능
-        if (!"최종승인자".equals(userRole) && !"HR담당자".equals(userRole)) {
-            response.setContentType("text/html; charset=UTF-8");
-            java.io.PrintWriter out = response.getWriter();
-            out.println("<script>");
-            out.println("alert('접근 권한이 없습니다.');");
-            out.println("history.back();");
-            out.println("</script>");
-            out.flush();
-            return;
-        }
+        int     empId     = (Integer) session.getAttribute("empId");
+        String  role      = (String)  session.getAttribute("userRole");
+        Boolean mgrAttr   = (Boolean) session.getAttribute("isManager");
+        boolean isManager = (mgrAttr != null && mgrAttr);
 
         // 검색 파라미터
         String keyword    = request.getParameter("keyword");
         String changeType = request.getParameter("changeType");
-        String yearMonth = request.getParameter("yearMonth");
+        String yearMonth  = request.getParameter("yearMonth");
         if (changeType == null) changeType = "";
 
-        // 전체 이력 조회
-        List<HistoryDTO> historyList = historyService.getHistoryList(keyword, changeType, yearMonth);
+        List<HistoryDTO> historyList;
+
+        if ("HR담당자".equals(role) || "최종승인자".equals(role)) {
+            // 전사 전체 이력
+            historyList = historyService.getHistoryList(keyword, changeType, yearMonth);
+
+        } else if (isManager) {
+            // 부서장 — 팀원 + 본인 이력
+            historyList = historyService.getHistoryListByDept(empId, keyword, changeType, yearMonth);
+
+        } else {
+            // 일반직원·관리자 — 본인 이력만
+            historyList = historyService.getHistoryListByEmp(empId, keyword, changeType, yearMonth);
+        }
 
         request.setAttribute("historyList", historyList);
         request.setAttribute("keyword",     keyword);
         request.setAttribute("changeType",  changeType);
-        request.setAttribute("yearMonth", yearMonth);
+        request.setAttribute("yearMonth",   yearMonth);
 
         request.getRequestDispatcher("/WEB-INF/jsp/emp/history.jsp")
                .forward(request, response);
