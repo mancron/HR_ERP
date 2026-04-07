@@ -1,6 +1,7 @@
 package com.hrms.att.dao;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Time;
@@ -37,7 +38,7 @@ public class OvertimeDAO {
 	}
 
 	// 초과근무 승인, 반려
-	public void updateStatus(Connection conn, int otId, String status, String reason) {
+	public boolean updateStatus(Connection conn, int otId, String status, String reason) {
 
 	    String sql = "UPDATE overtime_request SET status = ?, reject_reason = ?, approved_at = NOW() WHERE ot_id = ?";
 
@@ -45,7 +46,7 @@ public class OvertimeDAO {
 
 	        pstmt.setString(1, status);
 
-	        // 🔥 반려일 때만 사유 저장
+	        // 반려일 때만 사유 저장
 	        if ("반려".equals(status)) {
 	            pstmt.setString(2, reason);
 	        } else {
@@ -54,7 +55,9 @@ public class OvertimeDAO {
 
 	        pstmt.setInt(3, otId);
 
-	        pstmt.executeUpdate();
+	        int result = pstmt.executeUpdate();
+
+	        return result > 0;
 
 	    } catch (Exception e) {
 	        throw new RuntimeException(e);
@@ -389,5 +392,32 @@ public class OvertimeDAO {
 	    }
 
 	    return list;
+	}
+	
+	//중복 신청 체크
+	public boolean existsValidOvertime(int empId, Date otDate) {
+
+	    String sql =
+	        "SELECT COUNT(*) FROM overtime_request " +
+	        "WHERE emp_id = ? " +
+	        "AND ot_date = ? " +
+	        "AND status IN ('대기', '승인')";
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, empId);
+	        ps.setDate(2, otDate);
+
+	        ResultSet rs = ps.executeQuery();
+	        if (rs.next()) {
+	            return rs.getInt(1) > 0;
+	        }
+
+	    } catch (Exception e) {
+	        throw new RuntimeException(e);
+	    }
+
+	    return false;
 	}
 }
