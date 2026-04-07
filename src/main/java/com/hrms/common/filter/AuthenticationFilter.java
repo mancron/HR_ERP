@@ -94,11 +94,18 @@ public class AuthenticationFilter implements Filter {
         if ("관리자".equals(role)) {
             boolean allowed = false;
             for (String prefix : ADMIN_ALLOWED_PREFIXES) {
-                if (path.startsWith(prefix)) {
+                if (path.startsWith(prefix)) { allowed = true; break; }
+            }
+
+            // [추가] 관리자이면서 부서장이면 승인 경로도 허용
+            if (!allowed && isManager) {
+                if (path.startsWith("/att/leave/approve") ||
+                    path.startsWith("/att/overtime/approve") ||
+                    path.startsWith("/emp/approval")) {
                     allowed = true;
-                    break;
                 }
             }
+
             if (!allowed) {
                 res.sendRedirect(contextPath + "/main");
                 return;
