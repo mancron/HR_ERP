@@ -145,22 +145,14 @@ public class AuthenticationFilter implements Filter {
             }
         }
 
-        // [직원 관리] 휴직·복직·퇴직 승인 — HR담당자·CEO·부서장
-        // approvalHistory(내역 조회)는 전 역할 허용 — 서블릿에서 데이터 범위 통제
+        // [직원 관리] 휴직·복직·퇴직 승인 (HR, 최종승인자, 부서장만)
+        // 주의: /emp/approvalHistory (단순 내역 조회)는 통과시키고 실제 결재 화면만 막음
 //        if (path.startsWith("/emp/approval") && !path.startsWith("/emp/approvalHistory")) {
 //            if (!"HR담당자".equals(role) && !"최종승인자".equals(role) && !isManager) {
-//                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+//                res.sendError(HttpServletResponse.SC_FORBIDDEN, "결재 권한이 없습니다.");
 //                return;
 //            }
 //        }
-
-        // [근태 관리] 휴가 승인 — HR담당자·부서장
-        if (path.startsWith("/att/leave/approve")) {
-            if (!"HR담당자".equals(role) && !isManager) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
-                return;
-            }
-        }
 
         // [근태 관리] 초과근무 승인 — HR담당자·부서장
         if (path.startsWith("/att/overtime/approve")) {

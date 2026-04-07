@@ -84,7 +84,7 @@ public class TransferDAO {
         List<EmpDTO> list = new ArrayList<>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        String sql = "SELECT position_id, position_name FROM job_position ORDER BY position_level DESC";
+        String sql = "SELECT position_id, position_name, base_salary FROM job_position ORDER BY position_level DESC";
         try {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
@@ -92,6 +92,7 @@ public class TransferDAO {
                 EmpDTO dto = new EmpDTO();
                 dto.setPosition_id(rs.getInt("position_id"));
                 dto.setPosition_name(rs.getString("position_name"));
+                dto.setBase_salary(rs.getInt("base_salary")); // ← 추가
                 list.add(dto);
             }
         } finally {
