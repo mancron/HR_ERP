@@ -4,7 +4,7 @@
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/eval/evaluation.css">
-
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 <%-- ── 에러 메시지 ── --%>
 <c:if test="${not empty param.error}">
     <div class="eval-error-msg">

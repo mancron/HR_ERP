@@ -9,6 +9,7 @@
 	href="${pageContext.request.contextPath}/css/att/overtimeApprove.css">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/common/modal.css">
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />

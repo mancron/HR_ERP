@@ -13,6 +13,7 @@
 	href="<c:out value='${pageContext.request.contextPath}/css/att/leave.css'/>">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/common/toast.css">
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />

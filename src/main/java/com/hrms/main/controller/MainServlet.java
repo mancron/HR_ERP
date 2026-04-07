@@ -17,7 +17,6 @@ import java.io.IOException;
 public class MainServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-
     private MainService mainService;
 
     @Override
@@ -30,24 +29,38 @@ public class MainServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
-        int    empId = (Integer) session.getAttribute("empId");
-        String role  = (String)  session.getAttribute("userRole");
+        int     empId     = (Integer) session.getAttribute("empId");
+        String  role      = (String)  session.getAttribute("userRole");
+        Boolean isMgrAttr = (Boolean) session.getAttribute("isManager");
+        boolean isManager = (isMgrAttr != null && isMgrAttr);
 
-        // 출퇴근 카드 (공통)
+        // 출퇴근 카드 — 전 역할 공통
         AttendanceDTO todayAtt = mainService.getTodayAttendance(empId);
         request.setAttribute("todayAtt", todayAtt);
 
-        // role별 데이터 + JSP 분기
         MainDashboardDTO dashboard;
         String jspPath;
 
         if ("관리자".equals(role)) {
             dashboard = mainService.getAdminDashboard(empId);
             jspPath   = "/WEB-INF/jsp/main/main_admin.jsp";
+
         } else if ("HR담당자".equals(role)) {
             dashboard = mainService.getHrDashboard(empId);
             jspPath   = "/WEB-INF/jsp/main/main_hr.jsp";
+
+        } else if ("최종승인자".equals(role)) {
+            dashboard = mainService.getCeoDashboard(empId);
+            jspPath   = "/WEB-INF/jsp/main/main_ceo.jsp";
+
+        } else if (isManager) {
+            // 부서장 — role은 일반직원이지만 isManager=true
+            // HR담당자 겸 부서장인 경우는 위 HR담당자 분기에서 처리됨
+            dashboard = mainService.getManagerDashboard(empId);
+            jspPath   = "/WEB-INF/jsp/main/main_manager.jsp";
+
         } else {
+            // 일반직원
             dashboard = mainService.getUserDashboard(empId);
             jspPath   = "/WEB-INF/jsp/main/main_user.jsp";
         }
