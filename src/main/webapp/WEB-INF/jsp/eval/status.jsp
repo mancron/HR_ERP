@@ -49,11 +49,6 @@
             <button type="button" class="btn-reset" onclick="resetFilter()">초기화</button>
         </form>
 
-        <%-- TODO [알람 포인트 - 헤더 알람 뱃지]
-             반려된 평가 건 수 뱃지:
-             <span class="alarm-bell">🔔 <sup>${myRejectedCount}</sup></span>
-        --%>
-
         <a href="${pageContext.request.contextPath}/eval/write" class="btn-add">+ 평가 작성</a>
     </div>
 
@@ -103,10 +98,6 @@
                             </c:choose>
                         </td>
                         <td>
-                            <%--
-                                DB: eval_status IN ('작성중','최종확정')
-                                반려 여부: isRejected=true (evalComment [반려] 태그로 구분)
-                            --%>
                             <c:choose>
                                 <c:when test="${item.status == '최종확정'}">
                                     <span class="status-complete">최종확정</span>
@@ -129,19 +120,6 @@
                             </c:choose>
                         </td>
                         <td>
-                            <%--
-                                버튼 분기:
-                                ┌ 최종확정 ────────────────────────────────────────────┐
-                                │ HR담당자   → 보기(iframe)                            │
-                                │ 본인 작성  → 보기(iframe)                            │
-                                │ 타인       → 버튼 없음                               │
-                                ├ 작성중/반려됨 ────────────────────────────────────── │
-                                │ HR담당자   → 확정(iframe, 확정/반려 버튼 포함)       │
-                                │ 본인 작성  → 수정(write로 이동)                      │
-                                │ 타인       → 버튼 없음                               │
-                                └───────────────────────────────────────────────────── │
-                                ※ 관리자는 일반사용자 취급
-                            --%>
                             <c:set var="isOwner" value="${item.evaluatorId == loginEmpId}"/>
 
                             <c:choose>
@@ -152,7 +130,7 @@
                                 </c:when>
                                 <c:otherwise>
                                     <c:choose>
-                                        <c:when test="${isHr}">
+                                        <c:when test="${isHr && !isOwner}">
                                             <button class="btn-edit" onclick="openModal(${item.evalId})">확정</button>
                                         </c:when>
                                         <c:when test="${isOwner}">
@@ -161,7 +139,6 @@
                                                 수정
                                             </button>
                                         </c:when>
-                                        <%-- 타인 일반사용자: 버튼 없음 --%>
                                     </c:choose>
                                 </c:otherwise>
                             </c:choose>
@@ -177,12 +154,10 @@
 <script>
 const ctx = '${pageContext.request.contextPath}';
 
-// 최종확정된 평가 중복 작성 시도 시 alert
 document.addEventListener('DOMContentLoaded', function () {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('alert') === 'already_confirmed') {
         alert('해당 대상자의 평가는 이미 최종확정되었습니다.\n평가 현황에서 확인해 주세요.');
-        // URL에서 alert 파라미터 제거 (새로고침 시 재표시 방지)
         const cleanUrl = window.location.pathname + '?' +
             Array.from(urlParams.entries())
                 .filter(([k]) => k !== 'alert')
@@ -204,13 +179,11 @@ function closeConfirmModal() {
     document.body.style.overflow = '';
 }
 
-// confirm.jsp에서 확정/반려 성공 후 호출 → 테이블 즉시 새로고침
 function reloadStatusTable() { location.reload(); }
 
 function resetFilter() {
-    document.getElementById('filterForm').querySelector('[name="searchTarget"]').value = '';
-    document.getElementById('filterForm').querySelector('[name="searchEvaluator"]').value = '';
-    document.getElementById('filterForm').submit();
+    const currentYear = new Date().getFullYear();
+    location.href = ctx + '/eval/status?year=' + currentYear;
 }
 
 document.getElementById('confirmOverlay').addEventListener('click', function(e) {

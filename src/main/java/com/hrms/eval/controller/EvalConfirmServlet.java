@@ -49,6 +49,11 @@ public class EvalConfirmServlet extends HttpServlet {
             return;
         }
 
+        // [C-1 / NEW-7 수정] isRejected를 evalData Map에 추가
+        // getEvaluationById()는 evalComment만 반환하므로 여기서 직접 계산해서 주입
+        String evalComment = (String) evalData.get("evalComment");
+        evalData.put("isRejected", evalComment != null && evalComment.startsWith("[반려]"));
+
         Vector<String>   itemNames  = evalService.getEvaluationItemNames();
         List<BigDecimal> itemScores = evalService.getItemScoresByEvalId(evalId, itemNames);
 
@@ -62,7 +67,6 @@ public class EvalConfirmServlet extends HttpServlet {
         request.setAttribute("ctxPath",    request.getContextPath());
         request.setAttribute("evalId",     evalId);
 
-        // confirm.jsp → iframe 전용 (index.jsp 거치지 않음)
         request.getRequestDispatcher("/WEB-INF/jsp/eval/confirm.jsp").forward(request, response);
     }
 
@@ -73,7 +77,7 @@ public class EvalConfirmServlet extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("empId") == null) {
-            sendJson(response, false, "session_expired");
+            sendJson(response, false, "세션이 만료되었습니다.");
             return;
         }
 
@@ -81,9 +85,8 @@ public class EvalConfirmServlet extends HttpServlet {
         String userRole   = (String)  session.getAttribute("userRole");
         if (userRole == null) userRole = "일반사원";
 
-        // HR담당자만 확정/반려 가능 (관리자는 일반사용자 취급)
         if (!"HR담당자".equals(userRole)) {
-            sendJson(response, false, "permission_denied");
+            sendJson(response, false, "인사평가 확정 권한이 없습니다.");
             return;
         }
 
@@ -91,37 +94,47 @@ public class EvalConfirmServlet extends HttpServlet {
         String idParam = request.getParameter("evalId");
 
         if (idParam == null || idParam.trim().isEmpty()) {
-            sendJson(response, false, "invalid_param");
+            sendJson(response, false, "잘못된 접근입니다 (ID 누락).");
             return;
         }
 
-        int evalId;
-        try { evalId = Integer.parseInt(idParam.trim()); }
-        catch (NumberFormatException e) { sendJson(response, false, "invalid_param"); return; }
+        try {
+            int evalId = Integer.parseInt(idParam.trim());
 
-        boolean ok = false;
-        if ("confirm".equals(action)) {
-            // 확정: audit_log 트랜잭션 통합 + NotificationUtil 알림
-            ok = evalService.confirmEvaluation(evalId, userRole, loginEmpId);
+            if ("confirm".equals(action)) {
+                // [NEW-1 수정] confirmEvaluation이 throws Exception → try-catch로 메시지 처리
+                // 셀프 확정, 권한 없음 등의 서비스 예외 메시지를 그대로 클라이언트에 전달
+                boolean ok = evalService.confirmEvaluation(evalId, userRole, loginEmpId);
 
-            // TODO [급여 인상 연동 포인트]
-            // ok가 true일 때 급여 인상 처리:
-            // Map<String,Object> evalData = evalService.getEvaluationById(evalId);
-            // salaryService.applyGradeRaise((Integer)evalData.get("empId"), (String)evalData.get("grade"), loginEmpId);
+                // TODO [급여 인상 연동 포인트]
+                // ok가 true일 때 급여 인상 처리:
+                // Map<String,Object> evalData = evalService.getEvaluationById(evalId);
+                // salaryService.applyGradeRaise((Integer)evalData.get("empId"), (String)evalData.get("grade"), loginEmpId);
 
-        } else if ("reject".equals(action)) {
-            // 반려: audit_log 트랜잭션 통합 + 알림 발송
-            ok = evalService.rejectEvaluation(evalId, userRole, loginEmpId);
-        } else {
-            sendJson(response, false, "invalid_action");
-            return;
+                sendJson(response, ok, ok ? "success" : "처리 중 오류가 발생했습니다.");
+
+            } else if ("reject".equals(action)) {
+                boolean ok = evalService.rejectEvaluation(evalId, userRole, loginEmpId);
+                sendJson(response, ok, ok ? "success" : "처리 중 오류가 발생했습니다.");
+
+            } else {
+                sendJson(response, false, "유효하지 않은 요청입니다.");
+            }
+
+        } catch (NumberFormatException e) {
+            sendJson(response, false, "잘못된 접근입니다 (ID 형식 오류).");
+        } catch (Exception e) {
+            // [NEW-1 수정] 서비스에서 던진 예외 메시지 ("본인의 평가 결과는 직접 확정할 수 없습니다." 등)
+            // 를 그대로 클라이언트에 반환하여 confirm.jsp의 rmsg에 표시됨
+            e.printStackTrace();
+            sendJson(response, false, e.getMessage());
         }
-
-        sendJson(response, ok, ok ? "success" : "db_error");
     }
 
     private void sendJson(HttpServletResponse response, boolean ok, String msg) throws IOException {
         response.setContentType("application/json; charset=UTF-8");
-        response.getWriter().write("{\"ok\":" + ok + ",\"msg\":\"" + msg + "\"}");
+        // msg에 따옴표가 포함될 수 있으므로 이스케이프 처리
+        String safeMsg = (msg != null) ? msg.replace("\"", "\\\"") : "";
+        response.getWriter().write("{\"ok\":" + ok + ",\"msg\":\"" + safeMsg + "\"}");
     }
 }
