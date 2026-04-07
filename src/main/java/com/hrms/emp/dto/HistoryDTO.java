@@ -11,11 +11,24 @@ public class HistoryDTO {
 	private int to_dept_id;
 	private int from_position_id;
 	private int to_position_id;
+	private String from_role;  // 이전 직책
+	private String to_role;    // 변경 직책
 	private LocalDateTime change_date;
 	private String reason;
 	private int approved_by;
-	private LocalDateTime craeted_at;
+	private LocalDateTime created_at;
 	
+	//JOIN 결과 필드
+	private String emp_name;           // 직원 이름
+	private String emp_no;             // 직원 사번
+	private String from_dept_name;     // 이전 부서명
+	private String to_dept_name;       // 발령 부서명
+	private String from_position_name; // 이전 직급명
+	private String to_position_name;   // 변경 직급명
+	private String approved_by_name;   // 승인자 이름
+	
+	
+
 	public HistoryDTO() {}
 	
 	public int getHistory_id() {
@@ -60,6 +73,18 @@ public class HistoryDTO {
 	public void setTo_position_id(int to_position_id) {
 		this.to_position_id = to_position_id;
 	}
+	public String getFrom_role() {
+		return from_role;
+	}
+	public void setFrom_role(String from_role) {
+		this.from_role = from_role;
+	}
+	public String getTo_role() {
+		return to_role;
+	}
+	public void setTo_role(String to_role) {
+		this.to_role = to_role;
+	}
 	public LocalDateTime getChange_date() {
 		return change_date;
 	}
@@ -78,10 +103,52 @@ public class HistoryDTO {
 	public void setApproved_by(int approved_by) {
 		this.approved_by = approved_by;
 	}
-	public LocalDateTime getCraeted_at() {
-		return craeted_at;
+	public LocalDateTime getCreated_at() {
+		return created_at;
 	}
-	public void setCraeted_at(LocalDateTime craeted_at) {
-		this.craeted_at = craeted_at;
+	public void setCreated_at(LocalDateTime created_at) {
+		this.created_at = created_at;
+	}
+	public String getEmp_name() {
+		return emp_name;
+	}
+	public void setEmp_name(String emp_name) {
+		this.emp_name = emp_name;
+	}
+	public String getEmp_no() {
+		return emp_no;
+	}
+	public void setEmp_no(String emp_no) {
+		this.emp_no = emp_no;
+	}
+	public String getFrom_dept_name() {
+		return from_dept_name;
+	}
+	public void setFrom_dept_name(String from_dept_name) {
+		this.from_dept_name = from_dept_name;
+	}
+	public String getTo_dept_name() {
+		return to_dept_name;
+	}
+	public void setTo_dept_name(String to_dept_name) {
+		this.to_dept_name = to_dept_name;
+	}
+	public String getFrom_position_name() {
+		return from_position_name;
+	}
+	public void setFrom_position_name(String from_position_name) {
+		this.from_position_name = from_position_name;
+	}
+	public String getTo_position_name() {
+		return to_position_name;
+	}
+	public void setTo_position_name(String to_position_name) {
+		this.to_position_name = to_position_name;
+	}
+	public String getApproved_by_name() {
+		return approved_by_name;
+	}
+	public void setApproved_by_name(String approved_by_name) {
+		this.approved_by_name = approved_by_name;
 	}
 }
