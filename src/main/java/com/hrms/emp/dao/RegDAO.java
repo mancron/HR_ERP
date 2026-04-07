@@ -171,4 +171,30 @@ public class RegDAO {
             if (pstmt != null) pstmt.close();
         }
     }
+    
+    // 직원 등록 시 인사발령 이력 INSERT
+    public int insertPersonnelHistory(Connection con, int empId,
+            int toDeptId, int toPositionId, String toRole,
+            String hireDate, int approvedBy) throws SQLException {
+        String sql = "INSERT INTO personnel_history " +
+                     "(emp_id, change_type, change_date, " +
+                     "from_dept_id, to_dept_id, " +
+                     "from_position_id, from_role, " +
+                     "to_position_id, to_role, " +
+                     "reason, approved_by) " +
+                     "VALUES (?, '입사', ?, NULL, ?, NULL, NULL, ?, ?, '신규 입사', ?)";
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, empId);
+            pstmt.setObject(2, java.time.LocalDate.parse(hireDate).atStartOfDay());
+            pstmt.setInt(3, toDeptId);
+            pstmt.setInt(4, toPositionId);
+            pstmt.setString(5, toRole);
+            pstmt.setInt(6, approvedBy);
+            return pstmt.executeUpdate();
+        } finally {
+            if (pstmt != null) pstmt.close();
+        }
+    }
 }

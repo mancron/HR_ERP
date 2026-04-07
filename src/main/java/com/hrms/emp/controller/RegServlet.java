@@ -141,7 +141,8 @@ public class RegServlet extends HttpServlet {
         dto.setPhone(phone);
 
         // 등록 처리
-        String tempPw = regService.registerEmployee(dto, username);
+        Integer loginEmpId = (Integer) session.getAttribute("empId");
+        String tempPw = regService.registerEmployee(dto, username, loginEmpId);
 
         if (tempPw != null) {
             response.setContentType("text/html; charset=UTF-8");

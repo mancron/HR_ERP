@@ -29,7 +29,7 @@ public class RegService {
     
     
     // ── 직원 등록 트랜잭션 ──
-    public String registerEmployee(EmpDTO dto, String username) {
+    public String registerEmployee(EmpDTO dto, String username, int loginEmpId) {
         Connection con = null;
         try {
             con = DatabaseConnection.getConnection();
@@ -57,13 +57,24 @@ public class RegService {
             	return null;
             }
 
-            // 5. 연차 계산 → annual_leave INSERT
+         // 5. 연차 계산 → annual_leave INSERT
             LocalDate hireDate = LocalDate.parse(dto.getHire_date());
             double totalDays = calculateAnnualLeave(hireDate);
             int leaveYear = LocalDate.now().getYear();
 
             int r3 = regDao.insertAnnualLeave(con, empId, leaveYear, totalDays);
             if (r3 <= 0) {
+                con.rollback();
+                return null;
+            }
+
+            // 6. 인사발령 이력 INSERT
+            // 신규 입사: from은 공백(NULL), to는 배정된 부서/직급/직책
+            String toRole = "일반"; // 신규 입사는 기본 일반 (부서장 배정은 별도 발령으로)
+            int r4 = regDao.insertPersonnelHistory(con, empId,
+                    dto.getDept_id(), dto.getPosition_id(), toRole,
+                    dto.getHire_date(), loginEmpId);
+            if (r4 <= 0) {
                 con.rollback();
                 return null;
             }

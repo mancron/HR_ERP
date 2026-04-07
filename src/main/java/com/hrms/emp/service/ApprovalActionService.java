@@ -275,6 +275,4 @@ public class ApprovalActionService {
 	        dao.clearDeptManagerIfResign(con, empId);
 	    }
 	}
-	
-	
 }
