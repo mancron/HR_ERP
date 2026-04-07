@@ -60,7 +60,10 @@
           </select>
 
           <button type="submit" >검색</button>
-          <a href="${pageContext.request.contextPath}/emp/reg" class="btn-register">+ 직원 등록</a>
+          <button type="button" class="btn-my-info btn-detail"
+        data-empno="${sessionScope.loginUser.emp_no}">
+    내 정보
+</button>
         </div>
       </form>
 
