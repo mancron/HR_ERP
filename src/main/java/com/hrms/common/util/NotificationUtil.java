@@ -134,4 +134,26 @@ public class NotificationUtil {
 
 		send(empId, "ANNUAL_ADJUSTED", "annual_leave", null, msg);
 	}
+	
+	// ══════════════════════════════════════
+	// 근태 관련
+	// ══════════════════════════════════════
+
+	/** 결근 처리 → 직원에게 알림 */
+	public static void sendAttendanceAbsent(int empId, String date) {
+	    String msg = date + " 근태가 결근으로 처리되었습니다.";
+	    send(empId, "ATT_ABSENT", "attendance", null, msg);
+	}
+
+	/** 퇴근 수정 → 직원에게 알림 */
+	public static void sendAttendanceCheckoutUpdated(int empId, String date) {
+	    String msg = date + " 퇴근 시간이 수정되었습니다.";
+	    send(empId, "ATT_CHECKOUT_UPDATED", "attendance", null, msg);
+	}
+
+	/** 근태 전체 수정 → 직원에게 알림 */
+	public static void sendAttendanceUpdated(int empId, String date) {
+	    String msg = date + " 근태 정보가 수정되었습니다.";
+	    send(empId, "ATT_UPDATED", "attendance", null, msg);
+	}
 }
