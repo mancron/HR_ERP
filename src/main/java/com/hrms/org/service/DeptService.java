@@ -12,7 +12,7 @@ public class DeptService {
     public DeptDTO                    getDeptById(int id)         { return deptDao.getDeptById(id); }
     public List<Map<String, Object>>  getMembersByDeptId(int id)  { return deptDao.getMembersByDeptId(id); }
     public List<Map<String, Object>>  getEmpList()                { return deptDao.getEmpList(); }
-    public int    findDeptIdByEmpName(String n) { return deptDao.findDeptIdByEmpName(n); }
+    public List<Map<String, Object>> findDeptIdByEmpName(String n) { return deptDao.findDeptIdByEmpName(n);}
     public int    getMemberCount(int id)        { return deptDao.getMemberCount(id); }
     public int    getChildDeptCount(int id)     { return deptDao.getChildDeptCount(id); }
     public List<DeptDTO> getInactiveDeptList()  { return deptDao.getInactiveDepts(); }
@@ -55,6 +55,7 @@ public class DeptService {
 
     /**
      * 부서 저장/수정 (레벨 동기화 포함)
+     * 수정사항: S-1 해결을 위한 insert 반환값 처리 및 S-3 대응
      */
     public String saveDept(DeptDTO dept) {
         // 부서명 필수 체크 (서버사이드 이중 검증)
@@ -91,9 +92,20 @@ public class DeptService {
             if (deptDao.getChildDeptCount(dept.getDept_id()) > 0) return "HAS_CHILDREN_INACTIVE";
         }
 
-        boolean success = (dept.getDept_id() == 0)
-            ? deptDao.insertDept(dept)
-            : deptDao.updateDept(dept);
+        // --- 수정 구간 (S-1 & S-3 대응) ---
+        boolean success = false;
+        if (dept.getDept_id() == 0) {
+            // 신규 등록: DAO에서 생성된 PK를 반환받아 DTO에 세팅 (S-1 해결)
+            int newId = deptDao.insertDept(dept);
+            if (newId > 0) {
+                dept.setDept_id(newId);
+                success = true;
+            }
+        } else {
+            // 수정: 기존 boolean 반환 유지 (S-3 로직은 DAO의 SQL에 CASE문으로 처리됨)
+            success = deptDao.updateDept(dept);
+        }
+        // ------------------------------
 
         if (success && oldDept != null && oldDept.getDept_level() != newLevel) {
             int diff = newLevel - oldDept.getDept_level();
