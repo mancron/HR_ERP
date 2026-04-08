@@ -31,6 +31,7 @@ public class AuthenticationFilter implements Filter {
         "/eval/write",
         "/eval/status",
         "/emp/list",
+        "/emp/detail",
         "/emp/approvalHistory",
         "/sys/"
     ));

@@ -265,13 +265,11 @@ public class ApprovalActionService {
 	        history.setTo_position_id(0);
 	        history.setTo_role(null);
 
-	        // ① 이력 먼저 (from 정보 살아있을 때)
+	        // 이력 먼저 (from 정보 살아있을 때)
 	        dao.insertPersonnelHistory(con, history);
-	        // ② 퇴직 처리
+	        // 퇴직 처리
 	        dao.updateEmployeeResign(con, empId, resignDate);
-	        // ③ 부서/직급 NULL
-	        dao.clearEmployeeDeptAndPosition(con, empId);
-	        // ④ 부서장이었으면 department.manager_id NULL
+	        // 부서장이었으면 department.manager_id NULL
 	        dao.clearDeptManagerIfResign(con, empId);
 	    }
 	}

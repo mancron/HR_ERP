@@ -104,4 +104,17 @@ public class LeaveService {
             try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
         }
     }
+    
+    public boolean hasPendingLeave(int empId) {
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            return leaveDao.hasPendingLeave(con, empId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
 }

@@ -6,6 +6,18 @@
 <meta charset="UTF-8">
 <title>퇴직 신청</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/resign.css">
+<script>
+    function validateForm() {
+        const resignDate = document.querySelector('input[name="resign_date"]').value;
+        const today      = new Date().toISOString().split('T')[0];
+
+        if (resignDate < today) {
+            alert('희망 퇴직일은 오늘 이후여야 합니다.');
+            return false;
+        }
+        return true;
+    }
+</script>
 </head>
 <body>
 
@@ -25,7 +37,7 @@
         최종 승인 이후에는 취소가 불가합니다.
     </div>
 
-    <form action="${pageContext.request.contextPath}/emp/resign" method="post">
+    <form action="${pageContext.request.contextPath}/emp/resign" method="post" onsubmit="return validateForm();">
         <%-- 서버에서 처리할 hidden 필드 --%>
         <input type="hidden" name="emp_id" value="${empDetail.emp_id}">
         <input type="hidden" name="emp_no" value="${empDetail.emp_no}">

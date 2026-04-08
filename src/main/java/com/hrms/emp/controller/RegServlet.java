@@ -54,8 +54,8 @@ public class RegServlet extends HttpServlet {
             return;
         }
         
-        // 최종승인자/HR담당자만 접근 가능
-        if (!"최종승인자".equals(userRole) && !"HR담당자".equals(userRole)) {
+        // HR담당자만 접근 가능
+		if (!"HR담당자".equals(userRole)) {
             response.setContentType("text/html; charset=UTF-8");
             java.io.PrintWriter out = response.getWriter();
             out.println("<script>");
@@ -91,7 +91,7 @@ public class RegServlet extends HttpServlet {
             return;
         }
         String userRole = (String) session.getAttribute("userRole");
-        if (!"관리자".equals(userRole) && !"HR담당자".equals(userRole)) {
+        if (!"HR담당자".equals(userRole)) {
             response.sendRedirect(request.getContextPath() + "/emp/list");
             return;
         }

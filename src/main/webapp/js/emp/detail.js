@@ -7,7 +7,7 @@ const EDITABLE_FIELDS = {
 };
 
 function getEditableFields() {
-    return (USER_ROLE === '관리자' || USER_ROLE === 'HR담당자')
+    return (USER_ROLE === 'HR담당자')
         ? EDITABLE_FIELDS.admin
         : EDITABLE_FIELDS.default;
 }
