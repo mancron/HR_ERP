@@ -5,13 +5,10 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/eval/evaluation.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 
-<%-- ── iframe 모달 오버레이 ── --%>
-<div id="confirmOverlay" style="display:none; position:fixed; top:0; left:0;
-    width:100%; height:100%; background:rgba(0,0,0,0.45); z-index:9999;">
-    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-        width:820px; max-width:96vw; height:88vh; background:#fff;
-        border-radius:14px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-        <iframe id="confirmFrame" src="" style="width:100%;height:100%;border:none;"></iframe>
+<%-- ── iframe 모달 오버레이 (인라인 스타일 제거) ── --%>
+<div id="confirmOverlay" class="modal-overlay">
+    <div class="modal-content">
+        <iframe id="confirmFrame" src="" class="modal-iframe"></iframe>
     </div>
 </div>
 
@@ -40,6 +37,7 @@
                 <option value="상위평가" ${selectedType == '상위평가' ? 'selected' : ''}>상위평가</option>
                 <option value="자기평가" ${selectedType == '자기평가' ? 'selected' : ''}>자기평가</option>
                 <option value="동료평가" ${selectedType == '동료평가' ? 'selected' : ''}>동료평가</option>
+                <option value="하위평가" ${selectedType == '하위평가' ? 'selected' : ''}>하위평가</option>
             </select>
             <input type="text" name="searchTarget"    value="${searchTarget}"
                 placeholder="대상자 이름" class="search-input">
@@ -110,7 +108,16 @@
                                 </c:otherwise>
                             </c:choose>
                         </td>
-                        <td>${item.evaluatorName}</td>
+                        <td>
+                            <c:choose>
+                                <c:when test="${item.evalType == '하위평가' && !isHr}">
+                                    <span class="eval-anon">익명</span>
+                                </c:when>
+                                <c:otherwise>
+                                    ${item.evaluatorName}
+                                </c:otherwise>
+                            </c:choose>
+                        </td>
                         <td>
                             <c:choose>
                                 <c:when test="${not empty item.confirmedAt}">
@@ -121,7 +128,6 @@
                         </td>
                         <td>
                             <c:set var="isOwner" value="${item.evaluatorId == loginEmpId}"/>
-
                             <c:choose>
                                 <c:when test="${item.status == '최종확정'}">
                                     <c:if test="${isHr || isOwner}">
@@ -148,24 +154,10 @@
             </tbody>
         </table>
     </div>
-
 </div>
 
 <script>
 const ctx = '${pageContext.request.contextPath}';
-
-document.addEventListener('DOMContentLoaded', function () {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('alert') === 'already_confirmed') {
-        alert('해당 대상자의 평가는 이미 최종확정되었습니다.\n평가 현황에서 확인해 주세요.');
-        const cleanUrl = window.location.pathname + '?' +
-            Array.from(urlParams.entries())
-                .filter(([k]) => k !== 'alert')
-                .map(([k,v]) => k + '=' + encodeURIComponent(v))
-                .join('&');
-        history.replaceState(null, '', cleanUrl || window.location.pathname);
-    }
-});
 
 function openModal(evalId) {
     document.getElementById('confirmFrame').src = ctx + '/eval/confirm?id=' + evalId;
@@ -179,18 +171,12 @@ function closeConfirmModal() {
     document.body.style.overflow = '';
 }
 
-function reloadStatusTable() { location.reload(); }
-
 function resetFilter() {
     const currentYear = new Date().getFullYear();
     location.href = ctx + '/eval/status?year=' + currentYear;
 }
 
-document.getElementById('confirmOverlay').addEventListener('click', function(e) {
-    if (e.target === this) closeConfirmModal();
-});
-
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeConfirmModal();
-});
+// 오버레이 및 ESC 닫기 로직
+document.getElementById('confirmOverlay').addEventListener('click', e => { if (e.target.id === 'confirmOverlay') closeConfirmModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeConfirmModal(); });
 </script>
