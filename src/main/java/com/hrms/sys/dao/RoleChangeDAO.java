@@ -91,26 +91,26 @@ public class RoleChangeDAO {
     
     
     
-    /** DB에 실제 존재하는 권한 목록 조회 */
-    public List<String> selectDistinctRoles(Connection conn) throws SQLException {
-        String sql =
-            "SELECT DISTINCT role FROM account " +
-            "WHERE is_active = 1 " +
-            "ORDER BY role ASC";
-
-        List<String> list = new ArrayList<>();
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = conn.prepareStatement(sql);
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                list.add(rs.getString("role"));
-            }
-        } finally {
-            if (rs    != null) try { rs.close();    } catch (SQLException e) {}
-            if (pstmt != null) try { pstmt.close(); } catch (SQLException e) {}
-        }
-        return list;
-    }
+//    /** DB에 실제 존재하는 권한 목록 조회 */
+//    public List<String> selectDistinctRoles(Connection conn) throws SQLException {
+//        String sql =
+//            "SELECT DISTINCT role FROM account " +
+//            "WHERE is_active = 1 " +
+//            "ORDER BY role ASC";
+//
+//        List<String> list = new ArrayList<>();
+//        PreparedStatement pstmt = null;
+//        ResultSet rs = null;
+//        try {
+//            pstmt = conn.prepareStatement(sql);
+//            rs = pstmt.executeQuery();
+//            while (rs.next()) {
+//                list.add(rs.getString("role"));
+//            }
+//        } finally {
+//            if (rs    != null) try { rs.close();    } catch (SQLException e) {}
+//            if (pstmt != null) try { pstmt.close(); } catch (SQLException e) {}
+//        }
+//        return list;
+//    }
 }
