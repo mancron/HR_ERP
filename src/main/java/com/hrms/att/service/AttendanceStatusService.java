@@ -1,5 +1,6 @@
 package com.hrms.att.service;
 
+import com.hrms.att.dao.AttendanceCloseDAO;
 import com.hrms.att.dao.AttendanceDAO;
 import com.hrms.att.dao.AttendanceLogDAO;
 import com.hrms.att.dao.LeaveDAO;
@@ -18,12 +19,10 @@ public class AttendanceStatusService {
 	private AttendanceDAO attendanceDAO = new AttendanceDAO();
 	private LeaveDAO leaveDAO = new LeaveDAO();
 	private AttendanceLogDAO logDAO = new AttendanceLogDAO();
+	private AttendanceCloseDAO closeDAO = new AttendanceCloseDAO();
 
-	// =========================
-	// 🔒 마감 체크 (추후 DB 연결)
-	// =========================
-	private boolean isClosed(int year, int month) {
-		return false;
+	public boolean isClosed(int year, int month) {
+		return closeDAO.isClosed(year, month);
 	}
 
 	private void validateClosed(LocalDate date) {
@@ -217,5 +216,15 @@ public class AttendanceStatusService {
 		}
 
 		return "결근";
+	}
+	
+	public void closeMonth(int year, int month, int actorId) {
+
+	    // 이미 마감된 경우 방지
+	    if (isClosed(year, month)) {
+	        throw new RuntimeException("이미 마감된 월입니다.");
+	    }
+
+	    closeDAO.closeMonth(year, month, actorId);
 	}
 }

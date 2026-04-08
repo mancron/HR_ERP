@@ -1,6 +1,7 @@
 package com.hrms.att.controller;
 
 import com.hrms.att.dto.AttendanceSummaryDTO;
+import com.hrms.att.service.AttendanceStatusService;
 import com.hrms.att.service.AttendanceSummaryService;
 
 import jakarta.servlet.ServletException;
@@ -17,13 +18,14 @@ import java.util.Map;
 public class AttendanceStatusServlet extends HttpServlet {
 
 	private AttendanceSummaryService summaryService = new AttendanceSummaryService();
+	private AttendanceStatusService statusService = new AttendanceStatusService();
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
 		String monthParam = request.getParameter("month");
-
+		
 		LocalDate now = LocalDate.now();
 
 		int year = now.getYear();
@@ -43,9 +45,15 @@ public class AttendanceStatusServlet extends HttpServlet {
 
 		List<Map<String, Object>> list = summaryService.getSummaryList(keyword, deptId, positionId, status, year,
 				month);
-
+		List<String> deptList = summaryService.getDeptList();
+		request.setAttribute("deptList", deptList);
 		request.setAttribute("list", list);
-
+		request.setAttribute("year", year);
+		request.setAttribute("month", month);
+		
+		boolean isClosed = statusService.isClosed(year, month);
+		request.setAttribute("isClosed", isClosed);
+		
 		request.getRequestDispatcher("/WEB-INF/jsp/att/attendanceStatus.jsp").forward(request, response);
 	}
 }

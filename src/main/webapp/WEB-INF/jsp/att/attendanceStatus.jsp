@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
-
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,11 +21,13 @@
 		<!-- 🔥 카드 영역 -->
 		<div class="att-card">
 
-			<h3>근태 현황 관리</h3>
+			<h3>
+				근태 현황 관리 (${year}년 ${month}월)
+				<c:if test="${isClosed}">
+					<span style="color: red; font-size: 14px;">[마감됨]</span>
+				</c:if>
+			</h3>
 
-			<!-- ========================= -->
-			<!-- 🔍 필터 -->
-			<!-- ========================= -->
 			<form method="get"
 				action="${pageContext.request.contextPath}/att/status">
 
@@ -41,6 +43,7 @@
 					</select>
 
 					<button type="submit">조회</button>
+					<button type="button" onclick="closeMonthFromInput()">마감</button>
 
 				</div>
 
@@ -81,10 +84,17 @@
 								<td>${item.leaveDays}</td>
 								<td>${item.noCheckoutCount}</td>
 
-								<td>
-									<button class="btn-fix" onclick="openFixModal(${item.empId})">
-										근태 보정</button>
-								</td>
+								<td><c:choose>
+										<c:when test="${isClosed}">
+											<button class="btn-fix" disabled
+												style="background: #ccc; cursor: not-allowed;">마감됨
+											</button>
+										</c:when>
+										<c:otherwise>
+											<button class="btn-fix" onclick="openFixModal(${item.empId})">
+												근태 보정</button>
+										</c:otherwise>
+									</c:choose></td>
 
 							</tr>
 						</c:forEach>
@@ -119,7 +129,7 @@
 					보정</button>
 				<button class="btn-checkout" onclick="submitFix('CHECKOUT_FIX')">퇴근
 					보정</button>
-				<button class="btn-cancel" onclick="closeModal()">취소</button>
+				<button type="button" class="btn-cancel" onclick="closeModal()">취소</button>
 			</div>
 
 		</form>

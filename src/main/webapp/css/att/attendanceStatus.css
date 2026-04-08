@@ -60,12 +60,22 @@
 /* 모달 박스 */
 .modal-content {
     background: #fff;
-    margin: 8% auto;
-    padding: 25px 30px;
+    margin: 5% auto;
+    padding: 20px;
     width: 420px;
     border-radius: 12px;
     box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-    animation: fadeIn 0.2s ease-in-out;
+
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;   /* 🔥 전체 높이 제한 */
+}
+
+/* 🔥 form도 flex로 만들어야 스크롤 동작 */
+.modal-content form {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 /* 애니메이션 */
@@ -79,6 +89,30 @@
     margin-bottom: 15px;
     font-size: 20px;
     font-weight: 600;
+}
+
+/* ========================= */
+/* 🔥 리스트 (스크롤 핵심) */
+/* ========================= */
+
+.issue-list {
+    flex: 1;                   /* 남는 공간 채움 */
+    overflow-y: auto;          /* 🔥 스크롤 */
+    max-height: 400px;         /* 🔥 안전 제한 */
+    margin: 10px 0;
+    padding-right: 5px;
+
+    scroll-behavior: smooth;
+}
+
+/* 스크롤 디자인 */
+.issue-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.issue-list::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
 }
 
 .issue-row {
@@ -132,7 +166,12 @@
 .modal-buttons {
     display: flex;
     justify-content: space-between;
-    margin-top: 20px;
+    margin-top: 10px;
+
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+
+    flex-shrink: 0;
 }
 
 .modal-buttons button {

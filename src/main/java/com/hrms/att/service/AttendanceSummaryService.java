@@ -164,4 +164,8 @@ public class AttendanceSummaryService {
 	private boolean isWeekend(LocalDate date) {
 		return date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY;
 	}
+	
+	public List<String> getDeptList() {
+	    return empDAO.getDeptList();
+	}
 }
