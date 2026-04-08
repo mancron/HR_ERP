@@ -23,7 +23,7 @@ public class DeptManageServlet extends HttpServlet {
         String userRole = (String) session.getAttribute("userRole");
         Integer myDeptId = (Integer) session.getAttribute("userDeptId");
         
-        boolean isPrivileged = "관리자".equals(userRole) || "HR담당자".equals(userRole);
+        boolean isPrivileged = "HR담당자".equals(userRole);
         String action = request.getParameter("action");
 
         if ("new".equals(action) && !isPrivileged) {

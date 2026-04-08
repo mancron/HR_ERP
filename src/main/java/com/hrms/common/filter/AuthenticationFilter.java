@@ -90,12 +90,17 @@ public class AuthenticationFilter implements Filter {
         if ("관리자".equals(role)) {
             boolean allowed = ADMIN_ALLOWED_PREFIXES.stream()
                                 .anyMatch(p -> path.startsWith(p));
+            
+            if (!allowed && path.startsWith("/org/") && "GET".equalsIgnoreCase(method)) {
+                allowed = true;
+            }
+            
             if (!allowed && isManager) {
                 allowed = ADMIN_MANAGER_EXTRA_PREFIXES.stream()
                             .anyMatch(p -> path.startsWith(p));
             }
             if (!allowed) {
-                res.sendRedirect(contextPath + "/main");
+            	sendForbidden(req, res);
                 return;
             }
             chain.doFilter(request, response);
@@ -106,11 +111,11 @@ public class AuthenticationFilter implements Filter {
         if (path.startsWith("/sys/")) {
             if (path.startsWith("/sys/sqlQuery")) {
                 if (!"HR담당자".equals(role) && !"최종승인자".equals(role)) {
-                    res.sendRedirect(contextPath + "/main");
+                	sendForbidden(req, res);
                     return;
                 }
             } else {
-                res.sendRedirect(contextPath + "/main");
+            	sendForbidden(req, res);
                 return;
             }
         }
@@ -123,7 +128,7 @@ public class AuthenticationFilter implements Filter {
                 boolean ceoPostAllowed = CEO_ALLOWED_POST_PREFIXES.stream()
                                             .anyMatch(p -> path.startsWith(p));
                 if (!ceoPostAllowed) {
-                    res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                    sendForbidden(req, res);
                     return;
                 }
             }
@@ -132,7 +137,7 @@ public class AuthenticationFilter implements Filter {
         // [조직 관리] GET은 전 직원, 쓰기는 HR담당자 전용
         if (path.startsWith("/org/")) {
             if (!"GET".equalsIgnoreCase(method) && !"HR담당자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                sendForbidden(req, res);
                 return;
             }
         }
@@ -140,7 +145,7 @@ public class AuthenticationFilter implements Filter {
         // [직원 관리] 직원 등록 — HR담당자 전용 (접근 자체 차단)
         if (path.startsWith("/emp/reg")) {
             if (!"HR담당자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                sendForbidden(req, res);
                 return;
             }
         }
@@ -157,7 +162,7 @@ public class AuthenticationFilter implements Filter {
         // [근태 관리] 초과근무 승인 — HR담당자·부서장
         if (path.startsWith("/att/overtime/approve")) {
             if (!"HR담당자".equals(role) && !isManager) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                sendForbidden(req, res);
                 return;
             }
         }
@@ -165,7 +170,7 @@ public class AuthenticationFilter implements Filter {
         // [근태 관리] 전사 근태 현황 — HR담당자·CEO
         if (path.startsWith("/att/status")) {
             if (!"HR담당자".equals(role) && !"최종승인자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                sendForbidden(req, res);
                 return;
             }
         }
@@ -173,7 +178,7 @@ public class AuthenticationFilter implements Filter {
         // [근태 관리] 연차 일괄 부여 — HR담당자 전용
         if (path.startsWith("/att/annual/grant")) {
             if (!"HR담당자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                sendForbidden(req, res);
                 return;
             }
         }
@@ -181,7 +186,7 @@ public class AuthenticationFilter implements Filter {
         // [급여 관리] 급여 계산·지급 — HR담당자 전용
         if (path.startsWith("/sal/calc")) {
             if (!"HR담당자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                sendForbidden(req, res);
                 return;
             }
         }
@@ -189,7 +194,7 @@ public class AuthenticationFilter implements Filter {
         // [급여 관리] 전사 급여 현황 — HR담당자·CEO
         if (path.startsWith("/sal/status")) {
             if (!"HR담당자".equals(role) && !"최종승인자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                sendForbidden(req, res);
                 return;
             }
         }
@@ -197,7 +202,7 @@ public class AuthenticationFilter implements Filter {
         // [급여 관리] 공제율 관리 — HR담당자 전용
         if (path.startsWith("/sal/deduction")) {
             if (!"HR담당자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                sendForbidden(req, res);
                 return;
             }
         }
@@ -205,12 +210,19 @@ public class AuthenticationFilter implements Filter {
         // [인사 평가] 평가 작성 — CEO 불가
         if (path.startsWith("/eval/write")) {
             if ("최종승인자".equals(role)) {
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, "403");
+                sendForbidden(req, res);
                 return;
             }
         }
 
         chain.doFilter(request, response);
+    }
+    
+    private void sendForbidden(HttpServletRequest req, HttpServletResponse res)
+            throws ServletException, IOException {
+        res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        req.getRequestDispatcher("/WEB-INF/jsp/common/error_403.jsp")
+           .forward(req, res);
     }
 
     @Override
