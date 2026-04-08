@@ -31,18 +31,25 @@ public class RoleChangeService {
     }
     
     /** DB에서 유효 권한 목록 조회 */
-    public List<String> getValidRoles() {
-        Connection conn = null;
-        try {
-            conn = DatabaseConnection.getConnection();
-            return roleChangeDAO.selectDistinctRoles(conn);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("권한 목록 조회 중 오류가 발생했습니다.", e);
-        } finally {
-            if (conn != null) try { conn.close(); } catch (SQLException e) {}
-        }
-    }
+//    public List<String> getValidRoles() {
+//        Connection conn = null;
+//        try {
+//            conn = DatabaseConnection.getConnection();
+//            return roleChangeDAO.selectDistinctRoles(conn);
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//            throw new RuntimeException("권한 목록 조회 중 오류가 발생했습니다.", e);
+//        } finally {
+//            if (conn != null) try { conn.close(); } catch (SQLException e) {}
+//        }
+//    }
+    
+    private static final List<String> VALID_ROLES = 
+    	    List.of("관리자", "일반", "HR담당자", "최종승인자");
+
+    	public List<String> getValidRoles() {
+    	    return VALID_ROLES; // DB 상태와 무관하게 항상 4개 반환
+    	}
 
     /**
      * 권한 변경 + audit_log 기록 (트랜잭션)

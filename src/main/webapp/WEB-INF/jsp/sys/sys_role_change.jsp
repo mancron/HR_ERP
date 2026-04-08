@@ -71,7 +71,7 @@
                                             </td>
                                             <td>
 												<%-- 자기 자신은 select 비활성화 --%>
-												<select name="newRole" class="form-control select-sm">
+												<select name="newRole" id="select_${account.accountId}" class="form-control select-sm">
 												    <c:forEach var="role" items="${validRoles}">
 												        <option value="${role}"
 												                ${role == account.currentRole ? 'selected' : ''}>
