@@ -18,7 +18,6 @@ public class LoginServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private AuthService authService = new AuthService();
     
-    // [유지] 중복 로그인 체크를 위한 메모리 맵
     private static final Map<String, String> loginUsers = new ConcurrentHashMap<>();
 
     @Override
@@ -30,12 +29,19 @@ public class LoginServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         
+        //동일 브라우저 내 계정 전환 방지
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("empId") != null) {
+            // 이미 세션 정보가 있다면 메인으로 돌려보냄
+            response.sendRedirect(request.getContextPath() + "/main");
+            return;
+        }
+
         String user = request.getParameter("username");
         String pass = request.getParameter("password");
-        HttpSession session = request.getSession();
+        session = request.getSession(); // 새로운 세션 획득
 
         try {
-            // [팀장님 변경안 반영] LoginResultDTO로 결과 수신
             LoginResultDTO result = authService.login(user, pass);
             
             if (result != null && result.getAccount() != null) {
@@ -43,23 +49,24 @@ public class LoginServlet extends HttpServlet {
                 EmpDTO empInfo = result.getEmpInfo();
                 String sEmpId = String.valueOf(account.getEmpId());
 
-                // [우리 기능 유지] 중복 로그인 검증
+                // [중복 로그인 원칙 적용]
                 if (loginUsers.containsKey(sEmpId)) {
-                    throw new Exception("already_logged_in");
+                    String existingId = loginUsers.get(sEmpId);
+                    // 맵에 있는 세션ID가 현재 요청의 세션ID와 다를 때만(타 기기/브라우저) 차단
+                    if (!existingId.equals(session.getId())) {
+                        throw new Exception("already_logged_in");
+                    }
                 }
 
-                // [팀장님 변경안 반영] 세션 정보 세팅
+                // 세션 설정
                 session.setAttribute("empId", account.getEmpId());
                 session.setAttribute("userName", account.getUsername());
                 session.setAttribute("userRole", account.getRole());
-                
-                // [팀장님 변경안 반영] 부서장 권한 세팅 (isManager)
                 session.setAttribute("isManager", result.isManager());
                 
                 if (empInfo != null) {
                     session.setAttribute("loginUser", empInfo);
-                    
-                    // [우리 기능 유지] 로그인 성공 시 중복 로그인 체크 맵에 등록
+                    // 맵에 현재 사번과 세션ID 등록
                     loginUsers.put(sEmpId, session.getId());
                 }
                 
@@ -72,16 +79,13 @@ public class LoginServlet extends HttpServlet {
             String errorCode = e.getMessage();
             if (errorCode == null) errorCode = "invalid_auth";
             
-            // [우리 기능 유지] 퇴사자, 미존재 계정, 잠금 등 상세 에러 분기 유지
             boolean isKnownError = errorCode.equals("already_logged_in") || 
                                  errorCode.equals("account_locked") || 
                                  errorCode.equals("retired_user") || 
                                  errorCode.equals("invalid_user") || 
                                  errorCode.startsWith("login_fail");
 
-            if (!isKnownError) {
-                errorCode = "invalid_auth";
-            }
+            if (!isKnownError) errorCode = "invalid_auth";
             
             AccountDAO accountDao = new AccountDAO();
             session.setAttribute("loginErrorMsg", errorCode);
