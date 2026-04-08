@@ -5,7 +5,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>HR ERP - 대시보드 (HR담당자)</title>
+    <title>HR ERP - 대시보드 (CEO)</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/main/dashboard.css">
 </head>
@@ -49,29 +49,26 @@
                 </div>
             </div>
 
-            <%-- ② 업무 지표 배지 — 결재대기 + 급여처리 --%>
+            <%-- ② 전사 현황 배지 (읽기 전용) --%>
             <div class="widget-grid widget-grid-3">
-                <div class="widget-card warn">
-                    <div class="widget-label">휴가 결재 대기</div>
-                    <div class="widget-value"><c:out value="${dashboard.pendingLeaveCount}" />건</div>
-                    <a href="${pageContext.request.contextPath}/att/leave/approve" class="card-link">처리하기 →</a>
-                </div>
-                <div class="widget-card warn">
-                    <div class="widget-label">초과근무 결재 대기</div>
-                    <div class="widget-value"><c:out value="${dashboard.pendingOtCount}" />건</div>
-                    <a href="${pageContext.request.contextPath}/att/overtime/approve" class="card-link">처리하기 →</a>
-                </div>
                 <div class="widget-card">
-                    <div class="widget-label">이번달 급여 처리</div>
-                    <div class="widget-value">
-                        <c:out value="${dashboard.salaryDoneCount}" /> /
-                        <c:out value="${dashboard.salaryTotalCount}" />명
-                    </div>
-                    <div class="widget-sub">완료</div>
+                    <div class="widget-label">전사 인원</div>
+                    <div class="widget-value"><c:out value="${dashboard.totalEmpCount}" />명</div>
+                    <a href="${pageContext.request.contextPath}/emp/list" class="card-link">목록 →</a>
+                </div>
+                <div class="widget-card warn">
+                    <div class="widget-label">결재 대기 (전사)</div>
+                    <div class="widget-value"><c:out value="${dashboard.pendingLeaveCount}" />건</div>
+                    <a href="${pageContext.request.contextPath}/emp/approval" class="card-link">확인 →</a>
+                </div>
+                <div class="widget-card ${dashboard.incompleteEvalCount > 0 ? 'warn' : ''}">
+                    <div class="widget-label">평가 미완료</div>
+                    <div class="widget-value"><c:out value="${dashboard.incompleteEvalCount}" />건</div>
+                    <a href="${pageContext.request.contextPath}/eval/status" class="card-link">확인 →</a>
                 </div>
             </div>
 
-            <%-- ③ 본인 급여·연차 — HR담당자도 직원이므로 표시 --%>
+            <%-- ③ 본인 급여·연차 --%>
             <div class="widget-grid widget-grid-3 personal-section">
                 <div class="widget-card">
                     <div class="widget-label">내 잔여 연차</div>
@@ -114,36 +111,26 @@
                 </div>
             </div>
 
-            <%-- ④ 결재 대기 목록 — 부서별 근태는 /att/status 에서 확인 --%>
+            <%-- ④ 전사 결재 대기 목록 (읽기 전용) --%>
             <div class="bottom-grid bottom-grid-1">
                 <div class="info-card">
-                    <div class="info-card-title">⏳ 결재 대기</div>
+                    <div class="info-card-title">⏳ 전사 결재 대기</div>
                     <c:choose>
-                        <c:when test="${empty dashboard.pendingLeaves and empty dashboard.pendingOts}">
+                        <c:when test="${empty dashboard.pendingLeaves}">
                             <p class="empty-txt">대기 중인 결재가 없습니다.</p>
                         </c:when>
                         <c:otherwise>
                             <table class="mini-table">
                                 <thead>
-                                    <tr><th>구분</th><th>이름</th><th>부서</th><th>내용</th><th>기간</th></tr>
+                                    <tr><th>이름</th><th>부서</th><th>유형</th><th>기간</th></tr>
                                 </thead>
                                 <tbody>
                                     <c:forEach var="lv" items="${dashboard.pendingLeaves}">
                                         <tr>
-                                            <td><span class="req-type">휴가</span></td>
                                             <td><c:out value="${lv.emp_name}" /></td>
                                             <td><c:out value="${lv.dept_name}" /></td>
                                             <td><c:out value="${lv.leave_type}" /></td>
                                             <td><c:out value="${lv.startDt}" />~<c:out value="${lv.endDt}" /></td>
-                                        </tr>
-                                    </c:forEach>
-                                    <c:forEach var="ot" items="${dashboard.pendingOts}">
-                                        <tr>
-                                            <td><span class="req-type">초과</span></td>
-                                            <td><c:out value="${ot.emp_name}" /></td>
-                                            <td><c:out value="${ot.dept_name}" /></td>
-                                            <td><c:out value="${ot.ot_hours}" />h</td>
-                                            <td><c:out value="${ot.otDt}" /></td>
                                         </tr>
                                     </c:forEach>
                                 </tbody>

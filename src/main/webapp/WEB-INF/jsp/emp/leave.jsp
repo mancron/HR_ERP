@@ -14,6 +14,24 @@
         // 복직은 종료일 불필요
         endDateRow.style.display = (leaveType === '복직') ? 'none' : '';
     }
+    
+    // 복직일이 휴직일 보다 먼저 올 수 없게 함
+    function validateForm() {
+        const leaveType = document.getElementById('leaveType').value;
+        const startDate = document.querySelector('input[name="start_date"]').value;
+        const endDate   = document.querySelector('input[name="end_date"]').value;
+        const today     = new Date().toISOString().split('T')[0];
+
+        if (startDate < today) {
+            alert('시작일은 오늘 이후여야 합니다.');
+            return false;
+        }
+        if (leaveType === '휴직' && endDate && endDate <= startDate) {
+            alert('종료일은 시작일보다 이후여야 합니다.');
+            return false;
+        }
+        return true;
+    }
 
     window.onload = function() {
         toggleEndDate();
@@ -31,7 +49,7 @@
         </div>
     </div>
 
-    <form action="${pageContext.request.contextPath}/emp/leave" method="post">
+    <form action="${pageContext.request.contextPath}/emp/leave" method="post" onsubmit="return validateForm();">
         <%-- 서버에서 처리할 hidden 필드 --%>
         <input type="hidden" name="emp_id" value="${empDetail.emp_id}">
         <input type="hidden" name="emp_no" value="${empDetail.emp_no}">

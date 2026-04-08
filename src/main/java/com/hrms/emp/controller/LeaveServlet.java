@@ -146,6 +146,17 @@ public class LeaveServlet extends HttpServlet {
             out.flush();
             return;
         }
+        
+        if (leaveService.hasPendingLeave(dto.getEmp_id())) {
+            response.setContentType("text/html; charset=UTF-8");
+            java.io.PrintWriter out = response.getWriter();
+            out.println("<script>");
+            out.println("alert('이미 진행 중인 휴직/복직 신청이 있습니다.');");
+            out.println("history.back();");
+            out.println("</script>");
+            out.flush();
+            return;
+        }
         boolean isSuccess = leaveService.insertLeaveRequest(dto);
 
         if (isSuccess) {
@@ -167,4 +178,6 @@ public class LeaveServlet extends HttpServlet {
             out.flush();
         }
     }
+    
+    
 }

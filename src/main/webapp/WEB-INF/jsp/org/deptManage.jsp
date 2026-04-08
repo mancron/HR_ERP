@@ -2,25 +2,43 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 
-<c:set var="isAdmin" value="${sessionScope.userRole == '관리자' || sessionScope.userRole == 'HR담당자'}" />
+<c:set var="isAdmin"   value="${isPrivileged}" />
+<c:set var="isNewMode" value="${param.action eq 'new' || empty selectedDept.dept_id || selectedDept.dept_id eq 0}" />
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/org/dept.css">
 
-<%-- 토스트 --%>
+<%-- ══ 토스트 ══
+     [L-1  FIX] <c:otherwise> 에서 msg+error 동시 노출 방지:
+                 error 가 있으면 error 만, 없으면 msg 만 출력
+     [NEW-M-5 FIX] 누락 케이스 추가:
+                 no_dept_name / has_members_inactive / has_children_inactive / self_parent / fail
+--%>
 <c:if test="${not empty param.error || not empty param.msg}">
-    <c:set var="isSuccess" value="${not empty param.msg && (param.msg == 'success' || param.msg == 'deleted')}" />
-    <div class="status-toast ${isSuccess ? 'toast-success' : 'toast-error'}" id="statusMsg">
+    <c:set var="isError" value="${not empty param.error}" />
+    <div class="status-toast ${isError ? 'toast-error' : 'toast-success'}" id="statusMsg">
         <span class="toast-content">
             <c:choose>
-                <c:when test="${param.msg == 'success'}">✅ 정보가 성공적으로 반영되었습니다.</c:when>
-                <c:when test="${param.msg == 'deleted'}">✅ 부서가 성공적으로 폐지되었습니다.</c:when>
+                <%-- 에러 케이스 --%>
+                <c:when test="${param.error == 'no_auth'}">❌ 권한이 없습니다.</c:when>
                 <c:when test="${param.error == 'no_dept_name'}">❌ 부서명은 필수 입력 항목입니다.</c:when>
-                <c:when test="${param.error == 'circular_reference'}">❌ 순환 참조: 하위 부서를 상위로 지정할 수 없습니다.</c:when>
                 <c:when test="${param.error == 'self_parent'}">❌ 자기 자신을 상위 부서로 지정할 수 없습니다.</c:when>
+                <c:when test="${param.error == 'circular_reference'}">❌ 순환 참조: 하위 부서를 상위로 지정할 수 없습니다.</c:when>
                 <c:when test="${param.error == 'level_exceeded'}">❌ 조직도는 최대 5단계까지만 구성 가능합니다.</c:when>
                 <c:when test="${param.error == 'has_members'}">❌ 재직 중인 직원이 있어 폐지할 수 없습니다.</c:when>
-                <c:when test="${param.error == 'has_children'}">❌ 하위 부서가 존재하는 경우 폐지할 수 없습니다.</c:when>
-                <c:otherwise>⚠️ ${param.error}${param.msg}</c:otherwise>
+                <c:when test="${param.error == 'has_children'}">❌ 하위 부서가 존재하여 폐지할 수 없습니다.</c:when>
+                <c:when test="${param.error == 'has_members_inactive'}">⚠️ 소속 직원이 있는 부서는 비활성화할 수 없습니다.</c:when>
+                <c:when test="${param.error == 'has_children_inactive'}">⚠️ 하위 부서가 있는 부서는 비활성화할 수 없습니다.</c:when>
+                <c:when test="${param.error == 'fail'}">❌ 처리 중 오류가 발생했습니다. 다시 시도해 주세요.</c:when>
+                <%-- 성공 케이스 --%>
+                <c:when test="${param.msg == 'success'}">✅ 성공적으로 반영되었습니다.</c:when>
+                <c:when test="${param.msg == 'deleted'}">✅ 부서가 폐지되었습니다.</c:when>
+                <%-- [L-1 FIX] error 가 있으면 error 코드만, 없으면 msg 코드만 출력 --%>
+                <c:otherwise>
+                    <c:choose>
+                        <c:when test="${not empty param.error}">⚠️ ${param.error}</c:when>
+                        <c:otherwise>⚠️ ${param.msg}</c:otherwise>
+                    </c:choose>
+                </c:otherwise>
             </c:choose>
         </span>
         <span class="btn-toast-close" onclick="this.parentElement.style.display='none'">×</span>
@@ -29,9 +47,8 @@
 
 <div class="dept-container">
 
-    <%-- ══════ 왼쪽: 조직도 트리 ══════ --%>
+    <%-- ══ 왼쪽: 조직도 트리 ══ --%>
     <div class="dept-tree-panel">
-
         <div class="panel-header">
             <span class="panel-title">🌳 조직도</span>
             <c:if test="${isAdmin}">
@@ -163,46 +180,52 @@
                         </ul>
                     </c:when>
                     <c:otherwise>
-                        <div class="empty-state" style="padding:20px;font-size:13px;">비활성 부서가 없습니다.</div>
+                        <div class="empty-state">비활성 부서가 없습니다.</div>
                     </c:otherwise>
                 </c:choose>
             </div>
         </c:if>
-
     </div><%-- /dept-tree-panel --%>
 
 
-    <%-- ══════ 오른쪽: 상세 패널 ══════ --%>
+    <%-- ══ 오른쪽: 상세 패널 ══ --%>
     <div class="dept-detail-panel">
-
         <div class="dept-info-card">
             <div class="card-title">
                 📝 부서 정보
-                <c:if test="${not empty selectedDept.dept_name}">
-                    <span style="color:#94a3b8;font-weight:400;margin:0 4px;">·</span>
-                    <span style="color:#2563eb;">${selectedDept.dept_name}</span>
-                </c:if>
+                <c:if test="${isNewMode}"><span style="font-size:13px;font-weight:400;color:#64748b;">(신규 등록)</span></c:if>
             </div>
 
-            <form action="${pageContext.request.contextPath}/org/dept" method="post" id="deptForm"
-                  onsubmit="return false"><%-- JS로 검증 후 submit() 호출 --%>
-                <input type="hidden" name="action"  id="formAction" value="save">
+            <%--
+                [NEW-S-1 FIX]
+                - hidden action 값을 서버 렌더링 시점에 이미 'insert' / 'update' 로 확정
+                - JS submitAction() 은 'delete' 또는 그 외(저장) 두 갈래만 처리
+                - 저장 버튼 onclick 을 'save' → 'submit' 으로 변경하여
+                  서블릿에서 알 수 없는 액션으로 오류나는 경우 원천 차단
+            --%>
+            <form action="${pageContext.request.contextPath}/org/dept" method="post"
+                  id="deptForm" onsubmit="return false">
+                <input type="hidden" name="action"  id="formAction"
+                       value="${isNewMode ? 'insert' : 'update'}">
                 <input type="hidden" name="dept_id" value="${selectedDept.dept_id}">
 
                 <div class="dept-form-grid">
 
-                    <%-- ① 부서명: 전체 너비 --%>
+                    <%-- ① 부서명 --%>
                     <div class="dept-form-group full-width">
                         <label>부서명 <span class="required">*</span></label>
                         <input type="text" name="dept_name" id="deptNameInput"
-                               value="${selectedDept.dept_name}"
-                               placeholder="부서명을 입력하세요"
+                               value="${isNewMode ? '' : selectedDept.dept_name}"
+                               placeholder="${isNewMode ? '신규 부서명을 입력하세요' : ''}"
                                ${!isAdmin ? 'readonly' : ''}
                                oninput="clearFieldError(this)">
-                        <span class="field-error-msg" id="deptNameError">부서명은 필수 입력 항목입니다.</span>
+                        <span class="field-error-msg" id="deptNameError">부서명은 필수입니다.</span>
                     </div>
 
-                    <%-- ② 상위 부서 --%>
+                    <%-- ② 상위 부서
+                         [NEW2-S-2 FIX] 일반 사용자 쪽: parent_dept_name 필드 없으므로
+                                        allDepts 루프로 parent_dept_id 매칭하여 부서명 표시
+                    --%>
                     <div class="dept-form-group">
                         <label>상위 부서</label>
                         <c:choose>
@@ -210,7 +233,7 @@
                                 <select name="parent_dept_id">
                                     <option value="0">없음 (최상위)</option>
                                     <c:forEach var="d" items="${allDepts}">
-                                        <c:if test="${d.dept_id != selectedDept.dept_id && d.is_active == 1}">
+                                        <c:if test="${(isNewMode || d.dept_id != selectedDept.dept_id) && d.is_active == 1}">
                                             <option value="${d.dept_id}"
                                                     ${selectedDept.parent_dept_id == d.dept_id ? 'selected' : ''}>
                                                 ${d.dept_name}
@@ -220,6 +243,7 @@
                                 </select>
                             </c:when>
                             <c:otherwise>
+                                <%-- 상위 부서명을 allDepts 에서 찾아 표시 --%>
                                 <c:set var="parentName" value="없음 (최상위)" />
                                 <c:forEach var="d" items="${allDepts}">
                                     <c:if test="${d.dept_id == selectedDept.parent_dept_id}">
@@ -231,30 +255,32 @@
                         </c:choose>
                     </div>
 
-                    <%-- ③ 부서장: 항상 readonly (인사발령에서 관리) --%>
+                    <%-- ③ 부서장 --%>
                     <div class="dept-form-group">
                         <label>부서장</label>
                         <input type="text"
-                               value="${not empty selectedDept.manager_name ? selectedDept.manager_name : '미지정'}"
+                               value="${isNewMode ? '자동지정' : (not empty selectedDept.manager_name ? selectedDept.manager_name : '미지정')}"
                                readonly
                                title="부서장은 인사발령 메뉴에서 변경합니다">
                     </div>
 
-                    <%-- 관리자 전용 필드들 --%>
+                    <%-- 관리자 전용 필드 --%>
                     <c:if test="${isAdmin}">
 
                         <%-- ④ 출력 순서 --%>
                         <div class="dept-form-group">
                             <label>출력 순서</label>
-                            <input type="number" name="sort_order" min="1"
+                            <input type="number" name="sort_order" min="1" step="1"
                                    value="${selectedDept.sort_order > 0 ? selectedDept.sort_order : 1}">
                         </div>
 
-                        <%-- ⑤ 계층 깊이 --%>
+                        <%-- ⑤ 계층 깊이
+                             [NEW-L-2 FIX] EL += 연산자(숫자 덧셈) 대신 c:choose 로 안전하게 출력
+                        --%>
                         <div class="dept-form-group">
                             <label>계층 깊이</label>
                             <c:choose>
-                                <c:when test="${selectedDept.dept_level > 0}">
+                                <c:when test="${!isNewMode && selectedDept.dept_level > 0}">
                                     <input type="text" value="${selectedDept.dept_level}단계" readonly>
                                 </c:when>
                                 <c:otherwise>
@@ -266,35 +292,27 @@
                         <%-- ⑥ 상태 --%>
                         <div class="dept-form-group">
                             <label>상태</label>
-                            <select name="is_active">
-                                <option value="1" ${selectedDept.is_active == 1 ? 'selected' : ''}>활성</option>
-                                <option value="0" ${selectedDept.is_active == 0 ? 'selected' : ''}>비활성</option>
-                            </select>
+                            <c:choose>
+                                <c:when test="${!isNewMode && selectedDept.is_active == 0}">
+                                    <select name="is_active">
+                                        <option value="1">활성 (복구)</option>
+                                        <option value="0" selected>비활성 유지</option>
+                                    </select>
+                                </c:when>
+                                <c:otherwise>
+                                    <input type="text" value="활성" readonly
+                                           style="background-color:#f1f5f9;color:#2563eb;font-weight:600;">
+                                    <input type="hidden" name="is_active" value="1">
+                                </c:otherwise>
+                            </c:choose>
                         </div>
-
-                        <%-- ⑦ 생성일 (있을 때만) --%>
-                        <c:if test="${not empty selectedDept.created_at}">
-                            <div class="dept-form-group">
-                                <label>생성일</label>
-                                <input type="text" value="${selectedDept.created_at}" readonly>
-                            </div>
-                        </c:if>
-
-                        <%-- ⑧ 폐지일 (있을 때만) --%>
-                        <c:if test="${not empty selectedDept.closed_at}">
-                            <div class="dept-form-group">
-                                <label>폐지일</label>
-                                <input type="text" value="${selectedDept.closed_at}" readonly
-                                       style="color:#ef4444;">
-                            </div>
-                        </c:if>
 
                     </c:if><%-- /isAdmin --%>
 
                 </div><%-- /dept-form-grid --%>
 
                 <div class="dept-btn-area">
-                    <c:if test="${isAdmin && selectedDept.dept_id > 0 && selectedDept.is_active == 1}">
+                    <c:if test="${isAdmin && !isNewMode && selectedDept.dept_id > 0 && selectedDept.is_active == 1}">
                         <button type="button" class="btn-dept-delete"
                                 onclick="submitAction('delete')">부서 폐지</button>
                     </c:if>
@@ -303,13 +321,14 @@
                                 onclick="location.href='${pageContext.request.contextPath}/org/dept'">
                             취소
                         </button>
+                        <%-- [NEW-S-1 FIX] 'save' 대신 'submit' 으로 — JS가 서버 렌더링 값을 그대로 전송 --%>
                         <button type="button" class="btn-dept-save"
-                                onclick="submitAction('save')">저장</button>
+                                onclick="submitAction('submit')">저장</button>
                     </c:if>
                 </div>
 
             </form>
-        </div>
+        </div><%-- /dept-info-card --%>
 
         <%-- 소속 직원 --%>
         <div class="dept-member-card">
@@ -329,11 +348,18 @@
                                     <td style="color:#64748b;font-size:13px;">${m.empNo}</td>
                                     <td style="font-weight:600;">${m.empName}</td>
                                     <td>${m.posName}</td>
+                                    <%-- [NEW2-S-1 FIX] 뱃지 복구 --%>
                                     <td>
                                         <c:choose>
-                                            <c:when test="${m.status == '재직'}"><span class="badge-active">재직</span></c:when>
-                                            <c:when test="${m.status == '휴직'}"><span class="badge-leave">휴직</span></c:when>
-                                            <c:otherwise><span class="badge-inactive">퇴직</span></c:otherwise>
+                                            <c:when test="${m.status == '재직'}">
+                                                <span class="badge-active">재직</span>
+                                            </c:when>
+                                            <c:when test="${m.status == '휴직'}">
+                                                <span class="badge-leave">휴직</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="badge-inactive">퇴직</span>
+                                            </c:otherwise>
                                         </c:choose>
                                     </td>
                                 </tr>
@@ -341,38 +367,52 @@
                         </tbody>
                     </table>
                 </c:when>
-                <c:otherwise><div class="empty-state">소속 직원이 없습니다.</div></c:otherwise>
+                <c:otherwise>
+                    <div class="empty-state">
+                        ${isNewMode ? '부서 등록 후 직원을 배정할 수 있습니다.' : '소속 직원이 없습니다.'}
+                    </div>
+                </c:otherwise>
             </c:choose>
-        </div>
+        </div><%-- /dept-member-card --%>
 
     </div><%-- /dept-detail-panel --%>
 </div><%-- /dept-container --%>
 
+<%-- 동명이인 선택 모달 --%>
+<div id="empModalOverlay" class="emp-modal-overlay">
+    <div class="emp-modal-content">
+        <div class="emp-modal-header">
+            <h3>👥 검색 결과 선택</h3>
+            <span class="emp-modal-close" onclick="closeEmpModal()">&times;</span>
+        </div>
+        <div class="emp-modal-body" id="empModalBody"></div>
+    </div>
+</div>
 
 <script>
-/* ─────────────────────────────────────────
-   탭 전환
-───────────────────────────────────────── */
+/* ── 탭 전환
+   [NEW2-M-1 FIX] 인라인 스타일 초기화(cssText='') 복구
+   + CSS 클래스 토글로도 동작하므로 인라인 style 추가는 최소화
+─────────────────────────────────── */
 function switchDeptTab(el, tabId) {
     document.querySelectorAll('.dept-tab').forEach(t => {
         t.classList.remove('active');
-        t.style.cssText = '';
+        t.style.cssText = '';          // 이전에 세팅된 인라인 스타일 초기화
     });
     el.classList.add('active');
-    el.style.background  = '#fff';
-    el.style.boxShadow   = '0 1px 4px rgba(0,0,0,.1)';
-    el.style.color       = '#2563eb';
 
     document.querySelectorAll('.tab-content').forEach(c => {
-        c.style.display = 'none'; c.classList.remove('active');
+        c.style.display = 'none';
+        c.classList.remove('active');
     });
-    const t = document.getElementById(tabId);
-    if (t) { t.style.display = 'block'; t.classList.add('active'); }
+    const target = document.getElementById(tabId);
+    if (target) {
+        target.style.display = 'block';
+        target.classList.add('active');
+    }
 }
 
-/* ─────────────────────────────────────────
-   부서명 필수 검증
-───────────────────────────────────────── */
+/* ── 폼 유효성 검사 ─────────────────────── */
 function clearFieldError(input) {
     input.classList.remove('input-error');
     const errEl = document.getElementById(input.id + 'Error');
@@ -381,67 +421,110 @@ function clearFieldError(input) {
 
 function validateForm() {
     const nameInput = document.getElementById('deptNameInput');
-    if (!nameInput) return true; // readonly 뷰에서는 검증 불필요
-    const val = nameInput.value.trim();
-    if (!val) {
+    if (nameInput && !nameInput.value.trim()) {
         nameInput.classList.add('input-error');
-        nameInput.focus();
         const errEl = document.getElementById('deptNameError');
         if (errEl) errEl.style.display = 'block';
+        nameInput.focus();
         return false;
     }
     return true;
 }
 
-/* ─────────────────────────────────────────
-   폼 제출
-───────────────────────────────────────── */
+/* ── 폼 제출
+   [NEW-S-1 FIX]
+   - 'delete' : formAction → 'delete' 세팅 후 submit
+   - 'submit' : 서버 렌더링 시점에 이미 'insert'/'update' 가 세팅되어 있으므로
+                JS 에서 재판단 없이 그대로 submit
+   → 서블릿에 'save' 같은 알 수 없는 액션이 도달할 경우가 원천 차단됨
+─────────────────────────────────── */
 function submitAction(action) {
+    const form        = document.getElementById('deptForm');
+    const actionInput = document.getElementById('formAction');
+
     if (action === 'delete') {
-        if (!confirm('정말 이 부서를 폐지하시겠습니까?')) return;
-        document.getElementById('formAction').value = 'delete';
-        document.getElementById('deptForm').submit();
+        if (!confirm('정말 폐지하시겠습니까?')) return;
+        actionInput.value = 'delete';
+        form.submit();
         return;
     }
+
+    // 저장('submit') 경로
     if (!validateForm()) return;
-    document.getElementById('formAction').value = 'save';
-    document.getElementById('deptForm').submit();
+    // formAction 값은 서버가 렌더링한 'insert' 또는 'update' 그대로 유지
+    form.submit();
 }
 
-/* ─────────────────────────────────────────
-   사원 검색
-───────────────────────────────────────── */
+/* ── 사원 검색 ─────────────────────────── */
 function searchDeptByEmp() {
     const name = document.getElementById('empSearchInput').value.trim();
-    if (!name) { alert('검색할 사원명을 입력하세요.'); return; }
+    if (!name) return;
+
     fetch('${pageContext.request.contextPath}/org/dept?action=findDeptByEmp&empName=' + encodeURIComponent(name))
         .then(r => r.json())
         .then(d => {
-            if (d.deptId > 0) location.href = '?deptId=' + d.deptId;
-            else alert('해당 이름의 사원을 찾을 수 없습니다.');
+            if (d.status === 'success') {
+                if (d.deptId && parseInt(d.deptId) > 0) {
+                    location.href = '?deptId=' + d.deptId;
+                } else {
+                    alert('해당 사원은 현재 소속된 부서가 없습니다.');
+                }
+            } else if (d.status === 'multiple') {
+                openEmpModal(d.list);
+            } else {
+                alert('사원을 찾을 수 없습니다.');
+            }
         })
         .catch(() => alert('검색 중 오류가 발생했습니다.'));
 }
 
-/* 트리 연결선: 순수 CSS (last-node 클래스는 JSTL varStatus로 서버에서 부여) */
+/* ── 동명이인 모달 ─────────────────────── */
+function openEmpModal(list) {
+    const body = document.getElementById('empModalBody');
+    body.innerHTML = '';
+    list.forEach(emp => {
+        const div = document.createElement('div');
+        div.className = 'emp-select-item';
+        div.innerHTML = `
+            <span class="dept-label">\${emp.deptName || '부서미정'}</span>
+            <span class="info-label">\${emp.posName || ''} | \${emp.empName || ''} (\${emp.empNo || ''})</span>
+        `;
+        div.onclick = () => {
+            if (emp.deptId && parseInt(emp.deptId) > 0) {
+                location.href = '?deptId=' + emp.deptId;
+            } else {
+                alert('해당 사원은 현재 소속된 부서 정보가 없습니다.');
+                closeEmpModal();
+            }
+        };
+        body.appendChild(div);
+    });
+    document.getElementById('empModalOverlay').style.display = 'flex';
+}
 
-/* ─────────────────────────────────────────
-   초기화
-───────────────────────────────────────── */
+function closeEmpModal() {
+    document.getElementById('empModalOverlay').style.display = 'none';
+}
+
+window.onclick = e => {
+    if (e.target === document.getElementById('empModalOverlay')) closeEmpModal();
+};
+
+/* ── 초기화 ─────────────────────────────── */
 window.addEventListener('DOMContentLoaded', () => {
 
-    /* 비활성 탭 자동 전환 */
+    /* 비활성 부서 선택 시 탭 자동 전환 */
     <c:if test="${not empty selectedDept && selectedDept.is_active == 0}">
         const inactiveTab = document.querySelectorAll('.dept-tab')[1];
         if (inactiveTab) switchDeptTab(inactiveTab, 'inactive-list');
     </c:if>
 
-    /* 토스트 자동 닫기 */
+    /* 토스트 자동 페이드아웃 */
     const toast = document.getElementById('statusMsg');
     if (toast) {
         setTimeout(() => {
             toast.style.transition = 'opacity .4s';
-            toast.style.opacity = '0';
+            toast.style.opacity    = '0';
             setTimeout(() => toast.style.display = 'none', 400);
         }, 3500);
     }

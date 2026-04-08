@@ -7,6 +7,7 @@
 <title>HR ERP - 출퇴근</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/attendance.css">
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />

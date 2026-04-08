@@ -6,6 +6,18 @@
 <meta charset="UTF-8">
 <title>퇴직 신청</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/resign.css">
+<script>
+    function validateForm() {
+        const resignDate = document.querySelector('input[name="resign_date"]').value;
+        const today      = new Date().toISOString().split('T')[0];
+
+        if (resignDate < today) {
+            alert('희망 퇴직일은 오늘 이후여야 합니다.');
+            return false;
+        }
+        return true;
+    }
+</script>
 </head>
 <body>
 
@@ -20,12 +32,12 @@
 
     <%-- 주의 안내 --%>
     <div class="warn-box">
-        ⚠ 퇴직 신청은 부서장 승인 후 인사담당자 최종 승인 시 처리됩니다.<br>
+	    ⚠ 퇴직 신청 안내<br>
         신청 후 취소를 원하시면 담당 인사팀에 문의하세요.<br>
         최종 승인 이후에는 취소가 불가합니다.
     </div>
 
-    <form action="${pageContext.request.contextPath}/emp/resign" method="post">
+    <form action="${pageContext.request.contextPath}/emp/resign" method="post" onsubmit="return validateForm();">
         <%-- 서버에서 처리할 hidden 필드 --%>
         <input type="hidden" name="emp_id" value="${empDetail.emp_id}">
         <input type="hidden" name="emp_no" value="${empDetail.emp_no}">
@@ -73,6 +85,8 @@
                 <td><input type="text" value="부서장 승인" readonly class="readonly-input"></td>
                 <th>2차 결재자</th>
                 <td><input type="text" value="인사담당자 승인" readonly class="readonly-input"></td>
+                <th>최종 결재자</th>
+                <td><input type="text" value="최종 결재자 승인" readonly class="readonly-input"></td>
             </tr>
             <tr>
                 <th>부서장</th>
