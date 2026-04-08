@@ -1,0 +1,137 @@
+@charset "UTF-8";
+
+/* ================================================
+   sal/sal-calc.css — 급여 계산·지급 전용 스타일
+   ================================================ */
+
+/* 툴바 */
+.calc-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.filter-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.inline-form { display: inline; margin: 0; }
+
+.select-sm {
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+/* 경고 안내 */
+.calc-notice {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #1e40af;
+    margin-bottom: 16px;
+}
+
+/* 알림 메시지 */
+.alert {
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 14px;
+}
+.alert-success { background: #dcfce7; color: #166534; border-left: 4px solid #16a34a; }
+.alert-error   { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
+
+/* 테이블 */
+.table-card {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    overflow-x: auto;
+}
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+.data-table th {
+    background: #f8f9fa;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+.data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f3f4f6;
+    white-space: nowrap;
+}
+
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover         { background: #f9fafb; }
+
+/* 완료 행 */
+.row-done { background: #f9fafb; color: #9ca3af; }
+.row-done .net-col { color: #9ca3af !important; }
+
+/* 실수령액 컬럼 */
+.net-col { font-weight: 700; color: #1f2937; }
+
+/* 배지 */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.badge-green  { background: #dcfce7; color: #166534; }
+.badge-yellow { background: #fef3c7; color: #92400e; }
+
+/* 지급 버튼 */
+.btn-pay {
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.btn-pay:hover { background: #2563eb; }
+
+.btn-xs { font-size: 12px; padding: 3px 10px; }
+
+/* 완료 체크 */
+.done-mark { color: #16a34a; font-weight: 700; font-size: 14px; }
+
+/* 빈 행 */
+.empty-row {
+    text-align: center;
+    padding: 50px !important;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+/* 버튼 비활성화 */
+button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

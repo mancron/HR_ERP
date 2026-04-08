@@ -416,7 +416,24 @@ CREATE TABLE salary (
     CONSTRAINT chk_salary_total  CHECK (net_salary = gross_salary - total_deduction)
 ) COMMENT '급여 명세 (월별 스냅샷) - 월급 계산 및 지급 관리';
 
-
+CREATE TABLE income_tax_table (
+    id          INT          AUTO_INCREMENT PRIMARY KEY,
+    salary_from BIGINT       NOT NULL COMMENT '월급여액 이상 (원)',
+    salary_to   BIGINT       NOT NULL COMMENT '월급여액 미만 (원)',
+    fam_1       INT          NOT NULL DEFAULT 0,
+    fam_2       INT          NOT NULL DEFAULT 0,
+    fam_3       INT          NOT NULL DEFAULT 0,
+    fam_4       INT          NOT NULL DEFAULT 0,
+    fam_5       INT          NOT NULL DEFAULT 0,
+    fam_6       INT          NOT NULL DEFAULT 0,
+    fam_7       INT          NOT NULL DEFAULT 0,
+    fam_8       INT          NOT NULL DEFAULT 0,
+    fam_9       INT          NOT NULL DEFAULT 0,
+    fam_10      INT          NOT NULL DEFAULT 0,
+    fam_11      INT          NOT NULL DEFAULT 0,
+    apply_year  INT          NOT NULL DEFAULT 2026 COMMENT '적용 연도',
+    INDEX idx_salary_range (apply_year, salary_from, salary_to)
+) COMMENT = '근로소득 간이세액표 (2026)';
 -- =============================================
 -- 5. 인사 평가
 -- =============================================
