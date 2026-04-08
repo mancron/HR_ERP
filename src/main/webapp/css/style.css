@@ -41,6 +41,8 @@
   }
   .nav-item:hover { color: white; background: rgba(255,255,255,.05); }
   .nav-item.active { color: white; border-left-color: var(--accent); background: rgba(255,255,255,.1); font-weight: 500; }
+  
+  .no-transition, .no-transition * { transition: none !important; }
 
   /* ── 메인 컨테이너 & 헤더 ── */
   #main-wrapper { margin-left: var(--sidebar-w); width: calc(100% - var(--sidebar-w)); min-height: 100vh; display: flex; flex-direction: column; }

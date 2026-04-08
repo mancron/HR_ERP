@@ -22,7 +22,7 @@ public class PasswordResetDAO {
             "FROM employee e " +
             "JOIN department  d ON e.dept_id     = d.dept_id " +
             "JOIN job_position j ON e.position_id = j.position_id " +
-            "WHERE e.status = '재직' " +
+            "WHERE e.status IN ('재직','휴직') " +
             "  AND (e.emp_name LIKE ? OR e.emp_no LIKE ? OR d.dept_name LIKE ?) " +
             "ORDER BY e.emp_no ASC";
 

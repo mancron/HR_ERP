@@ -104,4 +104,37 @@ public class LeaveService {
             try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
         }
     }
+    
+    public boolean hasPendingLeave(int empId) {
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            return leaveDao.hasPendingLeave(con, empId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
+    
+    // 현재 상태에 따른 신청 유형 유효성 검사
+    public String validateLeaveType(int empId, String leaveType) {
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            String currentStatus = leaveDao.getEmpStatus(con, empId);
+            if (currentStatus == null) return "직원 정보를 찾을 수 없습니다.";
+            if ("재직".equals(currentStatus) && "복직".equals(leaveType))
+                return "재직 중에는 복직 신청을 할 수 없습니다.";
+            if ("휴직".equals(currentStatus) && "휴직".equals(leaveType))
+                return "휴직 중에는 휴직 신청을 할 수 없습니다.";
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
 }

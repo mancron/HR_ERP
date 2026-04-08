@@ -6,8 +6,19 @@
 <head>
 <meta charset="UTF-8">
 <title>인사발령</title>
-<link rel="stylesheet"
-	href="${pageContext.request.contextPath}/css/emp/transfer.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/transfer.css">
+<script>
+    function validateForm() {
+        const transferDate = document.querySelector('input[name="transfer_date"]').value;
+        const today        = new Date().toISOString().split('T')[0];
+
+        if (transferDate < today) {
+            alert('발령 적용일은 오늘 이후여야 합니다.');
+            return false;
+        }
+        return true;
+    }
+</script>
 </head>
 <body>
 
@@ -21,7 +32,7 @@
 	</div>
 
 	<form action="${pageContext.request.contextPath}/emp/transfer"
-		method="post">
+		method="post" onsubmit="return validateForm();">
 		<input type="hidden" name="emp_no" value="${empDetail.emp_no}">
 		<input type="hidden" name="emp_id" value="${empDetail.emp_id}">
 		<input type="hidden" name="prev_dept_id" value="${empDetail.dept_id}">

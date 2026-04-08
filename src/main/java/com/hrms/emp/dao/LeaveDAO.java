@@ -142,4 +142,37 @@ public class LeaveDAO {
             if (pstmt != null) pstmt.close();
         }
     }
+    
+    // 대기 중인 휴직/복직 신청이 있는지 확인
+    public boolean hasPendingLeave(Connection con, int empId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM leave_of_absence_request " +
+                     "WHERE emp_id = ? AND status NOT IN ('최종승인', '반려')";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, empId);
+            rs = pstmt.executeQuery();
+            return rs.next() && rs.getInt(1) > 0;
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
+    
+    // 직원 현재 상태 조회
+    public String getEmpStatus(Connection con, int empId) throws SQLException {
+        String sql = "SELECT status FROM employee WHERE emp_id = ?";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, empId);
+            rs = pstmt.executeQuery();
+            return rs.next() ? rs.getString("status") : null;
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
 }

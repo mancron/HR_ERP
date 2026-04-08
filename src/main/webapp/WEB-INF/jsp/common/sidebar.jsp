@@ -1,5 +1,6 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 
@@ -28,9 +29,9 @@
     <div class="nav-group-content">
       <a href="${ctx}/emp/list"            class="nav-item">직원 목록</a>
       <a href="${ctx}/emp/history"         class="nav-item">인사발령 이력</a>
-      <a href="${ctx}/emp/approvalHistory" class="nav-item">휴직·복직·퇴직 내역</a>
+      <a href="${ctx}/emp/approvalHistory" class="nav-item">휴·퇴직 완료 내역</a>
       <a href="${ctx}/emp/reg"             class="nav-item">직원 등록</a>
-      <a href="${ctx}/emp/approval"        class="nav-item">휴직·복직·퇴직 승인</a>
+      <a href="${ctx}/emp/approval"        class="nav-item">휴·퇴직 승인 관리</a>
     </div>
   </div>
 

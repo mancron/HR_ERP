@@ -58,4 +58,17 @@ public class ResignService {
             try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
         }
     }
+    
+    public boolean hasPendingResign(int empId) {
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            return resignDao.hasPendingResign(con, empId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
 }

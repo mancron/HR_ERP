@@ -70,4 +70,21 @@ public class ResignDAO {
             if (pstmt != null) pstmt.close();
         }
     }
+    
+    // 대기 중인 퇴직 신청이 있는지 확인
+    public boolean hasPendingResign(Connection con, int empId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM resign_request " +
+                     "WHERE emp_id = ? AND status NOT IN ('최종승인', '반려')";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, empId);
+            rs = pstmt.executeQuery();
+            return rs.next() && rs.getInt(1) > 0;
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
 }

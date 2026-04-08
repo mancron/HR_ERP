@@ -128,6 +128,23 @@ public class LeaveServlet extends HttpServlet {
         String idStr = request.getParameter("request_id");
 
         if ("edit".equals(mode) && idStr != null) {
+        	String validationMsg = leaveService.validateLeaveType(dto.getEmp_id(), dto.getLeave_type());
+        	if (validationMsg != null) {
+        	    response.setContentType("text/html; charset=UTF-8");
+        	    java.io.PrintWriter out = response.getWriter();
+        	    out.println("<script>");
+        	    out.println("alert('" + validationMsg + "');");
+        	    out.println("if (window.parent && window.parent !== window) {");
+        	    out.println("    window.parent.document.getElementById('approvalModalIframe').src = '';");
+        	    out.println("    window.parent.document.getElementById('approvalDetailModal').classList.remove('active');");
+        	    out.println("    window.parent.location.reload();");
+        	    out.println("} else {");
+        	    out.println("    history.back();");
+        	    out.println("}");
+        	    out.println("</script>");
+        	    out.flush();
+        	    return;
+        	}
             dto.setRequest_id(Integer.parseInt(idStr));
             boolean isSuccess = leaveService.updateLeaveRequest(dto);
             response.setContentType("text/html; charset=UTF-8");
@@ -146,6 +163,30 @@ public class LeaveServlet extends HttpServlet {
             out.flush();
             return;
         }
+        
+        if (leaveService.hasPendingLeave(dto.getEmp_id())) {
+            response.setContentType("text/html; charset=UTF-8");
+            java.io.PrintWriter out = response.getWriter();
+            out.println("<script>");
+            out.println("alert('이미 진행 중인 휴직/복직 신청이 있습니다.');");
+            out.println("history.back();");
+            out.println("</script>");
+            out.flush();
+            return;
+        }
+        
+        String validationMsg = leaveService.validateLeaveType(dto.getEmp_id(), dto.getLeave_type());
+        if (validationMsg != null) {
+            response.setContentType("text/html; charset=UTF-8");
+            java.io.PrintWriter out = response.getWriter();
+            out.println("<script>");
+            out.println("alert('" + validationMsg + "');");
+            out.println("history.back();");
+            out.println("</script>");
+            out.flush();
+            return;
+        }
+        
         boolean isSuccess = leaveService.insertLeaveRequest(dto);
 
         if (isSuccess) {
@@ -167,4 +208,6 @@ public class LeaveServlet extends HttpServlet {
             out.flush();
         }
     }
+    
+    
 }
