@@ -211,24 +211,31 @@ public class AttendanceDAO {
 		}
 	}
 
-	// 전체 수정
-	public void updateAttendance(int empId, Date date, Time checkIn, Time checkOut, String status, String note,
-			Connection conn) throws Exception {
+	// 시간만 수정
+	public void updateTime(int empId, Date date, Time checkIn, Time checkOut, Connection conn) throws Exception {
 
-		String sql = "UPDATE attendance " + "SET check_in=?, check_out=?, status=?, note=? "
-				+ "WHERE emp_id=? AND work_date=?";
+	    String sql = "UPDATE attendance SET check_in=?, check_out=? WHERE emp_id=? AND work_date=?";
 
-		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	        pstmt.setTime(1, checkIn);
+	        pstmt.setTime(2, checkOut);
+	        pstmt.setInt(3, empId);
+	        pstmt.setDate(4, date);
+	        pstmt.executeUpdate();
+	    }
+	}
+	
+	public void updateCheckIn(int empId, Date date, Time checkIn, String note, Connection conn) throws Exception {
 
-			pstmt.setTime(1, checkIn);
-			pstmt.setTime(2, checkOut);
-			pstmt.setString(3, status);
-			pstmt.setString(4, note);
-			pstmt.setInt(5, empId);
-			pstmt.setDate(6, date);
+	    String sql = "UPDATE attendance SET check_in=?, note=? WHERE emp_id=? AND work_date=?";
 
-			pstmt.executeUpdate();
-		}
+	    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	        pstmt.setTime(1, checkIn);
+	        pstmt.setString(2, note);
+	        pstmt.setInt(3, empId);
+	        pstmt.setDate(4, date);
+	        pstmt.executeUpdate();
+	    }
 	}
 
 }

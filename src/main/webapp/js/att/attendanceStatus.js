@@ -19,28 +19,46 @@ function closeModal() {
 
 function submitFix(actionType) {
 
-    const form = document.getElementById("fixForm");
-
+    const empId = document.getElementById("fixEmpId").value;
     const checkboxes = document.querySelectorAll("input[name='dates']:checked");
 
-    // 🔥 체크 안했을 때 방어
     if (checkboxes.length === 0) {
         alert("처리할 항목을 선택하세요.");
         return;
     }
 
-    const formData = new FormData(form);
+    // 🔥 잘못된 처리 방지
+    for (let cb of checkboxes) {
 
-    // 체크된 날짜 추가
+        const row = cb.parentElement;
+        const type = row.querySelector(".issue-type").innerText;
+
+        if (actionType === "CHECKOUT_FIX" && type === "결근 후보") {
+            alert("결근 후보는 퇴근 보정 불가");
+            return;
+        }
+
+        if (actionType === "CHECKIN_FIX" && type === "미퇴근") {
+            alert("미퇴근은 출근 보정 대상이 아닙니다.");
+            return;
+        }
+    }
+
+    const params = new URLSearchParams();
+
+    params.append("empId", empId);
+    params.append("actionType", actionType);
+
     checkboxes.forEach(cb => {
-        formData.append("dates", cb.value);
+        params.append("dates", cb.value);
     });
-
-    formData.append("actionType", actionType);
 
     fetch(`${contextPath}/att/fix`, {
         method: "POST",
-        body: formData
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: params.toString()
     }).then(() => location.reload());
 }
 
@@ -49,6 +67,8 @@ function submitFix(actionType) {
 // =========================
 function renderIssueModal(empId, list) {
 
+	document.getElementById("fixEmpId").value = empId;
+	
     const modal = document.getElementById("fixModal");
     const container = document.getElementById("issueList");
 
@@ -61,11 +81,23 @@ function renderIssueModal(empId, list) {
         const row = document.createElement("div");
         row.className = "issue-row";
 
-        row.innerHTML = `
-            <input type="checkbox" name="dates" value="${item.date}">
-            <span>${item.date}</span>
-            <span>${item.type}</span>
-        `;
+		let disabledCheckout = "";
+		let disabledCheckin = "";
+
+		// 👉 타입별 제한
+		if (item.type === "결근 후보") {
+		    disabledCheckout = "disabled"; // 퇴근 보정 불가
+		}
+		if (item.type === "미퇴근") {
+		    disabledCheckin = "disabled"; // 출근 보정 불필요
+		}
+
+		row.innerHTML = `
+		    <input type="checkbox" name="dates" value="${item.date}">
+		    <span>${item.date}</span>
+		    <span class="issue-type ${item.type}">${item.type}</span>
+		    ${item.checkIn ? `<span class="time">${item.checkIn}</span>` : ""}
+		`;
 
         container.appendChild(row);
     });

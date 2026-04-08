@@ -18,7 +18,14 @@ public class AttendanceFixServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) {
 
-        int empId = Integer.parseInt(request.getParameter("empId"));
+    	String empIdStr = request.getParameter("empId");
+
+    	if (empIdStr == null || empIdStr.isEmpty()) {
+    	    throw new RuntimeException("empId 누락");
+    	}
+
+    	int empId = Integer.parseInt(empIdStr);
+    	
         String action = request.getParameter("actionType");
 
         String[] dates = request.getParameterValues("dates");
@@ -44,14 +51,21 @@ public class AttendanceFixServlet extends HttpServlet {
                     );
                     break;
 
-                case "NORMAL":
-                    service.updateAttendance(
-                            empId,
-                            date,
-                            null,
-                            null,
-                            "정상",
-                            "관리자 보정"
+                case "CHECKIN_FIX":
+                    service.updateCheckIn(
+                        empId,
+                        date,
+                        java.sql.Time.valueOf("09:00:00"),
+                        "출근 보정"
+                    );
+                    break;
+
+                case "CHECKOUT_FIX":
+                    service.updateCheckout(
+                        empId,
+                        date,
+                        java.sql.Time.valueOf("18:00:00"),
+                        "퇴근 보정"
                     );
                     break;
             }

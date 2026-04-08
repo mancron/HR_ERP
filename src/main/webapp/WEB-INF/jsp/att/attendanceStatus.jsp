@@ -62,7 +62,7 @@
 							<th>지각</th>
 							<th>결근</th>
 							<th>휴가</th>
-							<th>초과근무</th>
+							<th>퇴근 미처리</th>
 							<th>관리</th>
 						</tr>
 					</thead>
@@ -79,7 +79,7 @@
 								<td>${item.lateCount}</td>
 								<td class="absent">${item.absentCount}</td>
 								<td>${item.leaveDays}</td>
-								<td>${item.overtimeHours}</td>
+								<td>${item.noCheckoutCount}</td>
 
 								<td>
 									<button class="btn-fix" onclick="openFixModal(${item.empId})">
@@ -112,11 +112,14 @@
 				<!-- JS로 채워짐 -->
 			</div>
 
-			<div class="modal-btn">
-				<button type="button" onclick="submitFix('ABSENT')">결근 처리</button>
-				<button type="button" onclick="submitFix('CHECKOUT')">퇴근 처리</button>
-				<button type="button" onclick="submitFix('NORMAL')">정상 처리</button>
-				<button type="button" onclick="closeModal()">취소</button>
+			<div class="modal-buttons">
+				<button class="btn-absent" onclick="submitFix('ABSENT')">결근
+					처리</button>
+				<button class="btn-checkin" onclick="submitFix('CHECKIN_FIX')">출근
+					보정</button>
+				<button class="btn-checkout" onclick="submitFix('CHECKOUT_FIX')">퇴근
+					보정</button>
+				<button class="btn-cancel" onclick="closeModal()">취소</button>
 			</div>
 
 		</form>
