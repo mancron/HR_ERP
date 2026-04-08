@@ -1,6 +1,7 @@
 package com.hrms.att.service;
 
 import com.hrms.att.dao.AttendanceDAO;
+import com.hrms.att.dao.AttendanceLogDAO;
 import com.hrms.att.dao.LeaveDAO;
 import com.hrms.att.dto.AttendanceDTO;
 import com.hrms.common.db.DatabaseConnection;
@@ -16,6 +17,7 @@ public class AttendanceStatusService {
 
 	private AttendanceDAO attendanceDAO = new AttendanceDAO();
 	private LeaveDAO leaveDAO = new LeaveDAO();
+	private AttendanceLogDAO logDAO = new AttendanceLogDAO();
 
 	// =========================
 	// 🔒 마감 체크 (추후 DB 연결)
@@ -33,7 +35,7 @@ public class AttendanceStatusService {
 	// =========================
 	// 1️⃣ 결근 처리
 	// =========================
-	public void markAbsent(int empId, LocalDate date) {
+	public void markAbsent(int empId, LocalDate date, int actorId) {
 
 		Connection conn = null;
 
@@ -49,21 +51,33 @@ public class AttendanceStatusService {
 				throw new RuntimeException("휴가 날짜는 결근 처리할 수 없습니다.");
 			}
 
-			// 3. 기존 데이터 확인
-			AttendanceDTO existing = attendanceDAO.getAttendanceByDate(empId, Date.valueOf(date), conn);
+			// 🔥 3. BEFORE 데이터
+			AttendanceDTO before = attendanceDAO.getAttendanceByDate(empId, Date.valueOf(date), conn);
 
-			if (existing != null && existing.getCheckIn() != null) {
+			if (before != null && before.getCheckIn() != null) {
 				throw new RuntimeException("출근 기록이 있는 날은 결근 처리 불가");
 			}
 
+			// 🔥 기존 값 저장
+			Time oldIn = before != null ? before.getCheckIn() : null;
+			Time oldOut = before != null ? before.getCheckOut() : null;
+			String oldStatus = before != null ? before.getStatus() : null;
+
 			// 4. INSERT or UPDATE
-			if (existing == null) {
+			if (before == null) {
 				attendanceDAO.insertAbsent(empId, Date.valueOf(date), conn);
 			} else {
 				attendanceDAO.updateStatus(empId, Date.valueOf(date), "결근", null, conn);
 			}
 
-			// 5. 커밋
+			// 🔥 5. AFTER 데이터 (결근 상태)
+			AttendanceDTO after = attendanceDAO.getAttendanceByDate(empId, Date.valueOf(date), conn);
+
+			// 🔥 6. 로그 저장
+			logDAO.insertLog(empId, date, actorId, "ABSENT", oldIn, after.getCheckIn(), oldOut, after.getCheckOut(),
+					oldStatus, "결근", "결근 처리", conn);
+
+			// 7. 커밋
 			conn.commit();
 
 		} catch (Exception e) {
@@ -82,14 +96,14 @@ public class AttendanceStatusService {
 			}
 		}
 
-		// 6. 알림 (커밋 이후 실행)
+		// 8. 알림
 		NotificationUtil.sendAttendanceAbsent(empId, date.toString());
 	}
 
 	// =========================
 	// 2️⃣ 퇴근 미처리 수정
 	// =========================
-	public void updateCheckout(int empId, LocalDate date, Time checkout, String note) {
+	public void updateCheckout(int empId, LocalDate date, Time checkout, String note, int actorId) {
 
 		Connection conn = null;
 
@@ -110,16 +124,15 @@ public class AttendanceStatusService {
 			attendanceDAO.updateCheckout(empId, Date.valueOf(date), checkout, note, conn);
 
 			// 🔥 반드시 다시 조회
-			AttendanceDTO updated =
-			    attendanceDAO.getAttendanceByDate(empId, Date.valueOf(date), conn);
+			AttendanceDTO updated = attendanceDAO.getAttendanceByDate(empId, Date.valueOf(date), conn);
 
 			// 🔥 최신 값으로 계산
-			String newStatus = calculateStatus(
-			    updated.getCheckIn(),
-			    updated.getCheckOut()
-			);
+			String newStatus = calculateStatus(updated.getCheckIn(), updated.getCheckOut());
 
 			attendanceDAO.updateStatus(empId, Date.valueOf(date), newStatus, "자동 상태 변경", conn);
+
+			logDAO.insertLog(empId, date, actorId, "CHECKOUT_FIX", dto.getCheckIn(), updated.getCheckIn(),
+					dto.getCheckOut(), updated.getCheckOut(), dto.getStatus(), newStatus, note, conn);
 
 			// 3. 커밋
 			conn.commit();
@@ -144,48 +157,8 @@ public class AttendanceStatusService {
 		NotificationUtil.sendAttendanceCheckoutUpdated(empId, date.toString());
 	}
 
-	// =========================
-	// 3️⃣ 전체 근태 수정
-	// =========================
-	public void updateAttendance(int empId, LocalDate date, Time checkIn, Time checkOut, String status, String note) {
-
-		Connection conn = null;
-
-		try {
-			conn = DatabaseConnection.getConnection();
-			conn.setAutoCommit(false);
-
-			// 1. 마감 체크
-			validateClosed(date);
-
-			// 2. 근태 시간만 수정
-			attendanceDAO.updateTime(empId, Date.valueOf(date), checkIn, checkOut, conn);
-
-			// 3. 커밋
-			conn.commit();
-
-		} catch (Exception e) {
-			try {
-				if (conn != null)
-					conn.rollback();
-			} catch (Exception ignore) {
-			}
-			throw new RuntimeException("근태 수정 실패", e);
-
-		} finally {
-			try {
-				if (conn != null)
-					conn.close();
-			} catch (Exception ignore) {
-			}
-		}
-
-		// 4. 알림
-		NotificationUtil.sendAttendanceUpdated(empId, date.toString());
-	}
-
 	// 출근 시간 수정
-	public void updateCheckIn(int empId, LocalDate date, Time checkIn, String note) {
+	public void updateCheckIn(int empId, LocalDate date, Time checkIn, String note, int actorId) {
 
 		Connection conn = null;
 
@@ -204,15 +177,14 @@ public class AttendanceStatusService {
 // 👉 출근만 수정
 			attendanceDAO.updateCheckIn(empId, Date.valueOf(date), checkIn, note, conn);
 
-			AttendanceDTO updated =
-				    attendanceDAO.getAttendanceByDate(empId, Date.valueOf(date), conn);
+			AttendanceDTO updated = attendanceDAO.getAttendanceByDate(empId, Date.valueOf(date), conn);
 
-				String newStatus = calculateStatus(
-				    updated.getCheckIn(),
-				    updated.getCheckOut()
-				);
+			String newStatus = calculateStatus(updated.getCheckIn(), updated.getCheckOut());
 
 			attendanceDAO.updateStatus(empId, Date.valueOf(date), newStatus, "자동 상태 변경", conn);
+
+			logDAO.insertLog(empId, date, actorId, "CHECKOUT_FIX", dto.getCheckIn(), updated.getCheckIn(),
+					dto.getCheckOut(), updated.getCheckOut(), dto.getStatus(), newStatus, note, conn);
 
 			conn.commit();
 
@@ -236,14 +208,14 @@ public class AttendanceStatusService {
 	// 상태값 업데이트
 	private String calculateStatus(Time checkIn, Time checkOut) {
 
-	    if (checkIn != null && checkOut != null) {
-	        if (checkIn.toLocalTime().isAfter(LocalTime.of(9, 0))) {
-	            return "지각";
-	        } else {
-	            return "출근";
-	        }
-	    }
+		if (checkIn != null && checkOut != null) {
+			if (checkIn.toLocalTime().isAfter(LocalTime.of(9, 0))) {
+				return "지각";
+			} else {
+				return "출근";
+			}
+		}
 
-	    return "결근";
+		return "결근";
 	}
 }
