@@ -2,6 +2,7 @@ package com.hrms.org.controller;
 
 import com.hrms.org.dto.DeptDTO;
 import com.hrms.org.service.DeptService;
+import com.hrms.emp.dto.EmpDTO;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
@@ -15,61 +16,109 @@ public class DeptManageServlet extends HttpServlet {
 
     private DeptService deptService = new DeptService();
 
+    /**
+     * 권한 판정 로직 (수정본)
+     * 1. HR담당자: 모든 부서에 대해 true 반환
+     * 2. 일반 사원: 수정하려는 부서의 manager_id가 본인 사번(empId)과 일치할 때만 true 반환
+     */
+    private boolean resolvePrivilege(HttpSession session, int targetDeptId) {
+        if (session == null) return false;
+
+        // 세션에서 권한(role)과 사번(empId) 추출
+        Object roleObj = session.getAttribute("userRole");
+        Object empIdObj = session.getAttribute("empId");
+        
+        String userRole = (roleObj != null) ? String.valueOf(roleObj).trim() : "";
+
+        // [1] HR담당자는 프리패스
+        if ("HR담당자".equals(userRole)) {
+            return true;
+        }
+
+        // [2] 부서장 여부 체크 (기존 서비스의 getDeptById 활용)
+        if (empIdObj != null && targetDeptId > 0) {
+            try {
+                int myEmpId = Integer.parseInt(String.valueOf(empIdObj));
+                
+                // DB에서 해당 부서의 상세 정보(manager_id 포함)를 가져옴
+                DeptDTO targetDept = deptService.getDeptById(targetDeptId);
+                
+                // 부서 정보가 존재하고, 해당 부서에 등록된 manager_id가 내 사번과 일치하는지 확인
+                if (targetDept != null && targetDept.getManager_id() == myEmpId) {
+                    return true; // 이 부서의 관리 권한이 있음
+                }
+            } catch (NumberFormatException e) {
+                // 사번 형식이 잘못된 경우 로그 출력 후 false 유지
+                e.printStackTrace();
+            }
+        }
+
+        // 위 조건에 해당하지 않으면 권한 없음
+        return false;
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         HttpSession session = request.getSession();
-        String userRole = (String) session.getAttribute("userRole");
-        Integer myDeptId = (Integer) session.getAttribute("userDeptId");
-        
-        boolean isPrivileged = "HR담당자".equals(userRole);
         String action = request.getParameter("action");
 
-        if ("new".equals(action) && !isPrivileged) {
-            response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
-            return;
+        // [부서 ID 결정] 파라미터가 없으면 로그인 유저의 부서 ID를 기본값으로 사용
+        String deptIdParam = request.getParameter("deptId");
+        int selectedDeptId = 1;
+
+        if (deptIdParam != null && !deptIdParam.isEmpty()) {
+            try {
+                selectedDeptId = Integer.parseInt(deptIdParam);
+            } catch (NumberFormatException e) {
+                selectedDeptId = 1;
+            }
+        } else {
+            Object loginUserObj = session.getAttribute("loginUser");
+            if (loginUserObj instanceof EmpDTO) {
+                selectedDeptId = ((EmpDTO) loginUserObj).getDept_id();
+            }
         }
 
-        // [수정 포인트] AJAX 검색 결과 JSON 생성 로직 보완
+        // [권한 판정] 선택된 부서 ID를 기준으로 수정 권한 여부 확인
+        boolean isPrivileged = resolvePrivilege(session, selectedDeptId);
+
+        // 신규 등록(new) 페이지는 오직 HR담당자만 접근 가능하도록 설정
+        if ("new".equals(action)) {
+            Object roleObj = session.getAttribute("userRole");
+            if (!"HR담당자".equals(String.valueOf(roleObj).trim())) {
+                response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
+                return;
+            }
+        }
+
+        // AJAX 사원 검색 처리 (기존 로직 유지)
         if ("findDeptByEmp".equals(action)) {
             String searchVal = request.getParameter("empName");
             List<Map<String, Object>> results = deptService.findDeptIdByEmpName(searchVal);
-            
+
             response.setContentType("application/json; charset=UTF-8");
             PrintWriter out = response.getWriter();
 
-            if (results.isEmpty()) {
+            if (results == null || results.isEmpty()) {
                 out.write("{\"status\": \"none\", \"deptId\": 0}");
-            } 
-            else if (results.size() == 1) {
-                // 단일 결과일 때도 키값 매칭 유연화
-                Map<String, Object> m = results.get(0);
-                Object dId = getMapValue(m, "deptId");
+            } else if (results.size() == 1) {
+                Object dId = getMapValue(results.get(0), "deptId");
                 out.write("{\"status\": \"success\", \"deptId\": " + (dId != null ? dId : 0) + "}");
-            } 
-            else {
+            } else {
                 StringBuilder sb = new StringBuilder();
                 sb.append("{\"status\": \"multiple\", \"list\": [");
                 for (int i = 0; i < results.size(); i++) {
                     Map<String, Object> m = results.get(i);
-                    
-                    // [해결] undefined 방지를 위해 모든 필드를 명시적으로 추출 (empName 추가)
-                    Object dId = getMapValue(m, "deptId");
-                    Object dName = getMapValue(m, "deptName");
-                    Object pName = getMapValue(m, "posName");
-                    Object eName = getMapValue(m, "empName"); // JSP에서 요구하는 이름 필드
-                    Object eNo = getMapValue(m, "empNo");
-
                     sb.append(String.format(
-                        "{\"deptId\":%s, \"deptName\":\"%s\", \"posName\":\"%s\", \"empName\":\"%s\", \"empNo\":\"%s\"}", 
-                        (dId != null ? dId : 0),
-                        escapeJsonValue(dName), 
-                        escapeJsonValue(pName), 
-                        escapeJsonValue(eName),
-                        escapeJsonValue(eNo)
+                        "{\"deptId\":%s,\"deptName\":\"%s\",\"posName\":\"%s\",\"empName\":\"%s\",\"empNo\":\"%s\"}",
+                        getMapValue(m, "deptId") != null ? getMapValue(m, "deptId") : 0,
+                        escapeJsonValue(getMapValue(m, "deptName")),
+                        escapeJsonValue(getMapValue(m, "posName")),
+                        escapeJsonValue(getMapValue(m, "empName")),
+                        escapeJsonValue(getMapValue(m, "empNo"))
                     ));
-                    
                     if (i < results.size() - 1) sb.append(",");
                 }
                 sb.append("]}");
@@ -79,57 +128,50 @@ public class DeptManageServlet extends HttpServlet {
             return;
         }
 
-        request.setAttribute("deptTree",     deptService.getDeptTree());
-        request.setAttribute("allDepts",     deptService.getAllDepts());
-        request.setAttribute("isPrivileged", isPrivileged);
+        try {
+            request.setAttribute("deptTree",     deptService.getDeptTree());
+            request.setAttribute("allDepts",     deptService.getAllDepts());
+            request.setAttribute("isPrivileged", String.valueOf(isPrivileged));
 
-        if (isPrivileged) {
-            request.setAttribute("inactiveDepts", deptService.getInactiveDeptList());
-        }
+            // 비활성 부서 목록은 권한이 있을 때만 조회 가능
+            if (isPrivileged) {
+                request.setAttribute("inactiveDepts", deptService.getInactiveDeptList());
+            }
 
-        String deptIdParam = request.getParameter("deptId");
-        DeptDTO selectedDept = null;
-        List<Map<String, Object>> memberList = null;
-        int selectedDeptId = 0;
+            DeptDTO selectedDept = null;
+            List<Map<String, Object>> memberList = null;
 
-        if ("new".equals(action) && isPrivileged) {
-            selectedDept = new DeptDTO();
-            selectedDept.setIs_active(1); 
-        } 
-        else {
-            if (deptIdParam == null || deptIdParam.isEmpty()) {
-                selectedDeptId = (myDeptId != null) ? myDeptId : 1;
+            if ("new".equals(action)) {
+                // 이미 위에서 HR담당자 체크를 했으므로 바로 생성
+                selectedDept = new DeptDTO();
+                selectedDept.setIs_active(1);
             } else {
-                try {
-                    selectedDeptId = Integer.parseInt(deptIdParam);
-                } catch (NumberFormatException e) {
-                    selectedDeptId = 1;
+                selectedDept = deptService.getDeptById(selectedDeptId);
+
+                // 비관리자의 비활성 부서 접근 차단
+                if (selectedDept != null && selectedDept.getIs_active() == 0 && !isPrivileged) {
+                    response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
+                    return;
                 }
-            }
-            selectedDept = deptService.getDeptById(selectedDeptId);
-
-            if (selectedDept != null && selectedDept.getIs_active() == 0 && !isPrivileged) {
-                response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
-                return;
+                memberList = deptService.getMembersByDeptId(selectedDeptId);
             }
 
-            memberList = deptService.getMembersByDeptId(selectedDeptId);
+            if (selectedDept == null) {
+                selectedDept = new DeptDTO();
+                selectedDept.setIs_active(1);
+            }
+
+            request.setAttribute("selectedDept",   selectedDept);
+            request.setAttribute("selectedDeptId", selectedDeptId);
+            request.setAttribute("memberList",      memberList);
+
+            request.setAttribute("viewPage", "/WEB-INF/jsp/org/deptManage.jsp");
+            request.getRequestDispatcher("/index.jsp").forward(request, response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/main");
         }
-
-        if (selectedDept == null) {
-            selectedDept = new DeptDTO();
-            selectedDept.setIs_active(1);
-        } else if (!isPrivileged) {
-            selectedDept.setSort_order(0);
-            selectedDept.setDept_level(0);
-        }
-
-        request.setAttribute("selectedDept",   selectedDept);
-        request.setAttribute("selectedDeptId", selectedDeptId);
-        request.setAttribute("memberList",     memberList);
-
-        request.setAttribute("viewPage", "/WEB-INF/jsp/org/deptManage.jsp");
-        request.getRequestDispatcher("/index.jsp").forward(request, response);
     }
 
     @Override
@@ -138,15 +180,8 @@ public class DeptManageServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
 
         HttpSession session = request.getSession();
-        String userRole = (String) session.getAttribute("userRole");
-
-        if (!"관리자".equals(userRole) && !"HR담당자".equals(userRole)) {
-            response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
-            return;
-        }
-
         String action = request.getParameter("action");
-        String idStr = request.getParameter("dept_id");
+        String idStr  = request.getParameter("dept_id");
         
         int existingId = 0;
         boolean isParsingError = false;
@@ -156,7 +191,7 @@ public class DeptManageServlet extends HttpServlet {
                 existingId = Integer.parseInt(idStr);
             }
         } catch (NumberFormatException e) {
-            isParsingError = true; 
+            isParsingError = true;
             String referer = request.getHeader("Referer");
             if (referer != null && referer.contains("deptId=")) {
                 try {
@@ -166,49 +201,52 @@ public class DeptManageServlet extends HttpServlet {
             }
         }
 
+        // [POST 권한 판정] 해당 부서에 대한 수정 권한이 있는지 최종 확인
+        boolean isPrivileged = resolvePrivilege(session, existingId);
+
+        if (!isPrivileged) {
+            response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
+            return;
+        }
+
         try {
             if (!"insert".equals(action)) {
                 if (isParsingError || existingId <= 0) {
-                    throw new Exception("조작된 요청 감지: 정상적인 부서 ID가 아님");
+                    throw new Exception("잘못된 부서 ID");
                 }
             }
 
             if ("delete".equals(action)) {
-                String result = deptService.deleteDept(existingId); 
-                if ("SUCCESS".equals(result)) {
-                    response.sendRedirect(request.getContextPath() + "/org/dept?msg=deleted");
-                } else {
-                    response.sendRedirect(request.getContextPath() + "/org/dept?deptId=" + existingId + "&error=" + result.toLowerCase());
+                String result = deptService.deleteDept(existingId);
+                String msg = "SUCCESS".equals(result) ? "msg=deleted" : "error=" + result.toLowerCase();
+                response.sendRedirect(request.getContextPath() + "/org/dept?" + msg);
+
+            } else if ("update".equals(action) || "insert".equals(action)) {
+                int deptId = "update".equals(action) ? existingId : 0;
+                DeptDTO dept = createDeptFromRequest(request, deptId);
+
+                if (dept.getSort_order() > 99) {
+                    String target = "update".equals(action) ? "deptId=" + existingId : "action=new";
+                    response.sendRedirect(request.getContextPath() + "/org/dept?" + target + "&error=sort_order_limit");
+                    return;
                 }
-            } 
-            else if ("update".equals(action)) {
-                DeptDTO dept = createDeptFromRequest(request, existingId);
-                String result = deptService.saveDept(dept); 
+
+                String result = deptService.saveDept(dept);
                 if ("SUCCESS".equals(result)) {
-                    response.sendRedirect(request.getContextPath() + "/org/dept?deptId=" + existingId + "&msg=success");
+                    int redirectId = (deptId == 0) ? dept.getDept_id() : deptId;
+                    response.sendRedirect(request.getContextPath() + "/org/dept?deptId=" + redirectId + "&msg=success");
                 } else {
-                    response.sendRedirect(request.getContextPath() + "/org/dept?deptId=" + existingId + "&error=" + result.toLowerCase());
+                    String target = "update".equals(action) ? "deptId=" + existingId : "action=new";
+                    response.sendRedirect(request.getContextPath() + "/org/dept?" + target + "&error=" + result.toLowerCase());
                 }
-            } 
-            else if ("insert".equals(action)) {
-                DeptDTO dept = createDeptFromRequest(request, 0);
-                String result = deptService.saveDept(dept); 
-                if ("SUCCESS".equals(result)) {
-                    response.sendRedirect(request.getContextPath() + "/org/dept?deptId=" + dept.getDept_id() + "&msg=success");
-                } else {
-                    response.sendRedirect(request.getContextPath() + "/org/dept?action=new&error=" + result.toLowerCase());
-                }
-            }
-            else {
-                throw new Exception("알 수 없는 요청 액션: " + action);
+            } else {
+                throw new Exception("알 수 없는 액션: " + action);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
             String redirectUrl = request.getContextPath() + "/org/dept?error=fail";
-            if (existingId > 0) {
-                redirectUrl += "&deptId=" + existingId;
-            }
+            if (existingId > 0) redirectUrl += "&deptId=" + existingId;
             response.sendRedirect(redirectUrl);
         }
     }
@@ -217,67 +255,52 @@ public class DeptManageServlet extends HttpServlet {
         DeptDTO dept = new DeptDTO();
         dept.setDept_id(id);
         dept.setDept_name(request.getParameter("dept_name"));
-        
+
         String parentStr = request.getParameter("parent_dept_id");
         int parentId = 0;
         if (parentStr != null && !parentStr.isEmpty()) {
-            try {
-                parentId = Integer.parseInt(parentStr);
-            } catch (NumberFormatException e) {
-                parentId = 0;
-            }
+            try { parentId = Integer.parseInt(parentStr); }
+            catch (NumberFormatException e) { parentId = 0; }
         }
         dept.setParent_dept_id(parentId);
-        
+
         String sortStr = request.getParameter("sort_order");
         int sortOrder = 1;
         if (sortStr != null && !sortStr.isEmpty()) {
-            try { 
-                sortOrder = (int) Double.parseDouble(sortStr); 
-            } catch (NumberFormatException e) { 
-                sortOrder = 1; 
-            }
+            try { sortOrder = (int) Double.parseDouble(sortStr); }
+            catch (NumberFormatException e) { sortOrder = 1; }
         }
         dept.setSort_order(sortOrder);
-        
+
         String activeStr = request.getParameter("is_active");
         int isActive = 1;
         if (activeStr != null && !activeStr.isEmpty()) {
-            try {
-                isActive = Integer.parseInt(activeStr);
-            } catch (NumberFormatException e) {
-                isActive = 1;
-            }
+            try { isActive = Integer.parseInt(activeStr); }
+            catch (NumberFormatException e) { isActive = 1; }
         }
         dept.setIs_active(isActive);
-        
+
         return dept;
     }
 
-    // [중요] Map에서 대소문자/언더바 구분 없이 값을 가져오는 헬퍼 메서드
     private Object getMapValue(Map<String, Object> map, String key) {
         if (map == null) return null;
-        if (map.containsKey(key)) return map.get(key); // camelCase (deptId)
-        
-        // 대문자 snake_case 시도 (DEPT_ID)
+        if (map.containsKey(key)) return map.get(key);
         String upperSnake = key.replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
         if (map.containsKey(upperSnake)) return map.get(upperSnake);
-        
-        // 소문자 snake_case 시도 (dept_id)
         if (map.containsKey(upperSnake.toLowerCase())) return map.get(upperSnake.toLowerCase());
-        
         return null;
     }
 
     private String escapeJsonValue(Object value) {
         if (value == null) return "";
         return value.toString()
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\b", "\\b")
-                .replace("\f", "\\f")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\b", "\\b")
+            .replace("\f", "\\f")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t");
     }
 }

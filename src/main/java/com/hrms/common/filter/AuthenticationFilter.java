@@ -33,7 +33,8 @@ public class AuthenticationFilter implements Filter {
         "/emp/list",
         "/emp/detail",
         "/emp/approvalHistory",
-        "/sys/"
+        "/sys/",
+        "/org/"
     ));
 
     private static final Set<String> ADMIN_MANAGER_EXTRA_PREFIXES = new HashSet<>(Arrays.asList(

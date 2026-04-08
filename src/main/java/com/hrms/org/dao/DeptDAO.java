@@ -416,6 +416,83 @@ public class DeptDAO {
         return false;
     }
     
+    /**
+     * 특정 상위 부서 내에서 출력 순서가 겹치는 부서들을 뒤로 밀어냄
+     */
+    /**
+     * 특정 상위 부서 내에서 출력 순서 조정 (이동 방향에 따른 범위 업데이트)
+     */
+    /**
+     * 순서 조정 (기존 순서와 변경할 순서 사이의 부서들만 업데이트)
+     */
+    public void shiftSortOrder(int parentId, int oldOrder, int newOrder) {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        String sql = "";
+
+        if (oldOrder == 0) { 
+            // Case A: 신규 등록 (나보다 크거나 같은 순서 전부 +1)
+            sql = "UPDATE department SET sort_order = sort_order + 1 " +
+                  "WHERE parent_dept_id = ? AND sort_order >= ? AND is_active = 1";
+        } else if (oldOrder > newOrder) { 
+            // Case B: 높은 번호에서 낮은 번호로 (5 -> 2) : 2,3,4번이 뒤로 한 칸 밀려야 함
+            sql = "UPDATE department SET sort_order = sort_order + 1 " +
+                  "WHERE parent_dept_id = ? AND sort_order >= ? AND sort_order < ? AND is_active = 1";
+        } else if (oldOrder < newOrder) { 
+            // Case C: 낮은 번호에서 높은 번호로 (2 -> 5) : 3,4,5번이 앞으로 한 칸 당겨져야 함
+            sql = "UPDATE department SET sort_order = sort_order - 1 " +
+                  "WHERE parent_dept_id = ? AND sort_order > ? AND sort_order <= ? AND is_active = 1";
+        } else {
+            return; // 변동 없음
+        }
+
+        try {
+            con = DatabaseConnection.getConnection();
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, parentId);
+            
+            if (oldOrder == 0) { // 신규
+                pstmt.setInt(2, newOrder);
+            } else if (oldOrder > newOrder) { 
+                pstmt.setInt(2, newOrder);
+                pstmt.setInt(3, oldOrder);
+            } else {
+                pstmt.setInt(2, oldOrder);
+                pstmt.setInt(3, newOrder);
+            }
+
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(null, pstmt, con);
+        }
+    }
+    
+    public void reorderSortOrder(int parentId) {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        // @seq 변수를 사용하여 순서대로 1, 2, 3... 부여 (is_active=1인 것만)
+        String sql = "UPDATE department d " +
+                "INNER JOIN (" +
+                "    SELECT dept_id, (@seq := @seq + 1) AS new_order " +
+                "    FROM department, (SELECT @seq := 0) temp " +
+                "    WHERE parent_dept_id = ? AND is_active = 1 " +
+                "    ORDER BY sort_order ASC, dept_id ASC" + 
+                ") AS ordered_data ON d.dept_id = ordered_data.dept_id " +
+                "SET d.sort_order = ordered_data.new_order";
+        try {
+            con = DatabaseConnection.getConnection();
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, parentId);
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(null, pstmt, con);
+        }
+    }
+    
     private void closeResources(ResultSet rs, PreparedStatement pstmt, Connection con) {
         try { if (rs    != null) rs.close();    } catch (Exception e) { e.printStackTrace(); }
         try { if (pstmt != null) pstmt.close(); } catch (Exception e) { e.printStackTrace(); }
