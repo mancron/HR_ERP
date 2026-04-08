@@ -32,6 +32,20 @@
                 <c:set var="errorMsg" value="${sessionScope.loginErrorMsg}" />
                 
                 <c:choose>
+                    <%-- 0. 세션 만료 안내 (최우선순위) --%>
+                    <c:when test="${param.msg eq 'session_expired'}">
+                        <div class="alert-box alert-warning" style="border: 1px solid #3498db; background: #f0f9ff;">
+                            <div class="alert-side" style="background: transparent; color: #3498db;">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                <span class="side-label" style="background: transparent;">만료</span>
+                            </div>
+                            <div class="alert-content" style="border-left: 1px solid #3498db;">
+                                <span style="font-weight: bold; color: #2980b9;">세션이 만료되었습니다.</span><br>
+                                <span style="font-size: 12px;">보안을 위해 다시 로그인해 주세요.</span>
+                            </div>
+                        </div>
+                    </c:when>
+
                     <%-- 1. 중복 로그인 --%>
                     <c:when test="${errorMsg eq 'already_logged_in'}">
                         <div class="alert-box alert-danger" style="border: 1px solid #e74c3c; background: #fff5f5;">
@@ -46,7 +60,7 @@
                         </div>
                     </c:when>
 
-                    <%-- 2. 퇴사자 접속 차단 (복구됨) --%>
+                    <%-- 2. 퇴사자 접속 차단 --%>
                     <c:when test="${errorMsg eq 'retired_user'}">
                         <div class="alert-box alert-danger">
                             <div class="alert-side"><i class="fa-solid fa-user-slash"></i><span class="side-label">제한</span></div>
@@ -57,7 +71,7 @@
                         </div>
                     </c:when>
 
-                    <%-- 3. 계정 없음 (복구됨) --%>
+                    <%-- 3. 계정 없음 --%>
                     <c:when test="${errorMsg eq 'invalid_user'}">
                         <div class="alert-box alert-warning">
                             <div class="alert-side"><i class="fa-solid fa-user-xmark"></i><span class="side-label">미등록</span></div>
@@ -83,6 +97,7 @@
                             <div class="alert-content"><span>비밀번호 불일치 (현재 <strong>${fn:substringAfter(errorMsg, 'login_fail_')}</strong>회 실패)</span></div>
                         </div>
                     </c:when>
+                    
 
                     <c:otherwise>
                         <div class="alert-box alert-default">
@@ -106,10 +121,19 @@
     
     <script>
         window.onload = function() {
+            // 1. 세션 에러 메시지 (중복 로그인 등)
             const errorMsg = "${sessionScope.loginErrorMsg}";
             if (errorMsg === 'already_logged_in') {
                 alert("이미 다른 브라우저나 기기에서 로그인 중입니다.");
             }
+
+            // 2. [추가] URL 파라미터 확인 (세션 만료 알림)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('msg') === 'session_expired') {
+                alert("세션 시간이 만료되어 자동으로 로그아웃되었습니다.");
+            }
+
+            // 3. URL 지우기 (새로고침 시 알림 반복 방지)
             if (window.location.search) {
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
