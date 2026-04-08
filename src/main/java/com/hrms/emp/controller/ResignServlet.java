@@ -127,7 +127,17 @@ public class ResignServlet extends HttpServlet {
         int deptManagerId = resignService.getDeptManagerId(empId);
         dto.setDept_manager_id(deptManagerId);
 
-        // 등록 처리
+        if (resignService.hasPendingResign(empId)) {
+            response.setContentType("text/html; charset=UTF-8");
+            java.io.PrintWriter out = response.getWriter();
+            out.println("<script>");
+            out.println("alert('이미 진행 중인 퇴직 신청이 있습니다.');");
+            out.println("history.back();");
+            out.println("</script>");
+            out.flush();
+            return;
+        }
+        //등록 처리
         boolean isSuccess = resignService.submitResign(dto);
 
         response.setContentType("text/html; charset=UTF-8");
