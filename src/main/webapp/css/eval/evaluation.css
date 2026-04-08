@@ -117,3 +117,43 @@ textarea { width:100%; height:120px; border:1px solid #e2e8f0; border-radius:8px
 /* 확정/반려 버튼 */
 .btn-dept-delete { padding:12px 24px; background:#ef4444; color:#fff; border:none; border-radius:6px; font-weight:600; cursor:pointer; transition:background 0.2s; }
 .btn-dept-delete:hover { background:#dc2626; }
+
+/* =============================================
+   평가 확정/상세 모달 (confirm.jsp) 전용 스타일 
+   (클래스 간섭 방지를 위해 .cw 하위로 한정)
+   ============================================= */
+.cw { padding: 22px 26px; background: #fff; min-height: auto; }
+.cw .ct { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.cw .ro { width: 100%; padding: 8px 11px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; color: #64748b; font-size: 13px; box-sizing: border-box; }
+.cw .ig { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-bottom: 16px; }
+.cw .form-group { margin-bottom: 0; } /* 기존 form-group 여백 제거 */
+.cw .form-group label { display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+
+/* 점수 아이템 레이아웃 교정 */
+.cw .score-item { margin-bottom: 15px; }
+.cw .score-info { margin-bottom: 6px; font-weight: 600; font-size: 13px; display: flex; justify-content: space-between; }
+.cw .sro { opacity: 0.6; pointer-events: none; width: 100%; margin: 0; } 
+.cw .current-val { color: #3b82f6; font-size: 15px; font-weight: 700; width: auto; }
+
+/* 결과 박스 (종합점수/등급) */
+.cw .result-box { background: #f8fafc; padding: 15px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin: 20px 0; border: 1px solid #e2e8f0; }
+.cw .avg-value { font-size: 24px; font-weight: 800; color: #1e293b; }
+.cw .grade-badge { font-size: 32px; font-weight: 900; }
+
+/* 텍스트 영역 오버라이드 */
+.cw textarea[readonly] { 
+    width: 100%; height: 80px; padding: 12px; 
+    background: #f8fafc !important; color: #334155; 
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    margin-top: 6px; font-size: 13px; line-height: 1.5;
+    resize: none; box-sizing: border-box;
+}
+
+/* 하단 버튼 및 상태 태그 */
+.cw .ba { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #f1f5f9; }
+.cw .stag { display: inline-block; padding: 3px 11px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.cw .sc { background: #dcfce7; color: #16a34a; } 
+.cw .sw { background: #fef9c3; color: #ca8a04; } 
+.cw .sr { background: #fee2e2; color: #dc2626; }
+
+#rmsg { font-size: 12px; color: #dc2626; margin-top: 6px; text-align: right; min-height: 18px; }
