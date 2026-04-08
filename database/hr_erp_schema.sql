@@ -338,6 +338,37 @@ CREATE TABLE overtime_request (
     CONSTRAINT chk_ot_status     CHECK (status IN ('대기', '승인', '반려','취소'))
 ) COMMENT '초과근무 신청 - 초과근무 승인 및 관리';
 
+--근태 현황 보정 로그
+CREATE TABLE att_log (
+log_id INT AUTO_INCREMENT PRIMARY KEY,
+emp_id INT NOT NULL,              
+work_date DATE NOT NULL,          
+actor_id INT NOT NULL,            
+action VARCHAR(50) NOT NULL,      
+old_check_in TIME NULL,
+new_check_in TIME NULL,
+old_check_out TIME NULL,
+new_check_out TIME NULL,
+old_status VARCHAR(20) NULL,
+new_status VARCHAR(20) NULL,
+note VARCHAR(255),
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+INDEX idx_emp_date (emp_id, work_date),
+INDEX idx_actor (actor_id)
+);
+
+--근태 현황 마감 테이블 - 급여 계산할 때 조건으로 사용
+CREATE TABLE attendance_close (
+id INT AUTO_INCREMENT PRIMARY KEY,
+year INT NOT NULL,
+month INT NOT NULL,
+is_closed BOOLEAN DEFAULT FALSE,
+closed_by INT,
+closed_at DATETIME,
+
+UNIQUE KEY unique_month (year, month)
+);
 
 -- =============================================
 -- 4. 급여 관리
@@ -416,7 +447,24 @@ CREATE TABLE salary (
     CONSTRAINT chk_salary_total  CHECK (net_salary = gross_salary - total_deduction)
 ) COMMENT '급여 명세 (월별 스냅샷) - 월급 계산 및 지급 관리';
 
-
+CREATE TABLE income_tax_table (
+    id          INT          AUTO_INCREMENT PRIMARY KEY,
+    salary_from BIGINT       NOT NULL COMMENT '월급여액 이상 (원)',
+    salary_to   BIGINT       NOT NULL COMMENT '월급여액 미만 (원)',
+    fam_1       INT          NOT NULL DEFAULT 0,
+    fam_2       INT          NOT NULL DEFAULT 0,
+    fam_3       INT          NOT NULL DEFAULT 0,
+    fam_4       INT          NOT NULL DEFAULT 0,
+    fam_5       INT          NOT NULL DEFAULT 0,
+    fam_6       INT          NOT NULL DEFAULT 0,
+    fam_7       INT          NOT NULL DEFAULT 0,
+    fam_8       INT          NOT NULL DEFAULT 0,
+    fam_9       INT          NOT NULL DEFAULT 0,
+    fam_10      INT          NOT NULL DEFAULT 0,
+    fam_11      INT          NOT NULL DEFAULT 0,
+    apply_year  INT          NOT NULL DEFAULT 2026 COMMENT '적용 연도',
+    INDEX idx_salary_range (apply_year, salary_from, salary_to)
+) COMMENT = '근로소득 간이세액표 (2026)';
 -- =============================================
 -- 5. 인사 평가
 -- =============================================
