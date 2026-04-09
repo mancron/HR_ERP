@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/org/position.css">
-
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 <div class="pos-container">
     <div class="pos-header">
         <h2>직급 관리</h2>

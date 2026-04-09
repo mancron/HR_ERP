@@ -480,7 +480,7 @@ CREATE TABLE evaluation (
     emp_id       INT          NOT NULL                 COMMENT '평가 대상자 emp_id (FK)',
     eval_year    INT          NOT NULL                 COMMENT '평가 연도',
     eval_period  VARCHAR(10)  NOT NULL                 COMMENT '상반기/하반기/연간',
-    eval_type    VARCHAR(20)  NOT NULL DEFAULT '상위평가' COMMENT '자기평가/상위평가/동료평가',
+    eval_type    VARCHAR(20)  NOT NULL DEFAULT '상위평가' COMMENT '자기평가/상위평가/동료평가/하위평가',
     total_score  DECIMAL(5,2) NULL                     COMMENT '종합 점수 (0~100, evaluation_item의 평균)',
     grade        VARCHAR(5)   NULL                     COMMENT '등급 (S/A/B/C/D)',
     eval_comment TEXT         NULL                     COMMENT '평가 의견',
@@ -493,7 +493,7 @@ CREATE TABLE evaluation (
     FOREIGN KEY (emp_id)       REFERENCES employee(emp_id),
     FOREIGN KEY (evaluator_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
     CONSTRAINT chk_eval_status CHECK (eval_status IN ('작성중', '최종확정')),
-    CONSTRAINT chk_eval_type   CHECK (eval_type   IN ('자기평가', '상위평가', '동료평가')),
+    CONSTRAINT chk_eval_type   CHECK (eval_type   IN ('자기평가', '상위평가', '동료평가','하위평가')),
     CONSTRAINT chk_eval_period CHECK (eval_period IN ('상반기', '하반기', '연간')),
     CONSTRAINT chk_eval_grade  CHECK (grade IN ('S', 'A', 'B', 'C', 'D') OR grade IS NULL),
     CONSTRAINT chk_eval_score  CHECK (total_score >= 0 AND total_score <= 100 OR total_score IS NULL)

@@ -8,6 +8,7 @@
 	value="${param.action eq 'new' || selectedDept == null || selectedDept.dept_id eq 0}" />
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/org/dept.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 
 <%-- ══ 토스트 ══
      [L-1  FIX] <c:otherwise> 에서 msg+error 동시 노출 방지:
