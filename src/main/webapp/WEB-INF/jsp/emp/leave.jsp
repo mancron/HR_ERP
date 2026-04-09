@@ -6,7 +6,6 @@
 <meta charset="UTF-8">
 <title>휴직/복직 신청</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/leave.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 <script>
     // 휴직/복직 유형에 따라 종료일 필드 표시 여부 제어
     function toggleEndDate() {
