@@ -115,7 +115,10 @@
 	<div class="modal-content">
 
 		<h3>근태 보정</h3>
-
+		<div style="margin-bottom: 10px;">
+			<input type="checkbox" id="checkAllAbsent"> <label
+				for="checkAllAbsent">결근 후보 전체 선택</label>
+		</div>
 		<form id="fixForm">
 
 			<input type="hidden" name="empId" id="fixEmpId">
