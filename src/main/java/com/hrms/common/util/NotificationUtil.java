@@ -134,4 +134,44 @@ public class NotificationUtil {
         String msg = "관리자에 의해 비밀번호가 초기화되었습니다. 로그인 후 즉시 변경해주세요.";
         send(empId, "PASSWORD_RESET", "account", accountId, msg);
     }
+    
+	 // ══════════════════════════════════════
+	 // 휴직/복직/퇴직 결재 관련
+	 // ══════════════════════════════════════
+	
+	 /** 신청 접수 → 부서장에게 알림 */
+	 public static void sendApprovalPending(int deptManagerEmpId,
+	         String requesterName, String applyType, int requestId) {
+	     String msg = requesterName + " 님이 " + applyType + " 신청을 했습니다.";
+	     send(deptManagerEmpId, "APPROVAL_PENDING", "leave_of_absence_request", requestId, msg);
+	 }
+	
+	 /** 부서장 승인 → HR담당자에게 알림 */
+	 public static void sendApprovalDeptApproved(int hrManagerEmpId,
+	         String requesterName, String applyType, int requestId) {
+	     String msg = requesterName + " 님의 " + applyType + " 신청이 부서장 승인되었습니다.";
+	     send(hrManagerEmpId, "APPROVAL_DEPT_APPROVED", "leave_of_absence_request", requestId, msg);
+	 }
+	
+	 /** HR담당자 승인 → 최종승인자에게 알림 */
+	 public static void sendApprovalHrApproved(int presidentEmpId,
+	         String requesterName, String applyType, int requestId) {
+	     String msg = requesterName + " 님의 " + applyType + " 신청이 HR담당자 승인되었습니다.";
+	     send(presidentEmpId, "APPROVAL_HR_APPROVED", "leave_of_absence_request", requestId, msg);
+	 }
+	
+	 /** 최종 승인 → 신청자에게 알림 */
+	 public static void sendApprovalFinalApproved(int requesterEmpId,
+	         String applyType, int requestId) {
+	     String msg = applyType + " 신청이 최종 승인되었습니다.";
+	     send(requesterEmpId, "APPROVAL_FINAL", "leave_of_absence_request", requestId, msg);
+	 }
+	
+	 /** 반려 → 신청자에게 알림 */
+	 public static void sendApprovalRejected(int requesterEmpId,
+	         String applyType, String rejectReason, int requestId) {
+	     String msg = applyType + " 신청이 반려되었습니다." +
+	                  (rejectReason != null && !rejectReason.isEmpty() ? " 사유: " + rejectReason : "");
+	     send(requesterEmpId, "APPROVAL_REJECTED", "leave_of_absence_request", requestId, msg);
+	 }
 }

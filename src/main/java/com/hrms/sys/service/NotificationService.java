@@ -105,6 +105,11 @@ public class NotificationService {
             case "EVAL_CONFIRMED":    return "badge-purple";
             case "ACCOUNT_LOCKED":    return "badge-red";
             case "PASSWORD_RESET":    return "badge-yellow";
+            case "APPROVAL_PENDING":       return "badge-yellow";
+            case "APPROVAL_DEPT_APPROVED": return "badge-blue";
+            case "APPROVAL_HR_APPROVED":   return "badge-blue";
+            case "APPROVAL_FINAL":         return "badge-green";
+            case "APPROVAL_REJECTED":      return "badge-red";
             default:                  return "badge-gray";
         }
     }

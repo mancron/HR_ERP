@@ -33,6 +33,7 @@ public class AuthenticationFilter implements Filter {
         "/emp/list",
         "/emp/detail",
         "/emp/approvalHistory",
+        "/emp/approvalDetail",
         "/sys/"
     ));
 

@@ -49,6 +49,9 @@ public class TransferService {
                 }
 
                 transferDao.updateDeptManager(con, dto.getTo_dept_id(), dto.getEmp_id());
+                
+                // 새 부서장으로 대기 중인 신청들의 dept_manager_id 업데이트
+                transferDao.updatePendingRequestsManager(con, dto.getTo_dept_id(), dto.getEmp_id());
             }
             
             // 4. 이력 INSERT

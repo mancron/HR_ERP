@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.LocalDate;
 
+import com.hrms.common.util.NotificationUtil;
 import com.hrms.emp.dto.EmpDTO;
 import com.hrms.emp.dto.ResignDTO;
 import com.hrms.emp.service.EmpService;
@@ -138,12 +139,20 @@ public class ResignServlet extends HttpServlet {
             return;
         }
         //등록 처리
-        boolean isSuccess = resignService.submitResign(dto);
-
+        int newRequestId = resignService.submitResign(dto); // int로 변경
+        if (newRequestId > 0) {
+            // 성공했을 때만 알림 발송
+            EmpDTO loginUser = (EmpDTO) session.getAttribute("loginUser");
+            String loginEmpName = loginUser != null ? loginUser.getEmp_name() : "";
+            if (deptManagerId > 0) {
+                NotificationUtil.sendApprovalPending(deptManagerId, loginEmpName, "퇴직", newRequestId);
+            }
+        }
+        
         response.setContentType("text/html; charset=UTF-8");
         java.io.PrintWriter out = response.getWriter();
         out.println("<script>");
-        if (isSuccess) {
+        if (newRequestId > 0) {
             out.println("alert('퇴직 신청이 완료되었습니다.');");
             out.println("window.top.location.href='" + request.getContextPath() + "/emp/approval';");
         } else {

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import com.hrms.emp.dto.ResignDTO;
 
@@ -37,8 +38,9 @@ public class ResignDAO {
                      "(emp_id, resign_date, reason, status, dept_manager_id) " +
                      "VALUES (?, ?, ?, '대기', ?)";
         PreparedStatement pstmt = null;
+        ResultSet rs = null;
         try {
-            pstmt = con.prepareStatement(sql);
+            pstmt = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setInt(1, dto.getEmp_id());
             pstmt.setString(2, dto.getResign_date());
             pstmt.setString(3, dto.getReason());
@@ -47,8 +49,11 @@ public class ResignDAO {
             } else {
                 pstmt.setNull(4, java.sql.Types.INTEGER);
             }
-            return pstmt.executeUpdate();
+            pstmt.executeUpdate();
+            rs = pstmt.getGeneratedKeys(); // ← 추가
+            return rs.next() ? rs.getInt(1) : 0; // ← request_id 반환
         } finally {
+            if (rs != null) rs.close();
             if (pstmt != null) pstmt.close();
         }
     }
@@ -84,6 +89,21 @@ public class ResignDAO {
             return rs.next() && rs.getInt(1) > 0;
         } finally {
             if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
+    
+    // 대기 중인 퇴직 신청 철회
+    public int withdrawResign(Connection con, int requestId, int empId) throws SQLException {
+        String sql = "DELETE FROM resign_request " +
+                     "WHERE request_id = ? AND emp_id = ? AND status = '대기'";
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, requestId);
+            pstmt.setInt(2, empId);
+            return pstmt.executeUpdate();
+        } finally {
             if (pstmt != null) pstmt.close();
         }
     }
