@@ -5,7 +5,6 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/eval/evaluation.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 
-<%-- ── iframe 모달 오버레이 (인라인 스타일 제거) ── --%>
 <div id="confirmOverlay" class="modal-overlay">
     <div class="modal-content">
         <iframe id="confirmFrame" src="" class="modal-iframe"></iframe>
@@ -110,7 +109,8 @@
                         </td>
                         <td>
                             <c:choose>
-                                <c:when test="${item.evalType == '하위평가' && !isHr}">
+                                <%-- 하위평가이더라도 인사담당자(isHr)이거나 사장님(최종승인자)이면 실명 노출 --%>
+                                <c:when test="${item.evalType == '하위평가' && !isHr && sessionScope.userRole != '최종승인자'}">
                                     <span class="eval-anon">익명</span>
                                 </c:when>
                                 <c:otherwise>
@@ -128,17 +128,27 @@
                         </td>
                         <td>
                             <c:set var="isOwner" value="${item.evaluatorId == loginEmpId}"/>
+                            <c:set var="isCEO" value="${sessionScope.userRole == '최종승인자'}"/>
                             <c:choose>
+                                <%-- 1. 최종확정된 상태일 때 --%>
                                 <c:when test="${item.status == '최종확정'}">
-                                    <c:if test="${isHr || isOwner}">
+                                    <c:if test="${isHr || isOwner || isCEO}">
                                         <button class="btn-view" onclick="openModal(${item.evalId})">보기</button>
                                     </c:if>
                                 </c:when>
+                                
+                                <%-- 2. 작성 중이거나 반려 상태일 때 --%>
                                 <c:otherwise>
                                     <c:choose>
+                                        <%-- 사장님은 본인 것이 아닐 때 '조회' 버튼 (조회만 가능) --%>
+                                        <c:when test="${isCEO && !isOwner}">
+                                            <button class="btn-view" onclick="openModal(${item.evalId})">조회</button>
+                                        </c:when>
+                                        <%-- 인사담당자는 본인 것이 아닐 때 '확정' 버튼 (확정 처리 권한) --%>
                                         <c:when test="${isHr && !isOwner}">
                                             <button class="btn-edit" onclick="openModal(${item.evalId})">확정</button>
                                         </c:when>
+                                        <%-- 본인이 작성 중인 것은 '수정' 버튼 --%>
                                         <c:when test="${isOwner}">
                                             <button class="btn-edit"
                                                 onclick="location.href='${pageContext.request.contextPath}/eval/write?id=${item.evalId}'">

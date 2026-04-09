@@ -209,11 +209,13 @@ public class AuthenticationFilter implements Filter {
             }
         }
 
-        // [인사 평가] 평가 작성 — CEO 불가
+        // [인사 평가] 평가 작성 — CEO는 조회를 위해 GET 요청(페이지 진입)은 허용
         if (path.startsWith("/eval/write")) {
             if ("최종승인자".equals(role)) {
-                sendForbidden(req, res);
-                return;
+                if ("POST".equalsIgnoreCase(method)) { // 사장님이 '저장' 버튼을 누를 때 호출됨
+                    sendForbidden(req, res); // 403 에러로 튕겨냄
+                    return;
+                }
             }
         }
 
