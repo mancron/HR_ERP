@@ -211,17 +211,29 @@ public class EvaluationDAO {
 
     public Map<String, Object> getEvaluationById(int evalId) {
         Map<String, Object> map = new HashMap<>();
-        String sql = "SELECT e.eval_id, e.emp_id, emp.emp_name, e.eval_year, e.eval_period, e.eval_type, e.total_score, e.grade, e.eval_comment, e.eval_status, e.evaluator_id, e.confirmed_at FROM evaluation e JOIN employee emp ON e.emp_id = emp.emp_id WHERE e.eval_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        String sql = "SELECT e.*, emp.emp_name, evalr.emp_name AS evaluator_name " +
+                     "FROM evaluation e " +
+                     "JOIN employee emp ON e.emp_id = emp.emp_id " +
+                     "LEFT JOIN employee evalr ON e.evaluator_id = evalr.emp_id " +
+                     "WHERE e.eval_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection(); 
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, evalId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    map.put("evalId", rs.getInt("eval_id")); map.put("empId", rs.getInt("emp_id"));
-                    map.put("empName", rs.getString("emp_name")); map.put("evalYear", rs.getInt("eval_year"));
-                    map.put("evalPeriod", rs.getString("eval_period")); map.put("evalType", rs.getString("eval_type"));
-                    map.put("totalScore", rs.getBigDecimal("total_score")); map.put("grade", rs.getString("grade"));
-                    map.put("evalComment", rs.getString("eval_comment")); map.put("evalStatus", rs.getString("eval_status"));
-                    map.put("evaluatorId", rs.getInt("evaluator_id")); map.put("confirmedAt", rs.getTimestamp("confirmed_at"));
+                    map.put("evalId", rs.getInt("eval_id")); 
+                    map.put("empId", rs.getInt("emp_id"));
+                    map.put("empName", rs.getString("emp_name")); 
+                    map.put("evalYear", rs.getInt("eval_year"));
+                    map.put("evalPeriod", rs.getString("eval_period")); 
+                    map.put("evalType", rs.getString("eval_type"));
+                    map.put("totalScore", rs.getBigDecimal("total_score")); 
+                    map.put("grade", rs.getString("grade"));
+                    map.put("evalComment", rs.getString("eval_comment")); 
+                    map.put("evalStatus", rs.getString("eval_status"));
+                    map.put("evaluatorId", rs.getInt("evaluator_id"));
+                    map.put("evaluatorName", rs.getString("evaluator_name")); 
+                    map.put("confirmedAt", rs.getTimestamp("confirmed_at"));
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
@@ -326,25 +338,65 @@ public class EvaluationDAO {
 
     public Vector<Map<String, Object>> getEmployeeListForEvaluator(int evaluatorId, int posLevel, String evalType) {
         Vector<Map<String, Object>> list = new Vector<>();
-        String sql; boolean needSecondParam = true;
-        if ("자기평가".equals(evalType)) {
-            sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id WHERE e.emp_id = ?";
+        String sql = ""; 
+        boolean needSecondParam = true;
+     // 1. 사장님(Level 6)인 경우: 모든 조건을 무시하고 전체 조회 (가장 우선순위)
+        if (posLevel == 6) {
+            sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
+                  "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " +
+                  "WHERE e.status='재직' AND e.emp_id != ? " + 
+                  "ORDER BY p.position_level DESC, e.emp_name ASC";
+            needSecondParam = false; 
+        } 
+        // 2. 사장님이 아닐 때만 기존 평가 타입별 로직 수행 (else if로 연결)
+        else if ("자기평가".equals(evalType)) {
+            sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
+                  "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " +
+                  "WHERE e.emp_id = ?";
             needSecondParam = false;
-        } else if ("동료평가".equals(evalType)) {
-            sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id WHERE e.status='재직' AND e.emp_id != ? AND p.position_level = ? ORDER BY e.emp_name ASC";
-        } else {
-            sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id WHERE e.status='재직' AND e.emp_id != ? AND p.position_level < ? ORDER BY p.position_level DESC, e.emp_name ASC";
+        } 
+        else if ("동료평가".equals(evalType)) {
+            sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
+                  "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " +
+                  "WHERE e.status='재직' AND e.emp_id != ? AND p.position_level = ? " +
+                  "ORDER BY e.emp_name ASC";
+        } 
+        else if ("하위평가".equals(evalType)) {
+            sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
+                  "FROM employee e " +
+                  "LEFT JOIN job_position p ON e.position_id = p.position_id " +
+                  "WHERE e.dept_id = (SELECT dept_id FROM employee WHERE emp_id = ?) " +
+                  "AND p.position_level > ? " + 
+                  "AND e.status = '재직' " +
+                  "ORDER BY p.position_level ASC, e.emp_name ASC";
+        } 
+        else { // 상위평가
+            sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
+                  "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " +
+                  "WHERE e.status='재직' AND e.emp_id != ? AND p.position_level < ? " +
+                  "ORDER BY p.position_level DESC, e.emp_name ASC";
         }
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, evaluatorId); if (needSecondParam) pstmt.setInt(2, posLevel);
+
+        try (Connection conn = DatabaseConnection.getConnection(); 
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setInt(1, evaluatorId);
+            if (needSecondParam) {
+                pstmt.setInt(2, posLevel);
+            }
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> map = new HashMap<>();
-                    map.put("empId", rs.getInt("emp_id")); map.put("empName", rs.getString("emp_name")); map.put("pos", rs.getString("pos"));
+                    map.put("empId", rs.getInt("emp_id"));
+                    map.put("empName", rs.getString("emp_name"));
+                    map.put("pos", rs.getString("pos"));
                     list.add(map);
                 }
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return list;
     }
 

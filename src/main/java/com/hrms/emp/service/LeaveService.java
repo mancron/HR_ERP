@@ -37,24 +37,24 @@ public class LeaveService {
         }
     }
     
- // 휴직/복직 신청 INSERT
-    public boolean insertLeaveRequest(LeaveDTO dto) {
+    // 휴직/복직 신청 INSERT
+    public int insertLeaveRequest(LeaveDTO dto) {
         Connection con = null;
         try {
             con = DatabaseConnection.getConnection();
             con.setAutoCommit(false);
-            int result = leaveDao.insertLeaveRequest(con, dto);
-            if (result > 0) {
+            int newRequestId = leaveDao.insertLeaveRequest(con, dto);
+            if (newRequestId > 0) {
                 con.commit();
-                return true;
+                return newRequestId; // ← request_id 반환
             } else {
                 con.rollback();
-                return false;
+                return 0;
             }
         } catch (Exception e) {
             e.printStackTrace();
             try { if (con != null) con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
-            return false;
+            return 0;
         } finally {
             try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
         }
@@ -65,10 +65,18 @@ public class LeaveService {
         Connection con = null;
         try {
             con = DatabaseConnection.getConnection();
+            con.setAutoCommit(false);
             int result = leaveDao.withdrawLeave(con, requestId, empId);
-            return result > 0 ? "철회가 완료되었습니다." : "철회할 수 없습니다. (대기 상태만 가능)";
+            if (result > 0) {
+                con.commit();
+                return "철회가 완료되었습니다.";
+            } else {
+                con.rollback();
+                return "철회할 수 없습니다. (대기 상태만 가능)";
+            }
         } catch (Exception e) {
             e.printStackTrace();
+            try { if (con != null) con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
             return "오류가 발생했습니다.";
         } finally {
             try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }

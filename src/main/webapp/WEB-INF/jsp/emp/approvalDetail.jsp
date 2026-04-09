@@ -193,7 +193,6 @@
 			</button>
 		</c:if>
     </div>
-
 </c:if>
 <script>
     function rejectWithReason(url) {

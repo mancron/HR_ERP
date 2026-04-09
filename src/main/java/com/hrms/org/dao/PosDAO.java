@@ -100,34 +100,56 @@ public class PosDAO {
         return dto;
     }
 
-    // [수정 통합] 감사 로그 연동 업데이트 (트랜잭션 적용)
+ // [수정 통합] 감사 로그 연동 업데이트 (트랜잭션 적용 + High 5 Race Condition 방어)
     public boolean updatePositionWithLog(PosDTO dto, Integer actorId, String[] columns, String[] oldValues, String[] newValues) {
         Connection con = null;
         PreparedStatement pstmt = null;
         boolean success = false;
+        
         try {
             con = DatabaseConnection.getConnection();
             con.setAutoCommit(false); // 트랜잭션 시작
 
-            // 1. job_position 업데이트
-            String updateSql = "UPDATE job_position SET base_salary=?, meal_allowance=?, transport_allowance=?, position_allowance=?, is_active=? WHERE position_id=?";
-            pstmt = con.prepareStatement(updateSql);
+            // --- 1. job_position 업데이트 (High 5 대응 로직 포함) ---
+            StringBuilder updateSql = new StringBuilder();
+            updateSql.append("UPDATE job_position SET base_salary=?, meal_allowance=?, transport_allowance=?, position_allowance=?, is_active=? ");
+            updateSql.append("WHERE position_id=? ");
+            
+            // [High 5] 비활성화 시도 시, 그 순간에 직원이 0명인지 DB 레벨에서 다시 확인
+            if (dto.getIs_active() == 0) {
+                updateSql.append("AND (SELECT COUNT(*) FROM employees WHERE position_id = ?) = 0");
+            }
+
+            pstmt = con.prepareStatement(updateSql.toString());
             pstmt.setBigDecimal(1, dto.getBase_salary());
             pstmt.setInt(2, dto.getMeal_allowance());
             pstmt.setInt(3, dto.getTransport_allowance());
             pstmt.setInt(4, dto.getPosition_allowance());
             pstmt.setInt(5, dto.getIs_active());
             pstmt.setInt(6, dto.getPosition_id());
-            pstmt.executeUpdate();
-            pstmt.close();
+            
+            // 비활성화 조건일 경우 서브쿼리의 파라미터(?) 추가 세팅
+            if (dto.getIs_active() == 0) {
+                pstmt.setInt(7, dto.getPosition_id());
+            }
 
-            // 2. audit_log 기록 (변경된 값만)
+            int affectedRows = pstmt.executeUpdate();
+            
+            // [High 5 대응] 조건에 맞지 않아 업데이트된 행이 없다면 (동시성 충돌 발생 시)
+            if (affectedRows == 0) {
+                con.rollback(); // 즉시 롤백
+                return false;   // 실패 반환 -> 서블릿에서 'has_emp' 등으로 처리됨
+            }
+            pstmt.close(); // 다음 작업을 위해 닫기
+
+
+            // --- 2. audit_log 기록 (기존 로직 유지) ---
             String logSql = "INSERT INTO audit_log (actor_id, target_table, target_id, action, column_name, old_value, new_value) VALUES (?, 'job_position', ?, 'UPDATE', ?, ?, ?)";
             pstmt = con.prepareStatement(logSql);
 
             for (int i = 0; i < columns.length; i++) {
                 if (!oldValues[i].equals(newValues[i])) {
-                    // actor_id 외래키 에러 방지 처리
+                    // actor_id 외래키 에러 방지 처리 (기존 유지)
                     if (actorId != null && actorId > 0) {
                         pstmt.setInt(1, actorId);
                     } else {
@@ -140,11 +162,20 @@ public class PosDAO {
                     pstmt.addBatch();
                 }
             }
+            
             pstmt.executeBatch();
-            con.commit(); // 커밋
+            con.commit();
             success = true;
+
         } catch (Exception e) {
-            try { if (con != null) con.rollback(); } catch (SQLException se) { se.printStackTrace(); }
+            try { 
+                if (con != null) {
+                    con.rollback(); 
+                    System.err.println("Transaction Rollback executed due to error.");
+                }
+            } catch (SQLException se) { 
+                se.printStackTrace(); 
+            }
             e.printStackTrace();
         } finally {
             close(con, pstmt, null);

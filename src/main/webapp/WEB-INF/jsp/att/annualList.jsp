@@ -8,6 +8,7 @@
 <title>HR ERP - 연차 현황</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/annual.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 
 </head>
 

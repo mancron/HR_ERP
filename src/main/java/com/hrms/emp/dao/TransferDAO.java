@@ -193,4 +193,36 @@ public class TransferDAO {
 	        if (pstmt != null) pstmt.close();
 	    }
 	}
+	
+	// 새 부서장 배정 시 해당 부서의 대기 중인 신청들의 dept_manager_id 업데이트
+	public void updatePendingRequestsManager(Connection con, int deptId, int newManagerId) throws SQLException {
+	    // 휴직/복직 신청 업데이트
+	    String leaveSql = "UPDATE leave_of_absence_request l " +
+	                      "JOIN employee e ON l.emp_id = e.emp_id " +
+	                      "SET l.dept_manager_id = ? " +
+	                      "WHERE e.dept_id = ? AND l.status = '대기'";
+	    PreparedStatement pstmt = null;
+	    try {
+	        pstmt = con.prepareStatement(leaveSql);
+	        pstmt.setInt(1, newManagerId);
+	        pstmt.setInt(2, deptId);
+	        pstmt.executeUpdate();
+	    } finally {
+	        if (pstmt != null) pstmt.close();
+	    }
+
+	    // 퇴직 신청 업데이트
+	    String resignSql = "UPDATE resign_request r " +
+	                       "JOIN employee e ON r.emp_id = e.emp_id " +
+	                       "SET r.dept_manager_id = ? " +
+	                       "WHERE e.dept_id = ? AND r.status = '대기'";
+	    try {
+	        pstmt = con.prepareStatement(resignSql);
+	        pstmt.setInt(1, newManagerId);
+	        pstmt.setInt(2, deptId);
+	        pstmt.executeUpdate();
+	    } finally {
+	        if (pstmt != null) pstmt.close();
+	    }
+	}
 }
