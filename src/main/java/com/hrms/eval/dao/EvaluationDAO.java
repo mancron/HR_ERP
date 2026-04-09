@@ -340,21 +340,28 @@ public class EvaluationDAO {
         Vector<Map<String, Object>> list = new Vector<>();
         String sql = ""; 
         boolean needSecondParam = true;
-
-        if ("자기평가".equals(evalType)) {
+     // 1. 사장님(Level 6)인 경우: 모든 조건을 무시하고 전체 조회 (가장 우선순위)
+        if (posLevel == 6) {
+            sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
+                  "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " +
+                  "WHERE e.status='재직' AND e.emp_id != ? " + 
+                  "ORDER BY p.position_level DESC, e.emp_name ASC";
+            needSecondParam = false; 
+        } 
+        // 2. 사장님이 아닐 때만 기존 평가 타입별 로직 수행 (else if로 연결)
+        else if ("자기평가".equals(evalType)) {
             sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
                   "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " +
                   "WHERE e.emp_id = ?";
             needSecondParam = false;
-        } else if ("동료평가".equals(evalType)) {
+        } 
+        else if ("동료평가".equals(evalType)) {
             sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
                   "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " +
                   "WHERE e.status='재직' AND e.emp_id != ? AND p.position_level = ? " +
                   "ORDER BY e.emp_name ASC";
-        } else if ("하위평가".equals(evalType)) {
-            // 1. 같은 부서(dept_id)에 있으면서 
-            // 2. 직급 레벨(position_level)이 나보다 높고
-            // 3. 재직 중인 사람들을 조회
+        } 
+        else if ("하위평가".equals(evalType)) {
             sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
                   "FROM employee e " +
                   "LEFT JOIN job_position p ON e.position_id = p.position_id " +
@@ -362,11 +369,8 @@ public class EvaluationDAO {
                   "AND p.position_level > ? " + 
                   "AND e.status = '재직' " +
                   "ORDER BY p.position_level ASC, e.emp_name ASC";
-            
-            // 이 경우 dept_id를 찾기 위한 본인 ID와, 직급 비교를 위한 posLevel 두 개가 필요하므로
-            // needSecondParam을 true로 유지해야 합니다.
-            needSecondParam = true; 
-        } else { // 상위평가 (전통적인 방식: 상사가 부하를 평가)
+        } 
+        else { // 상위평가
             sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
                   "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " +
                   "WHERE e.status='재직' AND e.emp_id != ? AND p.position_level < ? " +

@@ -3,6 +3,9 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
+<%-- 현재 월을 가져와서 변수에 저장 (기간 제어용) --%>
+<c:set var="currentMonth" value="<%= java.time.LocalDate.now().getMonthValue() %>" />
+
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/eval/evaluation.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 
@@ -81,9 +84,18 @@
                         <div class="form-group">
                             <label>평가 기간 *</label> 
                             <select name="evalPeriod" id="sel_evalPeriod" onchange="checkLoadable()">
-                                <option value="상반기" ${param.evalPeriod == '상반기' ? 'selected' : ''}>상반기</option>
-                                <option value="하반기" ${param.evalPeriod == '하반기' ? 'selected' : ''}>하반기</option>
-                                <option value="연간" ${param.evalPeriod == '연간' ? 'selected' : ''}>연간</option>
+                                <option value="상반기" ${param.evalPeriod == '상반기' ? 'selected' : ''} 
+                                    ${(currentMonth >= 5 && currentMonth <= 6) ? '' : 'disabled'}>
+                                    상반기 ${(currentMonth >= 5 && currentMonth <= 6) ? '' : '(기간 아님)(5~6월)'}
+                                </option>
+                                <option value="하반기" ${param.evalPeriod == '하반기' ? 'selected' : ''} 
+                                    ${(currentMonth == 11 || currentMonth == 12) ? '' : 'disabled'}>
+                                    하반기 ${(currentMonth == 11 || currentMonth == 12) ? '' : '(기간 아님)(11~12월)'}
+                                </option>
+                                <option value="연간" ${param.evalPeriod == '연간' ? 'selected' : ''} 
+                                    ${(currentMonth == 12 || currentMonth == 1) ? '' : 'disabled'}>
+                                    연간 ${(currentMonth == 12 || currentMonth == 1) ? '' : '(기간 아님)(12~1월)'}
+                                </option>
                             </select>
                         </div>
                     </c:otherwise>
@@ -104,7 +116,9 @@
                     <div class="slider-container">
                         <input type="hidden" name="itemNames" value="${itemName}">
                         <fmt:parseNumber var="intScore" value="${not empty itemScores ? itemScores[loop.index] : (not empty paramValues.scores ? paramValues.scores[loop.index] : 80)}" integerOnly="true" />
-                        <input type="range" name="scores" min="0" max="100" value="${intScore}" oninput="document.getElementById('out${loop.index}').innerText=this.value; updateEvaluation();">
+                        <input type="range" name="scores" min="0" max="100" value="${intScore}" 
+                               oninput="document.getElementById('out${loop.index}').innerText=this.value; updateEvaluation();"
+                               ${sessionScope.userRole == '최종승인자' ? 'disabled' : ''}>
                         <span class="current-val" id="out${loop.index}">${intScore}</span><span class="max-val">/100</span>
                     </div>
                 </div>
@@ -125,19 +139,32 @@
                 <label class="res-label">평가 코멘트</label>
                 <c:set var="rawComment" value="${not empty evalData ? evalData.evalComment : ''}" />
                 <c:set var="cleanComment" value="${fn:replace(rawComment, '[반려] ', '')}" />
-                <textarea name="evalComment" id="evalComment" placeholder="평가 의견을 입력하세요." required><c:choose><c:when test="${not empty tempComment}">${tempComment}</c:when><c:otherwise>${cleanComment}</c:otherwise></c:choose></textarea>
+                <textarea name="evalComment" id="evalComment" placeholder="평가 의견을 입력하세요." required 
+                          ${sessionScope.userRole == '최종승인자' ? 'readonly' : ''}><c:choose><c:when test="${not empty tempComment}">${tempComment}</c:when><c:otherwise>${cleanComment}</c:otherwise></c:choose></textarea>
             </div>
 
             <div class="btn-area">
-                <c:if test="${isHr}">
-                    <div class="admin-notice">
-                        <span class="notice-icon">ℹ</span>
-                        <p class="notice-text">
-                            <strong>관리자 권한:</strong> 현재 HR 권한으로 접속 중입니다. 제출 후 [평가 현황]에서 확정이 가능합니다.
-                        </p>
-                    </div>
-                </c:if>
-                <button type="submit" name="status" value="작성중" class="btn btn-submit">제출하기</button>
+                <c:choose>
+                    <c:when test="${sessionScope.userRole == '최종승인자'}">
+                        <div class="admin-notice" style="border-left-color: #3b82f6;">
+                            <span class="notice-icon" style="color: #3b82f6;">ℹ</span>
+                            <p class="notice-text">
+                                <strong>조회 전용 모드:</strong> 사장님(최종승인자) 계정은 평가 현황 조회를 위해 모든 페이지에 접근 가능하나, <strong>평가 작성 및 수정은 불가능</strong>합니다.
+                            </p>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <c:if test="${isHr}">
+                            <div class="admin-notice">
+                                <span class="notice-icon">ℹ</span>
+                                <p class="notice-text">
+                                    <strong>관리자 권한:</strong> 현재 HR 권한으로 접속 중입니다. 제출 후 [평가 현황]에서 확정이 가능합니다.
+                                </p>
+                            </div>
+                        </c:if>
+                        <button type="submit" name="status" value="작성중" class="btn btn-submit">제출하기</button>
+                    </c:otherwise>
+                </c:choose>
             </div>
         </form>
     </div>
@@ -158,7 +185,6 @@
 </div>
 
 <script>
-// ... (스크립트 로직은 동일하되 인라인 조작 최소화)
 const ctx = '${pageContext.request.contextPath}';
 const isEditMode = ${not empty evalData ? 'true' : 'false'};
 
@@ -176,7 +202,7 @@ function updateEvaluation() {
     else if (avg >= 60) { grade = 'C'; color = '#22c55e'; }
     const badge = document.getElementById('gradeBadge');
     badge.innerText = grade; 
-    badge.style.color = color; // 등급 색상은 동적 계산이므로 유지
+    badge.style.color = color;
 }
 
 function onEvalTypeChange() {
@@ -218,9 +244,12 @@ function checkLoadable() {
     if (!btn) return;
     const empId = document.getElementById('sel_empId').value;
     const year = document.getElementById('sel_evalYear').value;
-    const period = document.getElementById('sel_evalPeriod').value;
+    const periodSel = document.getElementById('sel_evalPeriod');
+    const period = periodSel.value;
     const type = document.getElementById('sel_evalType').value;
-    btn.disabled = !(empId && year && period && type);
+    
+    const isPeriodDisabled = periodSel.options[periodSel.selectedIndex].disabled;
+    btn.disabled = !(empId && year && period && type && !isPeriodDisabled);
 }
 
 function loadExisting() {
@@ -244,7 +273,6 @@ function loadExisting() {
 document.addEventListener('DOMContentLoaded', function () {
     updateEvaluation();
     checkLoadable();
-    
     const errorMessages = document.querySelectorAll('.auto-hide');
     errorMessages.forEach(msg => {
         setTimeout(() => {
