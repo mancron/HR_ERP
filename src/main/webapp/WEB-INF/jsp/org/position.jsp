@@ -2,8 +2,11 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/org/position.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 
 <div class="pos-container">
+    <div id="parentStatusMsg" class="msg-layer" style="display:none; margin-bottom: 20px; width: 100%; box-sizing: border-box;"></div>
+
     <div class="pos-header">
         <h2>직급 관리</h2>
         <p>전체 직급 체계를 조회합니다.</p>
@@ -94,24 +97,52 @@
             <h3 style="margin:0; font-size: 1.1rem; font-weight: 700; color: #1e293b;">직급 정보 수정</h3>
             <button type="button" onclick="closeModal()" class="close-btn">&times;</button>
         </div>
-        
         <iframe id="editFrame" src="" frameborder="0"></iframe>
     </div>
 </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const content = document.getElementById('inactiveContent');
         const icon = document.getElementById('toggleIcon');
-        
         if (content) content.style.display = 'none';
         if (icon) icon.innerText = '▼';
     });
+
+    // 성공 시 자식(iframe)에서 호출하는 함수
+    function handleUpdateSuccess() {
+        const modal = document.getElementById('editModal');
+        const iframe = document.getElementById('editFrame');
+        
+        // 1. 모달 닫기
+        modal.style.display = 'none';
+        iframe.src = '';
+        document.body.style.overflow = 'auto';
+
+        // 2. 페이지 내부 최상단 알림 표시
+        const statusMsg = document.getElementById('parentStatusMsg');
+        statusMsg.innerText = "✅ 직급 정보가 성공적으로 수정되었습니다.";
+        statusMsg.className = "msg-layer msg-success"; 
+        
+        //왼쪽 정렬 및 여백 조정
+        statusMsg.style.textAlign = "left";
+        statusMsg.style.paddingLeft = "20px";
+        statusMsg.style.display = "block";
+
+        // 3. 메시지 확인을 위해 상단으로 스크롤
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // 4. 3초 뒤 새로고침
+        setTimeout(() => {
+            statusMsg.style.display = "none";
+            location.reload();
+        }, 3000);
+    }
 
     function openModal(id) {
         if (!id) return;
         const modal = document.getElementById('editModal');
         const iframe = document.getElementById('editFrame');
-        
         iframe.src = "${pageContext.request.contextPath}/org/position/edit?id=" + id;
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -120,21 +151,18 @@
     function closeModal() {
         const modal = document.getElementById('editModal');
         const iframe = document.getElementById('editFrame');
-        
         modal.style.display = 'none';
         iframe.src = '';
         document.body.style.overflow = 'auto';
+        // 수동으로 닫을 때도 혹시 모를 변경사항 반영을 위해 리로드 유지
         location.reload(); 
     }
 
     function toggleInactive() {
         const content = document.getElementById('inactiveContent');
         const icon = document.getElementById('toggleIcon');
-        
         if (!content || !icon) return;
-
         const isHidden = (content.style.display === 'none' || content.style.display === '');
-        
         if (isHidden) {
             content.style.display = 'block';
             icon.innerText = '▲';
