@@ -47,6 +47,7 @@
     cursor: default;
   }
 </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 
 <%-- 검색 파라미터를 URL에 유지하기 위한 공통 쿼리스트링 --%>
 <c:set var="baseQuery"

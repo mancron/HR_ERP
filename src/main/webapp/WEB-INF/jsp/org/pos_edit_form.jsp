@@ -13,6 +13,7 @@
         .btn-save:hover { background: #2563eb; }
         .readonly { background-color: #f8fafc; color: #94a3b8; }
     </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>
     <form action="${pageContext.request.contextPath}/org/position/edit" method="post">
