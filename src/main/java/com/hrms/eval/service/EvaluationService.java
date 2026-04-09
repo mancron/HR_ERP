@@ -84,8 +84,11 @@ public class EvaluationService {
      * HR담당자도 평가 작성 시 본인 직급 기반 목록 표시 (확정/반려와 별개)
      */
     public Vector<Map<String, Object>> getEmployeeListForEvaluator(
-            int evaluatorId, String userRole, String evalType) {
+        int evaluatorId, String userRole, String evalType) {
         int posLevel = evalDao.getPositionLevelByEmpId(evaluatorId);
+        
+        // [중요] DAO의 getEmployeeListForEvaluator 메서드로 evalType을 넘겨서 
+        // DAO 내부에서 "하위평가"일 때의 SQL이 실행되도록 해야 합니다.
         return evalDao.getEmployeeListForEvaluator(evaluatorId, posLevel, evalType);
     }
 
@@ -113,6 +116,9 @@ public class EvaluationService {
 
         if ("상위평가".equals(evalType)) {
             return targetLevel >= myLevel; // 대상이 나보다 높거나 같으면 차단
+        }
+        if ("하위평가".equals(evalType)) {
+            return targetLevel <= myLevel; // 반대로 대상 레벨이 나보다 높거나 같으면 차단
         }
         if ("동료평가".equals(evalType)) {
             return targetLevel != myLevel; // 동일 직급이 아니면 차단
