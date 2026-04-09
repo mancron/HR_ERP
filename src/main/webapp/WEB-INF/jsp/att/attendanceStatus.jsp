@@ -8,6 +8,8 @@
 
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/attendanceStatus.css">
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/css/style.css">
 </head>
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
@@ -139,3 +141,4 @@
 
 <script
 	src="${pageContext.request.contextPath}/js/att/attendanceStatus.js"></script>
+<script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
