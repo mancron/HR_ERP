@@ -134,6 +134,29 @@ public class EvalWriteServlet extends HttpServlet {
         String evalType    = request.getParameter("evalType");
 
         try {
+            // ── [보안 검증 추가] 수정 모드일 때 상태값 및 권한 체크 ──
+            if (evalIdStr != null && !evalIdStr.isEmpty()) {
+                int checkEvalId = Integer.parseInt(evalIdStr);
+                Map<String, Object> currentEval = evalDao.getEvaluationById(checkEvalId);
+
+                if (currentEval != null && !currentEval.isEmpty()) {
+                    String dbStatus = (String) currentEval.get("evalStatus");
+                    Object ownerObj = currentEval.get("evaluatorId");
+                    int ownerId = (ownerObj != null) ? (Integer) ownerObj : -1;
+
+                    // 1. 이미 최종확정된 경우 서버에서 수정 원천 차단
+                    if ("최종확정".equals(dbStatus)) {
+                        throw new Exception("already_confirmed");
+                    }
+
+                    // 2. 작성자 본인이 아니고 HR담당자도 아닌 경우 수정 거부
+                    if (ownerId != loginEmpId && !"HR담당자".equals(userRole)) {
+                        throw new Exception("forbidden");
+                    }
+                }
+            }
+
+            // 필수값 검증
             if (empIdStr == null || empIdStr.isEmpty())
                 throw new Exception("target_required");
             if (evalComment == null || evalComment.trim().isEmpty())
@@ -165,8 +188,7 @@ public class EvalWriteServlet extends HttpServlet {
                 }
             }
 
-            // [NEW-8 수정] duplicate 처리를 throw Exception으로 통일
-            // (기존 alert=duplicate redirect 방식 제거 → 에러 코드로 forward)
+            // [NEW-8 수정] 중복 처리 검증
             boolean isNewWrite = (eval.getEvalId() == 0);
             if (isNewWrite) {
                 // 본인 작성 중복 체크
@@ -177,8 +199,6 @@ public class EvalWriteServlet extends HttpServlet {
                     throw new Exception("duplicate");
 
                 // [M-3 수정] 타인이 같은 조건으로 이미 작성중인 건이 있으면 차단
-                // ON DUPLICATE KEY UPDATE로 타인 건을 덮어쓰는 문제 방지
-                // '최종확정' 체크는 isAlreadyConfirmed로, '작성중'인 타인 건은 여기서 체크
                 if (isOccupiedByOther(targetEmpId, eval.getEvalYear(),
                         eval.getEvalPeriod(), eval.getEvalType(), loginEmpId)) {
                     throw new Exception("occupied_by_other");
