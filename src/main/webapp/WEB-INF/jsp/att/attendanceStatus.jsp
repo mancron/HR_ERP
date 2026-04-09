@@ -137,6 +137,6 @@
 
 	</div>
 </div>
-
+<script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
 <script
 	src="${pageContext.request.contextPath}/js/att/attendanceStatus.js"></script>
