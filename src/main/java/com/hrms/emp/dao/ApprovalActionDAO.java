@@ -436,4 +436,53 @@ public class ApprovalActionDAO {
             if (pstmt != null) pstmt.close();
         }
     }
+    
+    // 신청자 이름 조회
+    public String getRequesterName(Connection con, String type, int requestId) throws SQLException {
+        String table = "leave".equals(type) ? "leave_of_absence_request" : "resign_request";
+        String sql = "SELECT e.emp_name FROM " + table + " r " +
+                     "JOIN employee e ON r.emp_id = e.emp_id " +
+                     "WHERE r.request_id = ?";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, requestId);
+            rs = pstmt.executeQuery();
+            return rs.next() ? rs.getString("emp_name") : "";
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
+
+    // HR담당자 emp_id 조회 (account 테이블에서 role='HR담당자'인 첫 번째)
+    public int getHrManagerEmpId(Connection con) throws SQLException {
+        String sql = "SELECT emp_id FROM account WHERE role = 'HR담당자' LIMIT 1";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            return rs.next() ? rs.getInt("emp_id") : 0;
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
+
+    // 최종승인자 emp_id 조회
+    public int getPresidentEmpId(Connection con) throws SQLException {
+        String sql = "SELECT emp_id FROM account WHERE role = '최종승인자' LIMIT 1";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            return rs.next() ? rs.getInt("emp_id") : 0;
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
 }

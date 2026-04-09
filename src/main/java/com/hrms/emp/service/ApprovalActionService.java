@@ -2,6 +2,7 @@ package com.hrms.emp.service;
 
 import java.sql.Connection;
 import com.hrms.common.db.DatabaseConnection;
+import com.hrms.common.util.NotificationUtil;
 import com.hrms.emp.dao.ApprovalActionDAO;
 import com.hrms.emp.dto.HistoryDTO;
 
@@ -121,6 +122,35 @@ public class ApprovalActionService {
 
 			if (result > 0) {
 				con.commit();
+				
+				// 알림 발송 (트랜잭션 외부)
+				String requesterName = dao.getRequesterName(con, type, requestId);
+			    String applyType = "leave".equals(type) ?
+			        dao.getLeaveType(con, requestId) : "퇴직";
+
+			    // 현재 상태에 따라 다음 결재자에게 알림
+			    if ("대기".equals(currentStatus)) {
+			        if (isHrDept) {
+			            // 인사팀 흐름: 대기 → 부서장승인 → 최종승인자에게 알림
+			            int presidentEmpId = dao.getPresidentEmpId(con);
+			            if (presidentEmpId > 0)
+			                NotificationUtil.sendApprovalDeptApproved(presidentEmpId, requesterName, applyType, requestId);
+			        } else {
+			            // 일반 부서 흐름: 대기 → 부서장승인 → HR담당자에게 알림
+			            int hrEmpId = dao.getHrManagerEmpId(con);
+			            if (hrEmpId > 0)
+			                NotificationUtil.sendApprovalDeptApproved(hrEmpId, requesterName, applyType, requestId);
+			        }
+			    } else if ("부서장승인".equals(currentStatus)) {
+			        // 부서장승인 → HR담당자승인 완료 → 최종승인자에게 알림
+			        int presidentEmpId = dao.getPresidentEmpId(con);
+			        if (presidentEmpId > 0)
+			            NotificationUtil.sendApprovalHrApproved(presidentEmpId, requesterName, applyType, requestId);
+			    } else if ("HR담당자승인".equals(currentStatus) || isReqPresident) {
+			        // 최종승인 완료 → 신청자에게 알림
+			        NotificationUtil.sendApprovalFinalApproved(reqEmpId, applyType, requestId);
+			    }
+			    
 				return "승인이 완료되었습니다.";
 			} else {
 				con.rollback();
@@ -163,13 +193,13 @@ public class ApprovalActionService {
 			boolean isSelf = (reqEmpId == loginEmpId);
 			boolean canReject = false;
 
-// 최종승인자 신청: HR담당자만 반려 가능
+			// 최종승인자 신청: HR담당자만 반려 가능
 			if (isReqPresident) {
 				if ("대기".equals(currentStatus) && isHrManager && !isSelf) {
 					canReject = true;
 				}
 
-// 인사팀 흐름
+			// 인사팀 흐름
 			} else if (isHrDept) {
 				if ("대기".equals(currentStatus) && isDeptManager) {
 					boolean isSelfDeptMgr = dao.isSelfDeptManager(con, type, requestId, loginEmpId);
@@ -178,7 +208,7 @@ public class ApprovalActionService {
 					canReject = true;
 				}
 
-// 일반 부서 흐름
+			// 일반 부서 흐름
 			} else {
 				if ("대기".equals(currentStatus) && isDeptManager) {
 					boolean isSelfDeptMgr = dao.isSelfDeptManager(con, type, requestId, loginEmpId);
@@ -199,6 +229,13 @@ public class ApprovalActionService {
 
 			if (result > 0) {
 				con.commit();
+				
+				// 반려 알림 → 신청자에게
+			    String requesterName = dao.getRequesterName(con, type, requestId);
+			    String applyType = "leave".equals(type) ?
+			        dao.getLeaveType(con, requestId) : "퇴직";
+			    NotificationUtil.sendApprovalRejected(reqEmpId, applyType, rejectReason, requestId);
+				
 				return "반려 처리되었습니다.";
 			} else {
 				con.rollback();

@@ -24,23 +24,23 @@ public class ResignService {
     }
     
     
-    public boolean submitResign(ResignDTO dto) {
+    public int submitResign(ResignDTO dto) {
         Connection con = null;
         try {
             con = DatabaseConnection.getConnection();
             con.setAutoCommit(false);
-            int result = resignDao.insertResignRequest(con, dto);
-            if (result > 0) {
+            int newRequestId = resignDao.insertResignRequest(con, dto);
+            if (newRequestId > 0) {
                 con.commit();
-                return true;
+                return newRequestId; // ← request_id 반환
             } else {
                 con.rollback();
-                return false;
+                return 0;
             }
         } catch (Exception e) {
             e.printStackTrace();
             try { if (con != null) con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
-            return false;
+            return 0;
         } finally {
             try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
         }
@@ -67,6 +67,28 @@ public class ResignService {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
+    
+    public String withdrawResign(int requestId, int empId) {
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            con.setAutoCommit(false);
+            int result = resignDao.withdrawResign(con, requestId, empId);
+            if (result > 0) {
+                con.commit();
+                return "철회가 완료되었습니다.";
+            } else {
+                con.rollback();
+                return "철회할 수 없습니다. (대기 상태만 가능)";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { if (con != null) con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+            return "오류가 발생했습니다.";
         } finally {
             try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
         }
