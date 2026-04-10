@@ -1,17 +1,17 @@
 package com.hrms.sal.service;
 
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.List;
+
 import com.hrms.att.service.AttendanceStatusService;
 import com.hrms.common.db.DatabaseConnection;
 import com.hrms.common.util.NotificationUtil;
 import com.hrms.sal.dao.SalaryCalcDAO;
 import com.hrms.sal.dto.DeductionRateDTO;
 import com.hrms.sal.dto.SalaryCalcDTO;
-
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.util.List;
 
 public class SalaryCalcService {
 
@@ -277,57 +277,70 @@ public void recalculateInTransaction(int year, int month,
     //  계산 공식 (핵심 로직)
     // ─────────────────────────────────────────────
     private void calcAndFill(SalaryCalcDTO dto, int year, int month,
-                             DeductionRateDTO rate, Connection conn) throws SQLException {
-
-        int baseSalary = dto.getBaseSalary();
-
-        // ── 초과근무수당 = (기본급 / 209) × 시간 × 1.5 ──
-        double overtimeHours = dao.selectOvertimeHours(dto.getEmpId(), year, month, conn);
-        int overtimePay = (int) Math.round((baseSalary / 209.0) * overtimeHours * 1.5);
-        dto.setOvertimePay(overtimePay);
-        dto.setOtherAllowance(0);
-
-        // ── 지급합계 ──
-        int gross = baseSalary
-                  + dto.getMealAllowance()
-                  + dto.getTransportAllowance()
-                  + dto.getPositionAllowance()
-                  + overtimePay;
-        dto.setGrossSalary(gross);
-
-        // ── 4대보험 ──
-        int nationalPension     = (int)(gross * rate.getNationalPensionRate().doubleValue());
-        int healthInsurance     = (int)(gross * rate.getHealthInsuranceRate().doubleValue());
-        int longTermCare        = (int)(healthInsurance * rate.getLongTermCareRate().doubleValue());
-        int employmentInsurance = (int)(gross * rate.getEmploymentInsuranceRate().doubleValue());
-
-        dto.setNationalPension(nationalPension);
-        dto.setHealthInsurance(healthInsurance);
-        dto.setLongTermCare(longTermCare);
-        dto.setEmploymentInsurance(employmentInsurance);
-
-        // ── 무급 공제 (일급 = 기본급 / 22) ──
-        BigDecimal unpaidDays = dao.selectUnpaidLeaveDays(dto.getEmpId(), year, month, conn);
-        int unpaidDeduction   = (int)((baseSalary / 22.0) * unpaidDays.doubleValue());
-        dto.setUnpaidLeaveDays(unpaidDays);
-        dto.setUnpaidDeduction(unpaidDeduction);
-
-        // ── 소득세 (간이세액표 단순화) ──
-        int incomeTax = dao.selectIncomeTax(gross, year, conn);
-        int localIncomeTax = (int)(incomeTax * 0.10);
-        dto.setIncomeTax(incomeTax);
-        dto.setLocalIncomeTax(localIncomeTax);
-
-        // ── 공제합계 / 실수령액 ──
-        int totalDeduction = nationalPension + healthInsurance + longTermCare
-                           + employmentInsurance + unpaidDeduction
-                           + incomeTax + localIncomeTax;
-        int netSalary = gross - totalDeduction;
-        if (netSalary < 0) netSalary = 0; // 음수 방어
-
-        dto.setTotalDeduction(totalDeduction);
-        dto.setNetSalary(netSalary);
-    }
+            DeductionRateDTO rate, Connection conn) throws SQLException {
+		
+		int baseSalary = dto.getBaseSalary();
+		
+		// ── 초과근무수당 ──
+		double overtimeHours = dao.selectOvertimeHours(dto.getEmpId(), year, month, conn);
+		int overtimePay = (int) Math.round((baseSalary / 209.0) * overtimeHours * 1.5);
+		dto.setOvertimePay(overtimePay);
+		dto.setOtherAllowance(0);
+		
+		// ── 지급합계 ──
+		int gross = baseSalary
+		 + dto.getMealAllowance()
+		 + dto.getTransportAllowance()
+		 + dto.getPositionAllowance()
+		 + overtimePay;
+		dto.setGrossSalary(gross);
+		
+		// ── 4대보험 (각각 버림) ──
+		int nationalPension     = (int)(gross * rate.getNationalPensionRate().doubleValue());
+		int healthInsurance     = (int)(gross * rate.getHealthInsuranceRate().doubleValue());
+		int longTermCare        = (int)(healthInsurance * rate.getLongTermCareRate().doubleValue());
+		int employmentInsurance = (int)(gross * rate.getEmploymentInsuranceRate().doubleValue());
+		
+		dto.setNationalPension(nationalPension);
+		dto.setHealthInsurance(healthInsurance);
+		dto.setLongTermCare(longTermCare);
+		dto.setEmploymentInsurance(employmentInsurance);
+		
+		// ── 무급 공제 ──
+		BigDecimal unpaidDays = dao.selectUnpaidLeaveDays(dto.getEmpId(), year, month, conn);
+		int unpaidDeduction   = (int)((baseSalary / 22.0) * unpaidDays.doubleValue());
+		dto.setUnpaidLeaveDays(unpaidDays);
+		dto.setUnpaidDeduction(unpaidDeduction);
+		
+		// ── 소득세 ──
+		int incomeTax      = dao.selectIncomeTax(gross, year, conn);
+		int localIncomeTax = (int)(incomeTax * 0.10);
+		dto.setIncomeTax(incomeTax);
+		dto.setLocalIncomeTax(localIncomeTax);
+		
+		// ── 공제합계: 각 항목 직접 합산 ──
+		int totalDeduction = nationalPension
+		          + healthInsurance
+		          + longTermCare
+		          + employmentInsurance
+		          + unpaidDeduction
+		          + incomeTax
+		          + localIncomeTax;
+		dto.setTotalDeduction(totalDeduction);
+		
+		// ── 실수령액: gross - totalDeduction 으로 정확히 맞춤 ──
+		// DB CHECK: net_salary = gross_salary - total_deduction 을 반드시 만족해야 함
+		int netSalary = gross - totalDeduction;
+		if (netSalary < 0) netSalary = 0;
+		
+		// ⚠ netSalary가 0으로 보정된 경우 totalDeduction도 맞춰줌
+		if (gross - totalDeduction < 0) {
+		totalDeduction = gross;
+		dto.setTotalDeduction(totalDeduction);
+		}
+		
+		dto.setNetSalary(netSalary);
+		}
 
     // ── 공통 유틸 ──
     private void rollback(Connection conn) {
