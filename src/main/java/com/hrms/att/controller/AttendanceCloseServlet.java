@@ -1,21 +1,22 @@
 package com.hrms.att.controller;
 
+import java.io.IOException;
+
+import com.hrms.att.service.AttendanceCloseService;
+import com.hrms.att.service.AttendanceStatusService;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-
-import java.io.IOException;
-
-import com.hrms.att.service.AttendanceCloseService;
 
 @WebServlet("/att/close")
 public class AttendanceCloseServlet extends HttpServlet {
 
     private AttendanceCloseService service;
-
+    private AttendanceStatusService sservice;
+    
     @Override
     public void init() throws ServletException {
         this.service = new AttendanceCloseService();
@@ -32,10 +33,10 @@ public class AttendanceCloseServlet extends HttpServlet {
 
         try {
             // 🔥 1️⃣ 근태 마감 (조건 검사 포함)
-            service.closeMonth(year, month, actorId);
+        	sservice.closeMonth(year, month, actorId);
 
             // 🔥 2️⃣ 급여 재계산 (마감 성공 후 실행)
-            service.recalculateAfterClose(year, month, actorId);
+            service.closeAndRecalculate(year, month, actorId);
 
             response.getWriter().write("OK");
 
