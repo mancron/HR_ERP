@@ -77,8 +77,8 @@ CREATE TABLE employee (
     emp_id            INT          NOT NULL AUTO_INCREMENT    COMMENT '직원 ID (PK)',
     emp_name          VARCHAR(20)  NOT NULL                 COMMENT '직원명',
     emp_no            VARCHAR(20)  NOT NULL                 COMMENT '사번 (EMP001 형식, UNIQUE)',
-    dept_id           INT          NOT NULL                 COMMENT '소속 부서 ID (FK)',
-    position_id       INT          NOT NULL                 COMMENT '직급 ID (FK)',
+    dept_id           INT          NULL                 	COMMENT '소속 부서 ID (FK)',
+    position_id       INT          NULL                 	COMMENT '직급 ID (FK)',
     hire_date         DATE         NOT NULL                 COMMENT '입사일',
     resign_date       DATE         NULL                     COMMENT '퇴사일 (NULL=재직 중)',
     emp_type          VARCHAR(10)  NOT NULL DEFAULT '정규직' COMMENT '정규직/계약직/파트타임',
@@ -122,11 +122,11 @@ CREATE TABLE personnel_history (
     to_position_id   INT          NULL                     COMMENT '변경 직급 ID (FK)',
     from_role        VARCHAR(50)  NULL                     COMMENT '이전 직책',
     to_role          VARCHAR(50)  NULL                     COMMENT '변경 직책',
-    change_date      DATE         NOT NULL                 COMMENT '발령 적용일',
+    change_date      DATETIME     NOT NULL                 COMMENT '발령 적용일',
     reason           VARCHAR(300) NULL                     COMMENT '발령/휴직 상세 사유',
     approved_by      INT          NULL                     COMMENT '승인자 emp_id (FK)',
     created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    
+    is_applied 		 TINYINT 	  NOT NULL DEFAULT 0				 COMMENT '0=미처리, 1=처리완료 (적용일 기준 employee 반영 여부)',
     PRIMARY KEY (history_id),
     CONSTRAINT fk_ph_emp_id        FOREIGN KEY (emp_id)           REFERENCES employee(emp_id),
     CONSTRAINT fk_ph_from_dept     FOREIGN KEY (from_dept_id)     REFERENCES department(dept_id)       ON DELETE SET NULL,
@@ -135,7 +135,7 @@ CREATE TABLE personnel_history (
     CONSTRAINT fk_ph_to_pos        FOREIGN KEY (to_position_id)   REFERENCES job_position(position_id) ON DELETE SET NULL,
     CONSTRAINT fk_ph_approved_by   FOREIGN KEY (approved_by)      REFERENCES employee(emp_id)          ON DELETE SET NULL,
     
-    CONSTRAINT chk_ph_change_type  CHECK (change_type IN ('발령', '승진', '전보', '퇴직', '복직', '휴직'))
+    CONSTRAINT chk_ph_change_type  CHECK (change_type IN ('발령', '승진', '전보', '퇴직', '복직', '휴직','입사'))
 ) COMMENT '인사발령 및 상태 변경 이력 관리';
 
 
@@ -180,6 +180,7 @@ CREATE TABLE leave_of_absence_request (
     president_approved_at DATETIME     NULL                   COMMENT '최종승인자 승인일시',
     reject_reason     VARCHAR(200) NULL                   COMMENT '반려 사유',
     created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '신청일시',
+    is_applied 		  TINYINT 	   NOT NULL DEFAULT 0 				  COMMENT '0=미처리, 1=처리완료 (적용일 기준 employee 반영 여부)',
     PRIMARY KEY (request_id),
     FOREIGN KEY (emp_id)          REFERENCES employee(emp_id),
     FOREIGN KEY (dept_manager_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
@@ -204,6 +205,7 @@ CREATE TABLE resign_request (
     president_approved_at DATETIME     NULL                   COMMENT '최종승인자 승인일시',
     reject_reason     VARCHAR(200) NULL                   COMMENT '반려 사유',
     created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '신청일시',
+    is_applied TINYINT NOT NULL DEFAULT 0COMMENT '0=미처리, 1=처리완료 (적용일 기준 employee 반영 여부)',
     PRIMARY KEY (request_id),
     FOREIGN KEY (emp_id)          REFERENCES employee(emp_id),
     FOREIGN KEY (dept_manager_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
@@ -788,13 +790,13 @@ LIMIT 20;
 
 -- FLUSH PRIVILEGES;
 -- AI 전용 계정 생성 (비밀번호는 원하는 대로 변경)
-CREATE USER 'ai_reader'@'%' IDENTIFIED BY '123456!';
+-- CREATE USER 'ai_reader'@'%' IDENTIFIED BY '123456!';
 
 -- hr_erp DB에 대한 SELECT 권한만 부여
-GRANT SELECT ON hr_erp.* TO 'ai_reader'@'%';
+-- GRANT SELECT ON hr_erp.* TO 'ai_reader'@'%';
 
 -- 권한 적용
-FLUSH PRIVILEGES;
+-- FLUSH PRIVILEGES;
 
 
 -- 1. 직원 전체 정보 뷰 (직원 + 부서 + 직급 통합)
