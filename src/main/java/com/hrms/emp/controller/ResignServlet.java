@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import com.hrms.common.util.NotificationUtil;
 import com.hrms.emp.dto.EmpDTO;
 import com.hrms.emp.dto.ResignDTO;
+import com.hrms.emp.service.ApprovalActionService;
 import com.hrms.emp.service.EmpService;
 import com.hrms.emp.service.LeaveService; // 부서장 조회는 LeaveService 재사용
 import com.hrms.emp.service.ResignService;
@@ -23,6 +24,7 @@ public class ResignServlet extends HttpServlet {
     private EmpService empService = new EmpService();
     private LeaveService leaveService = new LeaveService();
     private ResignService resignService = new ResignService();
+    private ApprovalActionService approvalActionService = new ApprovalActionService();
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -139,13 +141,22 @@ public class ResignServlet extends HttpServlet {
             return;
         }
         //등록 처리
-        int newRequestId = resignService.submitResign(dto); // int로 변경
+        int newRequestId = resignService.submitResign(dto);
         if (newRequestId > 0) {
-            // 성공했을 때만 알림 발송
+            String userRole = (String) session.getAttribute("userRole");
             EmpDTO loginUser = (EmpDTO) session.getAttribute("loginUser");
             String loginEmpName = loginUser != null ? loginUser.getEmp_name() : "";
-            if (deptManagerId > 0) {
-                NotificationUtil.sendApprovalPending(deptManagerId, loginEmpName, "퇴직", newRequestId);
+
+            if ("최종승인자".equals(userRole)) {
+                // 즉시 최종승인 처리
+                approvalActionService.approve("resign", newRequestId, loginEmpId,
+                    false, false, true);
+            } else {
+                // 기존 흐름: 부서장에게 알림
+                if (deptManagerId > 0) {
+                    NotificationUtil.sendApprovalPending(deptManagerId, loginEmpName,
+                        "퇴직", newRequestId);
+                }
             }
         }
         

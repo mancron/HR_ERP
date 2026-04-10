@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import com.hrms.common.util.NotificationUtil;
 import com.hrms.emp.dto.EmpDTO;
 import com.hrms.emp.dto.LeaveDTO;
+import com.hrms.emp.service.ApprovalActionService;
 import com.hrms.emp.service.EmpService;
 import com.hrms.emp.service.LeaveService;
 
@@ -21,6 +22,7 @@ public class LeaveServlet extends HttpServlet {
 
     private EmpService empService = new EmpService();
     private LeaveService leaveService = new LeaveService();
+    private ApprovalActionService approvalActionService = new ApprovalActionService();
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -190,12 +192,21 @@ public class LeaveServlet extends HttpServlet {
         
         int newRequestId = leaveService.insertLeaveRequest(dto);
         if (newRequestId > 0) {
-            if (deptManagerId > 0) {
-                EmpDTO loginUser = (EmpDTO) session.getAttribute("loginUser"); // ← 수정
-                String loginEmpName = loginUser != null ? loginUser.getEmp_name() : "";
-                NotificationUtil.sendApprovalPending(deptManagerId, loginEmpName,
-                    dto.getLeave_type(), newRequestId); // ← 실제 requestId
+            String userRole = (String) session.getAttribute("userRole");
+            EmpDTO loginUser = (EmpDTO) session.getAttribute("loginUser");
+            String loginEmpName = loginUser != null ? loginUser.getEmp_name() : "";
+
+            if ("최종승인자".equals(userRole)) {
+            	approvalActionService.approve("leave", newRequestId, loginEmpId,
+            		    false, false, true);
+            } else {
+                // 기존 흐름: 부서장에게 알림
+                if (deptManagerId > 0) {
+                    NotificationUtil.sendApprovalPending(deptManagerId, loginEmpName,
+                        dto.getLeave_type(), newRequestId);
+                }
             }
+            
             response.setContentType("text/html; charset=UTF-8");
             java.io.PrintWriter out = response.getWriter();
             out.println("<script>");

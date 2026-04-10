@@ -28,7 +28,7 @@
     <div class="detail-header">
         <span class="status-badge status-${empDetail.status}">${empDetail.status}</span>
         <div class="btn-area">
-        <c:if test="${userRole == '최종승인자' || userRole == 'HR담당자'}">
+        <c:if test="${userRole == 'HR담당자'}">
             <button type="button" class="btn-transfer"
                 onclick="location.href='${pageContext.request.contextPath}/emp/transfer?emp_no=${empDetail.emp_no}'">
                 인사발령</button>
