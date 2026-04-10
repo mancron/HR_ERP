@@ -83,12 +83,18 @@ public class EvaluationService {
      * [NEW-4 수정] ADMIN_ALL 특수 분기 제거 — 실제로 사용되지 않는 사문 코드였음
      * HR담당자도 평가 작성 시 본인 직급 기반 목록 표시 (확정/반려와 별개)
      */
-    public Vector<Map<String, Object>> getEmployeeListForEvaluator(
-        int evaluatorId, String userRole, String evalType) {
-        int posLevel = evalDao.getPositionLevelByEmpId(evaluatorId);
+ // EvaluationService.java
+    public Vector<Map<String, Object>> getEmployeeListForEvaluator(int evaluatorId, String userRole, String evalType) {
         
-        // [중요] DAO의 getEmployeeListForEvaluator 메서드로 evalType을 넘겨서 
-        // DAO 내부에서 "하위평가"일 때의 SQL이 실행되도록 해야 합니다.
+        // 1. DB에서 이 사용자의 실제 직급 레벨을 직접 조회 (가장 정확함)
+        int posLevel = evalDao.getPositionLevelByEmpId(evaluatorId); 
+        
+        // 만약 사장님/최종승인자인데 특별 처리가 필요하다면 여기서만 살짝 분기
+        if ("사장님".equals(userRole) || "최종승인자".equals(userRole)) {
+            posLevel = 999; // 모든 하위 직급을 다 볼 수 있는 압도적 숫자
+        }
+
+
         return evalDao.getEmployeeListForEvaluator(evaluatorId, posLevel, evalType);
     }
 

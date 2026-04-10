@@ -16,7 +16,7 @@ import java.util.*;
 public class EvalWriteServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private EvaluationService evalService = new EvaluationService();
-    private EvaluationDAO     evalDao     = new EvaluationDAO();
+    private EvaluationDAO      evalDao      = new EvaluationDAO();
 
     /** doGet/doPost 공통 기본 속성 세팅 */
     private void setCommonAttributes(HttpServletRequest request, int loginEmpId, String userRole) {
@@ -48,7 +48,7 @@ public class EvalWriteServlet extends HttpServlet {
 
         setCommonAttributes(request, loginEmpId, userRole);
 
-        String idParam     = request.getParameter("id");
+        String idParam      = request.getParameter("id");
         String currentGrade = "A";
 
         if (idParam != null && !idParam.isEmpty()) {
@@ -92,9 +92,15 @@ public class EvalWriteServlet extends HttpServlet {
         String evalTypeForList = request.getParameter("evalType");
         if (evalTypeForList == null || evalTypeForList.isEmpty()) evalTypeForList = "상위평가";
 
+        System.out.println("\n=== [DEBUG] EvalWriteServlet.doGet 실행 ===");
+        System.out.println(">> loginEmpId: " + loginEmpId + ", evalType: " + evalTypeForList);
+
+        // 서비스 호출 및 리스트 조회 로그
+        Vector<Map<String, Object>> targetList = evalService.getEmployeeListForEvaluator(loginEmpId, userRole, evalTypeForList);
+        System.out.println(">> 조회된 대상자 수: " + (targetList != null ? targetList.size() : "NULL"));
+
         request.setAttribute("selectedEvalType", evalTypeForList);
-        request.setAttribute("targetList",
-                evalService.getEmployeeListForEvaluator(loginEmpId, userRole, evalTypeForList));
+        request.setAttribute("targetList", targetList);
         request.setAttribute("gradeColor", evalService.getGradeColor(currentGrade));
 
         request.setAttribute("viewPage", "/WEB-INF/jsp/eval/write.jsp");
@@ -134,7 +140,6 @@ public class EvalWriteServlet extends HttpServlet {
         String evalType    = request.getParameter("evalType");
 
         try {
-            // ── [보안 검증 추가] 수정 모드일 때 상태값 및 권한 체크 ──
             if (evalIdStr != null && !evalIdStr.isEmpty()) {
                 int checkEvalId = Integer.parseInt(evalIdStr);
                 Map<String, Object> currentEval = evalDao.getEvaluationById(checkEvalId);
@@ -144,19 +149,15 @@ public class EvalWriteServlet extends HttpServlet {
                     Object ownerObj = currentEval.get("evaluatorId");
                     int ownerId = (ownerObj != null) ? (Integer) ownerObj : -1;
 
-                    // 1. 이미 최종확정된 경우 서버에서 수정 원천 차단
                     if ("최종확정".equals(dbStatus)) {
                         throw new Exception("already_confirmed");
                     }
-
-                    // 2. 작성자 본인이 아니고 HR담당자도 아닌 경우 수정 거부
                     if (ownerId != loginEmpId && !"HR담당자".equals(userRole)) {
                         throw new Exception("forbidden");
                     }
                 }
             }
 
-            // 필수값 검증
             if (empIdStr == null || empIdStr.isEmpty())
                 throw new Exception("target_required");
             if (evalComment == null || evalComment.trim().isEmpty())
@@ -188,17 +189,14 @@ public class EvalWriteServlet extends HttpServlet {
                 }
             }
 
-            // [NEW-8 수정] 중복 처리 검증
             boolean isNewWrite = (eval.getEvalId() == 0);
             if (isNewWrite) {
-                // 본인 작성 중복 체크
                 Map<String, Object> myExisting = evalService.loadExistingEval(
                         targetEmpId, eval.getEvalYear(), eval.getEvalPeriod(),
                         eval.getEvalType(), loginEmpId);
                 if (myExisting != null)
                     throw new Exception("duplicate");
 
-                // [M-3 수정] 타인이 같은 조건으로 이미 작성중인 건이 있으면 차단
                 if (isOccupiedByOther(targetEmpId, eval.getEvalYear(),
                         eval.getEvalPeriod(), eval.getEvalType(), loginEmpId)) {
                     throw new Exception("occupied_by_other");
@@ -221,8 +219,7 @@ public class EvalWriteServlet extends HttpServlet {
             if (evalIdStr != null && !evalIdStr.isEmpty()) {
                 try {
                     int evalId = Integer.parseInt(evalIdStr);
-                    request.setAttribute("evalData",
-                            evalDao.getEvaluationById(evalId));
+                    request.setAttribute("evalData", evalDao.getEvaluationById(evalId));
                     request.setAttribute("itemScores",
                             evalDao.getItemScoresByEvalId(evalId, evalService.getEvaluationItemNames()));
                 } catch (Exception ex) { ex.printStackTrace(); }
@@ -238,10 +235,6 @@ public class EvalWriteServlet extends HttpServlet {
         }
     }
 
-    /**
-     * [M-3] 타인이 동일 조건으로 이미 작성중인 평가가 있는지 확인
-     * ON DUPLICATE KEY UPDATE가 타인 건을 evaluator_id만 바꿔 덮어쓰는 문제 방지
-     */
     private boolean isOccupiedByOther(int empId, int year, String period,
                                        String type, int myEmpId) {
         String sql = "SELECT evaluator_id FROM evaluation "
@@ -254,7 +247,7 @@ public class EvalWriteServlet extends HttpServlet {
             try (java.sql.ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     int existingEvaluatorId = rs.getInt("evaluator_id");
-                    return existingEvaluatorId != myEmpId; // 본인이 아닌 타인이 작성중
+                    return existingEvaluatorId != myEmpId;
                 }
             }
         } catch (Exception e) { e.printStackTrace(); }
@@ -264,13 +257,17 @@ public class EvalWriteServlet extends HttpServlet {
     // ── AJAX: 대상자 목록 갱신 ───────────────────────────────
     private void handleGetTargets(HttpServletRequest request, HttpServletResponse response,
                                    int loginEmpId, String userRole) throws IOException {
+        System.out.println("\n=== [DEBUG] AJAX handleGetTargets 호출됨 ===");
         response.setContentType("application/json; charset=UTF-8");
         try {
             String evalType = request.getParameter("evalType");
             if (evalType == null || evalType.isEmpty()) evalType = "상위평가";
+            System.out.println(">> 파라미터 evalType: " + evalType);
 
             Vector<Map<String, Object>> list =
                     evalService.getEmployeeListForEvaluator(loginEmpId, userRole, evalType);
+            
+            System.out.println(">> 서비스로부터 받은 리스트 크기: " + (list != null ? list.size() : "NULL"));
 
             StringBuilder json = new StringBuilder("[");
             for (int i = 0; i < list.size(); i++) {
@@ -283,8 +280,11 @@ public class EvalWriteServlet extends HttpServlet {
                     .append(",\"pos\":\"").append(pos).append("\"}");
             }
             json.append("]");
+            
+            System.out.println(">> 응답 JSON: " + json.toString());
             response.getWriter().write(json.toString());
         } catch (Exception e) {
+            System.out.println(">> [ERROR] handleGetTargets 내부 오류!");
             e.printStackTrace();
             response.setStatus(500);
             response.getWriter().write("[]");
@@ -293,7 +293,7 @@ public class EvalWriteServlet extends HttpServlet {
 
     // ── AJAX: 기존 평가 불러오기 ─────────────────────────────
     private void handleLoadExisting(HttpServletRequest request, HttpServletResponse response,
-                                    int loginEmpId) throws IOException {
+                                     int loginEmpId) throws IOException {
         response.setContentType("application/json; charset=UTF-8");
         try {
             String empIdStr = request.getParameter("empId");
@@ -347,7 +347,6 @@ public class EvalWriteServlet extends HttpServlet {
         return false;
     }
 
-    /** JSON 응답용 이스케이프 (XSS + JSON 파싱 오류 방지) */
     private String escapeForJson(String input) {
         if (input == null) return "";
         return input.replace("\\", "\\\\")

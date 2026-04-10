@@ -336,65 +336,57 @@ public class EvaluationDAO {
         return 0;
     }
 
+ // EvaluationDAO.java
     public Vector<Map<String, Object>> getEmployeeListForEvaluator(int evaluatorId, int posLevel, String evalType) {
         Vector<Map<String, Object>> list = new Vector<>();
-        String sql = ""; 
-        boolean needSecondParam = true;
-     // 1. 사장님(Level 6)인 경우: 모든 조건을 무시하고 전체 조회 (가장 우선순위)
-        if (posLevel == 6) {
+        String sql = "";
+        
+        if (posLevel == 6) { // 사장님
             sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
                   "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " +
                   "WHERE e.status='재직' AND e.emp_id != ? " + 
                   "ORDER BY p.position_level DESC, e.emp_name ASC";
-            needSecondParam = false; 
-        } 
-        // 2. 사장님이 아닐 때만 기존 평가 타입별 로직 수행 (else if로 연결)
-        else if ("자기평가".equals(evalType)) {
+        } else if ("자기평가".equals(evalType)) {
             sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
                   "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " +
                   "WHERE e.emp_id = ?";
-            needSecondParam = false;
-        } 
-        else if ("동료평가".equals(evalType)) {
-            sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
-                  "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " +
-                  "WHERE e.status='재직' AND e.emp_id != ? AND p.position_level = ? " +
-                  "ORDER BY e.emp_name ASC";
-        } 
-        else if ("하위평가".equals(evalType)) {
-            sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
-                  "FROM employee e " +
-                  "LEFT JOIN job_position p ON e.position_id = p.position_id " +
-                  "WHERE e.dept_id = (SELECT dept_id FROM employee WHERE emp_id = ?) " +
-                  "AND p.position_level > ? " + 
-                  "AND e.status = '재직' " +
-                  "ORDER BY p.position_level ASC, e.emp_name ASC";
-        } 
-        else { // 상위평가
-            sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos " +
-                  "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " +
-                  "WHERE e.status='재직' AND e.emp_id != ? AND p.position_level < ? " +
-                  "ORDER BY p.position_level DESC, e.emp_name ASC";
+        } else {
+            if ("동료평가".equals(evalType)) {
+                sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id WHERE e.status='재직' AND e.emp_id != ? AND p.position_level = ? ORDER BY e.emp_name ASC";
+            } else if ("하위평가".equals(evalType)) {
+                sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id WHERE e.dept_id = (SELECT dept_id FROM employee WHERE emp_id = ?) AND p.position_level > ? AND e.status = '재직' ORDER BY p.position_level ASC, e.emp_name ASC";
+            } else { // 상위평가
+                sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id WHERE e.status='재직' AND e.emp_id != ? AND p.position_level < ? ORDER BY p.position_level DESC, e.emp_name ASC";
+            }
         }
 
-        try (Connection conn = DatabaseConnection.getConnection(); 
+        System.out.println(">> 실행될 SQL 유형: " + evalType);
+
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setInt(1, evaluatorId);
-            if (needSecondParam) {
+            if (sql.contains("AND p.position_level") || sql.contains("AND p.position_level >") || sql.contains("AND p.position_level <")) {
                 pstmt.setInt(2, posLevel);
+                System.out.println(">> 파라미터 세팅: ?1=" + evaluatorId + ", ?2=" + posLevel);
+            } else {
+                System.out.println(">> 파라미터 세팅: ?1=" + evaluatorId);
             }
 
             try (ResultSet rs = pstmt.executeQuery()) {
+                int count = 0;
                 while (rs.next()) {
+                    count++;
                     Map<String, Object> map = new HashMap<>();
                     map.put("empId", rs.getInt("emp_id"));
                     map.put("empName", rs.getString("emp_name"));
                     map.put("pos", rs.getString("pos"));
                     list.add(map);
                 }
+                System.out.println(">> DB 조회 결과 개수: " + count);
             }
         } catch (SQLException e) {
+            System.out.println(">> [ERROR] DAO 에러 발생!");
             e.printStackTrace();
         }
         return list;

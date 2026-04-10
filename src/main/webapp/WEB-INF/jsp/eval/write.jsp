@@ -207,48 +207,77 @@ function updateEvaluation() {
 
 function onEvalTypeChange() {
     if (isEditMode) return;
+    
     const evalType = document.getElementById('sel_evalType').value;
     const empSel = document.getElementById('sel_empId');
+    const btnLoad = document.getElementById('btnLoad');
+    
+    console.log(">> 선택된 평가 유형:", evalType);
+    
+    // 로딩 상태 표시
     empSel.innerHTML = '<option value="">조회 중...</option>';
     empSel.disabled = true;
-    
+    if(btnLoad) btnLoad.disabled = true;
+
     fetch(ctx + '/eval/write', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'ajaxAction=getTargets&evalType=' + encodeURIComponent(evalType)
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) throw new Error('Network response was not ok');
+        return r.json();
+    })
     .then(list => {
+        console.log(">> 수신된 대상자 리스트:", list);
+        
+        empSel.innerHTML = '<option value="">대상자를 선택하세요</option>';
+        
         if (!list || list.length === 0) {
             empSel.innerHTML = '<option value="">평가 가능한 대상자가 없습니다</option>';
         } else {
-            empSel.innerHTML = '<option value="">대상자를 선택하세요</option>';
             list.forEach(emp => {
                 const opt = document.createElement('option');
                 opt.value = emp.empId;
+                // 서버에서 보낸 필드명(empName, pos)과 정확히 일치 확인
                 opt.textContent = emp.empName + ' (' + emp.pos + ')';
                 empSel.appendChild(opt);
             });
         }
+        
         empSel.disabled = false;
-        checkLoadable();
-    }).catch(() => { 
-        empSel.innerHTML = '<option value="">조회 실패</option>'; 
+        checkLoadable(); // 목록 갱신 후 버튼 상태 다시 체크
+    })
+    .catch(err => { 
+        console.error(">> AJAX 오류 발생:", err);
+        empSel.innerHTML = '<option value="">조회 실패 (콘솔 확인)</option>'; 
         empSel.disabled = false; 
     });
 }
 
 function checkLoadable() {
     if (isEditMode) return;
-    const btn = document.getElementById('btnLoad');
-    if (!btn) return;
-    const empId = document.getElementById('sel_empId').value;
-    const year = document.getElementById('sel_evalYear').value;
-    const periodSel = document.getElementById('sel_evalPeriod');
-    const period = periodSel.value;
-    const type = document.getElementById('sel_evalType').value;
     
-    const isPeriodDisabled = periodSel.options[periodSel.selectedIndex].disabled;
+    const btn = document.getElementById('btnLoad');
+    const empSel = document.getElementById('sel_empId');
+    const yearSel = document.getElementById('sel_evalYear');
+    const periodSel = document.getElementById('sel_evalPeriod');
+    const typeSel = document.getElementById('sel_evalType');
+
+    if (!btn || !empSel || !yearSel || !periodSel || !typeSel) return;
+
+    const empId = empSel.value;
+    const year = yearSel.value;
+    const period = periodSel.value;
+    const type = typeSel.value;
+    
+    // 에러 발생 지점 수정: 옵션이 선택되었는지 먼저 확인
+    let isPeriodDisabled = true;
+    if (periodSel.selectedIndex !== -1) {
+        isPeriodDisabled = periodSel.options[periodSel.selectedIndex].disabled;
+    }
+    
+    // 모든 값이 있고, 선택한 기간이 'disabled' 상태가 아닐 때만 버튼 활성화
     btn.disabled = !(empId && year && period && type && !isPeriodDisabled);
 }
 
