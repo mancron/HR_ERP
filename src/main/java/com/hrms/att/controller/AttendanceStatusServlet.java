@@ -39,11 +39,11 @@ public class AttendanceStatusServlet extends HttpServlet {
 
 		// 👉 EmpDAO 필터 구조 맞춤
 		String keyword = null;
-		int deptId = 0;
+		String dept = request.getParameter("dept");
 		int positionId = 0;
 		String status = "재직";
 
-		List<Map<String, Object>> list = summaryService.getSummaryList(keyword, deptId, positionId, status, year,
+		List<Map<String, Object>> list = summaryService.getSummaryList(keyword, dept, positionId, status, year,
 				month);
 		List<String> deptList = summaryService.getDeptList();
 		request.setAttribute("deptList", deptList);
@@ -52,7 +52,11 @@ public class AttendanceStatusServlet extends HttpServlet {
 		request.setAttribute("month", month);
 		
 		boolean isClosed = statusService.isClosed(year, month);
+		boolean hasUnfinished = statusService.existsUnfinishedCheckoutAll(year, month);
+		boolean hasAbsent = statusService.existsAbsentCandidateAll(year, month);
 		request.setAttribute("isClosed", isClosed);
+		request.setAttribute("hasUnfinished", hasUnfinished);
+		request.setAttribute("hasAbsent", hasAbsent);
 		
 		request.getRequestDispatcher("/WEB-INF/jsp/att/attendanceStatus.jsp").forward(request, response);
 	}

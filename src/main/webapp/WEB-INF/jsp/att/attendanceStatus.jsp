@@ -8,7 +8,8 @@
 
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/attendanceStatus.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/css/style.css">
 
 </head>
 
@@ -29,6 +30,17 @@
 					<span style="color: red; font-size: 14px;">[마감됨]</span>
 				</c:if>
 			</h3>
+			<div class="close-warning">
+
+				<c:if test="${hasUnfinished}">
+					<div class="warn">⚠ 퇴근 미처리 데이터가 존재합니다</div>
+				</c:if>
+
+				<c:if test="${hasAbsent}">
+					<div class="warn">⚠ 결근 후보가 존재합니다</div>
+				</c:if>
+
+			</div>
 
 			<form method="get"
 				action="${pageContext.request.contextPath}/att/status">
@@ -45,7 +57,17 @@
 					</select>
 
 					<button type="submit">조회</button>
-					<button type="button" onclick="closeMonthFromInput()">마감</button>
+					<button id="closeMonthBtn" type="button"
+						onclick="closeMonthFromInput()"
+						${isClosed || hasUnfinished || hasAbsent ? "disabled" : ""}>
+
+						<c:choose>
+							<c:when test="${isClosed}">마감 완료</c:when>
+							<c:when test="${hasUnfinished || hasAbsent}">마감 불가</c:when>
+							<c:otherwise>마감하기</c:otherwise>
+						</c:choose>
+
+					</button>
 
 				</div>
 
@@ -128,12 +150,12 @@
 			</div>
 
 			<div class="modal-buttons">
-				<button class="btn-absent" onclick="submitFix('ABSENT')">결근
-					처리</button>
-				<button class="btn-checkin" onclick="submitFix('CHECKIN_FIX')">출근
-					보정</button>
-				<button class="btn-checkout" onclick="submitFix('CHECKOUT_FIX')">퇴근
-					보정</button>
+				<button type="button" class="btn-absent"
+					onclick="submitFix('ABSENT')">결근 처리</button>
+				<button type="button" class="btn-checkin"
+					onclick="submitFix('CHECKIN_FIX')">출근 보정</button>
+				<button type="button" class="btn-checkout"
+					onclick="submitFix('CHECKOUT_FIX')">퇴근 보정</button>
 				<button type="button" class="btn-cancel" onclick="closeModal()">취소</button>
 			</div>
 

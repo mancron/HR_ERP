@@ -25,35 +25,28 @@ public class AttendanceCloseServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        request.setCharacterEncoding("UTF-8");
-        HttpSession session = request.getSession(false);
-        int actorId = (Integer) session.getAttribute("empId");
+        int year = Integer.parseInt(request.getParameter("year"));
+        int month = Integer.parseInt(request.getParameter("month"));
 
-        int year  = 0;
-        int month = 0;
-        try {
-            year  = Integer.parseInt(request.getParameter("year").trim());
-            month = Integer.parseInt(request.getParameter("month").trim());
-        } catch (Exception e) {
-            session.setAttribute("errorMsg", "잘못된 요청입니다.");
-            response.sendRedirect(request.getContextPath() + "/sal/calc");
-            return;
-        }
+        int actorId = (int) request.getSession().getAttribute("empId");
 
         try {
-            service.closeAndRecalculate(year, month, actorId);
-            session.setAttribute("successMsg",
-                year + "년 " + month + "월 근태 마감 및 급여 자동 재계산이 완료되었습니다.");
+            // 🔥 1️⃣ 근태 마감 (조건 검사 포함)
+            service.closeMonth(year, month, actorId);
+
+            // 🔥 2️⃣ 급여 재계산 (마감 성공 후 실행)
+            service.recalculateAfterClose(year, month, actorId);
+
+            response.getWriter().write("OK");
+
+        } catch (IllegalStateException e) {
+            // 👉 마감 조건 실패 (결근 후보, 미퇴근 등)
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.getWriter().write(e.getMessage());
+
         } catch (RuntimeException e) {
-            session.setAttribute("errorMsg", e.getMessage());
-        }
-
-        String referer = request.getHeader("Referer");
-        if (referer != null && !referer.isEmpty()) {
-            response.sendRedirect(referer);
-        } else {
-            response.sendRedirect(
-                request.getContextPath() + "/att/status?year=" + year + "&month=" + month);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.getWriter().write("마감 처리 중 오류 발생");
         }
     }
 }

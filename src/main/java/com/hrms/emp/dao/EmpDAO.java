@@ -249,10 +249,8 @@ public class EmpDAO {
 	// 부서조회 할때 부서 추출
 	public List<String> getDeptList() {
 
-		String sql = "SELECT DISTINCT d.dept_name "
-				    + "FROM employee e "
-				    + "JOIN department d ON e.dept_id = d.dept_id "
-				    + "ORDER BY d.dept_name ";
+		String sql = "SELECT DISTINCT d.dept_name " + "FROM employee e " + "JOIN department d ON e.dept_id = d.dept_id "
+				+ "ORDER BY d.dept_name ";
 
 		List<String> list = new ArrayList<>();
 
@@ -262,6 +260,28 @@ public class EmpDAO {
 
 			while (rs.next()) {
 				list.add(rs.getString("dept_name"));
+			}
+
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
+		return list;
+	}
+
+	// 재직중인 인원들 검색 - 근태 보정 조건 검사할 때 사용
+	public List<Integer> getAllEmpIds() {
+
+		String sql = "SELECT emp_id FROM employee WHERE status = '재직'";
+
+		List<Integer> list = new ArrayList<>();
+
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql);
+				ResultSet rs = pstmt.executeQuery()) {
+
+			while (rs.next()) {
+				list.add(rs.getInt("emp_id"));
 			}
 
 		} catch (Exception e) {
