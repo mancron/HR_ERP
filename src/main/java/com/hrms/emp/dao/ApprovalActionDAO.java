@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.hrms.emp.dto.HistoryDTO;
 
@@ -277,13 +279,13 @@ public class ApprovalActionDAO {
         }
     }
     
-    // 관리자 신청용 메서드
-    public int approveHrManagerForPresident(Connection con, String type,
-                                         int requestId, int loginEmpId) throws SQLException {
+    // 최종승인자 본인 신청 즉시처리 (대기 → 최종승인)
+    public int approvePresidentSelf(Connection con, String type,
+            int requestId, int loginEmpId) throws SQLException {
         String table = "leave".equals(type) ? "leave_of_absence_request" : "resign_request";
         String sql = "UPDATE " + table + " SET status='최종승인', " +
-                     "hr_manager_id=?, hr_approved_at=NOW() " +
-                     "WHERE request_id=? AND status='대기'"; // ← 대기에서 바로 확정
+                     "president_id=?, president_approved_at=NOW() " +
+                     "WHERE request_id=? AND status = '대기'"; // ← 대기만 허용
         PreparedStatement pstmt = null;
         try {
             pstmt = con.prepareStatement(sql);
@@ -456,15 +458,17 @@ public class ApprovalActionDAO {
         }
     }
 
-    // HR담당자 emp_id 조회 (account 테이블에서 role='HR담당자'인 첫 번째)
-    public int getHrManagerEmpId(Connection con) throws SQLException {
-        String sql = "SELECT emp_id FROM account WHERE role = 'HR담당자' LIMIT 1";
+    // HR담당자 emp_id 조회 (account 테이블에서 role='HR담당자')
+    public List<Integer> getHrManagerEmpIds(Connection con) throws SQLException {
+        String sql = "SELECT emp_id FROM account WHERE role = 'HR담당자'";
         PreparedStatement pstmt = null;
         ResultSet rs = null;
+        List<Integer> list = new ArrayList<>();
         try {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
-            return rs.next() ? rs.getInt("emp_id") : 0;
+            while (rs.next()) list.add(rs.getInt("emp_id"));
+            return list;
         } finally {
             if (rs != null) rs.close();
             if (pstmt != null) pstmt.close();

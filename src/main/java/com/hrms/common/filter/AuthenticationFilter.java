@@ -46,6 +46,8 @@ public class AuthenticationFilter implements Filter {
 
     private static final Set<String> CEO_ALLOWED_POST_PREFIXES = new HashSet<>(Arrays.asList(
         "/emp/approval",
+        "/emp/leave",
+        "/emp/resign",
         "/auth/",
         "/att/record"
     ));
