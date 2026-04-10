@@ -1,5 +1,9 @@
 package com.hrms.sal.controller;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.List;
+
 import com.hrms.sal.dto.SalaryCalcDTO;
 import com.hrms.sal.service.SalaryCalcService;
 
@@ -9,10 +13,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
-import java.io.IOException;
-import java.time.LocalDate;
-import java.util.List;
 
 @WebServlet("/sal/calc")
 public class SalaryCalcServlet extends HttpServlet {
@@ -48,16 +48,19 @@ public class SalaryCalcServlet extends HttpServlet {
             if (monthParam != null && !monthParam.trim().isEmpty())  month = Integer.parseInt(monthParam.trim());
         } catch (NumberFormatException e) { /* 기본값 유지 */ }
 
-        List<SalaryCalcDTO> salaryList = service.getSalaryList(year, month);
-
         // 대기 건 존재 여부 (전체 지급 버튼 활성화 판단)
-        boolean hasPending = salaryList.stream().anyMatch(s -> "대기".equals(s.getStatus()));
+        List<SalaryCalcDTO> salaryList = service.getSalaryList(year, month);
+        boolean hasPending     = salaryList.stream().anyMatch(s -> "대기".equals(s.getStatus()));
 
-        request.setAttribute("salaryList",     salaryList);
-        request.setAttribute("hasPending",     hasPending);
-        request.setAttribute("yearOptions",    service.getYearOptions());
-        request.setAttribute("selectedYear",   year);
-        request.setAttribute("selectedMonth",  month);
+        // ── 추가: 근태 마감 여부 조회 ──
+        boolean isClosed = service.isAttendanceClosed(year, month);
+
+        request.setAttribute("salaryList",    salaryList);
+        request.setAttribute("hasPending",    hasPending);
+        request.setAttribute("isClosed",      isClosed);   // ← 추가
+        request.setAttribute("yearOptions",   service.getYearOptions());
+        request.setAttribute("selectedYear",  year);
+        request.setAttribute("selectedMonth", month);
 
         request.getRequestDispatcher("/WEB-INF/jsp/sal/sal_calc.jsp")
                .forward(request, response);
@@ -73,8 +76,6 @@ public class SalaryCalcServlet extends HttpServlet {
         int actorEmpId = (Integer) session.getAttribute("empId");
 
         String action = request.getParameter("action");
-        String contextPath = request.getContextPath();
-
         int year  = LocalDate.now().getYear();
         int month = LocalDate.now().getMonthValue();
         try {
@@ -88,23 +89,19 @@ public class SalaryCalcServlet extends HttpServlet {
                     service.calculate(year, month);
                     session.setAttribute("successMsg", year + "년 " + month + "월 급여 계산이 완료되었습니다.");
                     break;
-
                 case "recalculate":
                     service.recalculate(year, month);
-                    session.setAttribute("successMsg", year + "년 " + month + "월 급여 재계산이 완료되었습니다. (완료 건 제외)");
+                    session.setAttribute("successMsg", year + "년 " + month + "월 재계산이 완료되었습니다. (완료 건 제외)");
                     break;
-
                 case "payOne":
                     int salaryId = Integer.parseInt(request.getParameter("salaryId").trim());
-                    service.payOne(salaryId, actorEmpId);
+                    service.payOne(salaryId, actorEmpId, year, month); // ← year, month 추가
                     session.setAttribute("successMsg", "지급 처리가 완료되었습니다.");
                     break;
-
                 case "payAll":
                     service.payAll(year, month, actorEmpId);
                     session.setAttribute("successMsg", year + "년 " + month + "월 전체 지급 처리가 완료되었습니다.");
                     break;
-
                 default:
                     session.setAttribute("errorMsg", "잘못된 요청입니다.");
             }
@@ -112,7 +109,6 @@ public class SalaryCalcServlet extends HttpServlet {
             session.setAttribute("errorMsg", e.getMessage());
         }
 
-        // PRG 패턴
-        response.sendRedirect(contextPath + "/sal/calc?year=" + year + "&month=" + month);
+        response.sendRedirect(request.getContextPath() + "/sal/calc?year=" + year + "&month=" + month);
     }
 }

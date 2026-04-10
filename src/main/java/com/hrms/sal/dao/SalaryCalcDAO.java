@@ -417,6 +417,30 @@ public class SalaryCalcDAO {
     
     
     /**
+     * 해당 연월 근태 마감 여부 조회
+     * attendance_close 테이블에 is_closed=true 인 행이 있으면 마감
+     */
+    public boolean isAttendanceClosed(int year, int month, Connection conn) throws SQLException {
+        String sql =
+            "SELECT is_closed FROM attendance_close " +
+            "WHERE year = ? AND month = ? AND is_closed = TRUE";
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, year);
+            pstmt.setInt(2, month);
+            rs = pstmt.executeQuery();
+            return rs.next(); // 행이 있으면 마감됨
+        } finally {
+            if (rs    != null) try { rs.close();    } catch (SQLException e) {}
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException e) {}
+        }
+    }
+    
+    
+    /**
      * 간이세액표 조회 (독신 = fam_1 고정)
      * 10,000천원 이하: DB 테이블 조회
      * 10,000천원 초과: 표 하단 공식 적용
