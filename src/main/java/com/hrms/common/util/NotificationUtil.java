@@ -189,6 +189,13 @@ public class NotificationUtil {
 	     String msg = applyType + " 신청이 최종 승인되었습니다.";
 	     send(requesterEmpId, "APPROVAL_FINAL", "leave_of_absence_request", requestId, msg);
 	 }
+	 
+	 /** 최종승인자 즉시처리 확인 → HR담당자에게 알림 */
+	 public static void sendApprovalPresidentSelf(int hrManagerEmpId,
+	         String requesterName, String applyType, int requestId) {
+	     String msg = requesterName + " 님의 " + applyType + " 신청이 최종 승인 처리되었습니다.";
+	     send(hrManagerEmpId, "APPROVAL_FINAL", "leave_of_absence_request", requestId, msg);
+	 }
 	
 	 /** 반려 → 신청자에게 알림 */
 	 public static void sendApprovalRejected(int requesterEmpId,

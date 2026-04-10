@@ -103,13 +103,8 @@
 													onclick="openApprovalModal('${pageContext.request.contextPath}/emp/approvalDetail?type=leave&id=${item.request_id}')">
 													상세</button>
 											</td>
-											<td><c:if
-													test="${item.status == '대기' && isHrManager && item.reqIsPresident}">
-													<button class="btn-approve"
-														onclick="location.href='${pageContext.request.contextPath}/emp/approvalAction?type=leave&id=${item.request_id}&action=approve'">승인(확정)</button>
-													<button class="btn-reject"
-														onclick="rejectWithReason('${pageContext.request.contextPath}/emp/approvalAction?type=leave&id=${item.request_id}&action=reject')">반려</button>
-												</c:if> <c:if
+											<td> 
+												<c:if
 													test="${item.status == '대기' && isDeptManager && !item.reqIsPresident}">
 													<button class="btn-approve"
 														onclick="location.href='${pageContext.request.contextPath}/emp/approvalAction?type=leave&id=${item.request_id}&action=approve'">승인</button>

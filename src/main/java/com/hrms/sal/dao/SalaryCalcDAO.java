@@ -417,79 +417,59 @@ public class SalaryCalcDAO {
     
     
     /**
-     * 간이세액표 조회 (독신 = fam_1 고정)
-     * 10,000천원 이하: DB 테이블 조회
-     * 10,000천원 초과: 표 하단 공식 적용
+     * 해당 연월 근태 마감 여부 조회
+     * attendance_close 테이블에 is_closed=true 인 행이 있으면 마감
      */
-    public int selectIncomeTax(int grossSalary, int year, Connection conn) throws SQLException {
-
-        // ── 10,000천원 이하: 테이블 조회 ──
-        if (grossSalary <= 10_000_000) {
-            String sql =
-                "SELECT fam_1 FROM income_tax_table " +
-                "WHERE apply_year = ? " +
-                "  AND salary_from <= ? " +
-                "  AND salary_to   >  ? " +
-                "ORDER BY salary_from DESC LIMIT 1";
-
-            PreparedStatement pstmt = null;
-            ResultSet rs = null;
-            try {
-                pstmt = conn.prepareStatement(sql);
-                pstmt.setInt(1, year);
-                pstmt.setInt(2, grossSalary);
-                pstmt.setInt(3, grossSalary);
-                rs = pstmt.executeQuery();
-                if (rs.next()) return rs.getInt("fam_1");
-            } finally {
-                if (rs    != null) try { rs.close();    } catch (SQLException e) {}
-                if (pstmt != null) try { pstmt.close(); } catch (SQLException e) {}
-            }
-            return 0;
-        }
-
-        // ── 10,000천원 초과: 표 하단 공식 적용 ──
-        // 기준값 조회 (10,000천원일 때 fam_1 세액)
-        int base = 1_507_400; // 기본값
-        String baseSql =
-            "SELECT fam_1 FROM income_tax_table " +
-            "WHERE apply_year = ? AND salary_from = 10000000";
+    public boolean isAttendanceClosed(int year, int month, Connection conn) throws SQLException {
+        String sql =
+            "SELECT is_closed FROM attendance_close " +
+            "WHERE year = ? AND month = ? AND is_closed = TRUE";
 
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            pstmt = conn.prepareStatement(baseSql);
+            pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, year);
+            pstmt.setInt(2, month);
             rs = pstmt.executeQuery();
-            if (rs.next()) base = rs.getInt("fam_1");
+            return rs.next(); // 행이 있으면 마감됨
         } finally {
             if (rs    != null) try { rs.close();    } catch (SQLException e) {}
             if (pstmt != null) try { pstmt.close(); } catch (SQLException e) {}
         }
-
-        // 구간별 공식 (2026 간이세액표 하단 기준)
-        if (grossSalary <= 14_000_000) {
-            return base + (int)((grossSalary - 10_000_000) * 0.98 * 0.35) + 25_000;
-
-        } else if (grossSalary <= 28_000_000) {
-            return base + 1_397_000
-                 + (int)((grossSalary - 14_000_000) * 0.98 * 0.38);
-
-        } else if (grossSalary <= 30_000_000) {
-            return base + 6_610_600
-                 + (int)((grossSalary - 28_000_000) * 0.98 * 0.40);
-
-        } else if (grossSalary <= 45_000_000) {
-            return base + 7_394_600
-                 + (int)((grossSalary - 30_000_000) * 0.40);
-
-        } else if (grossSalary <= 87_000_000) {
-            return base + 13_394_600
-                 + (int)((grossSalary - 45_000_000) * 0.42);
-
-        } else {
-            return base + 31_034_600
-                 + (int)((grossSalary - 87_000_000) * 0.45);
-        }
     }
+    
+    
+
+    /**
+     * 간이세액표에서 소득세 조회
+     * 부양가족 수 기본값 1명 (fam_1 컬럼)
+     * gross >= salary_from AND gross < salary_to 인 구간 조회
+     */
+    public int selectIncomeTax(int gross, int year, Connection conn) throws SQLException {
+        String sql =
+            "SELECT fam_1 FROM income_tax_table " +
+            "WHERE apply_year = ? " +
+            "  AND salary_from <= ? " +
+            "  AND salary_to   >  ? " +
+            "LIMIT 1";
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, year);
+            pstmt.setInt(2, gross);
+            pstmt.setInt(3, gross);
+            rs = pstmt.executeQuery();
+            if (rs.next()) return rs.getInt("fam_1");
+        } finally {
+            if (rs    != null) try { rs.close();    } catch (SQLException e) {}
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException e) {}
+        }
+        // 구간 없으면 0 반환
+        return 0;
+    }
+    
+    
 }

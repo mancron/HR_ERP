@@ -31,11 +31,13 @@
     </div>
 
     <%-- 주의 안내 --%>
-    <div class="warn-box">
-	    ⚠ 퇴직 신청 안내<br>
-        신청 후 취소를 원하시면 담당 인사팀에 문의하세요.<br>
-        최종 승인 이후에는 취소가 불가합니다.
-    </div>
+    <c:if test="${sessionScope.userRole != '최종승인자'}">
+	    <div class="warn-box">
+		    ⚠ 퇴직 신청 안내<br>
+	        신청 후 취소를 원하시면 담당 인사팀에 문의하세요.<br>
+	        최종 승인 이후에는 취소가 불가합니다.
+	    </div>
+	</c:if>
 
     <form action="${pageContext.request.contextPath}/emp/resign" method="post" onsubmit="return validateForm();">
         <%-- 서버에서 처리할 hidden 필드 --%>
@@ -61,10 +63,17 @@
 
             <%-- 희망 퇴직일 --%>
             <tr>
-                <th>희망 퇴직일 <span class="required">*</span></th>
+            	<c:if test="${sessionScope.userRole != '최종승인자'}">
+                	<th>희망 퇴직일 <span class="required">*</span></th>
+                </c:if>
+                <c:if test="${sessionScope.userRole == '최종승인자'}">
+                	<th>퇴직일 <span class="required">*</span></th>
+                </c:if>
                 <td colspan="3">
                     <input type="date" name="resign_date" value="${tomorrow}" required>
-                    <div class="guide-text">실제 퇴직일은 승인 후 인사팀과 협의하여 확정됩니다.</div>
+                    <c:if test="${sessionScope.userRole != '최종승인자'}">
+                    	<div class="guide-text">실제 퇴직일은 승인 후 인사팀과 협의하여 확정됩니다.</div>
+                    </c:if>
                 </td>
             </tr>
 
@@ -81,18 +90,22 @@
         <h3>승인 절차</h3>
         <table class="resign-table">
             <tr>
-                <th>1차 결재자</th>
-                <td><input type="text" value="부서장 승인" readonly class="readonly-input"></td>
-                <th>2차 결재자</th>
-                <td><input type="text" value="인사담당자 승인" readonly class="readonly-input"></td>
+            	<c:if test="${sessionScope.userRole != '최종승인자'}">
+	                <th>1차 결재자</th>
+	                <td><input type="text" value="부서장 승인" readonly class="readonly-input"></td>
+	                <th>2차 결재자</th>
+	                <td><input type="text" value="인사담당자 승인" readonly class="readonly-input"></td>
+                </c:if>
                 <th>최종 결재자</th>
                 <td><input type="text" value="최종 결재자 승인" readonly class="readonly-input"></td>
             </tr>
             <tr>
                 <th>부서장</th>
                 <td><input type="text" value="${deptManagerName}" readonly class="readonly-input"></td>
-                <th>처리 기간</th>
-                <td><input type="text" value="영업일 기준 3~5일" readonly class="readonly-input"></td>
+                <c:if test="${sessionScope.userRole != '최종승인자'}">
+	                <th>처리 기간</th>
+	                <td><input type="text" value="영업일 기준 3~5일" readonly class="readonly-input"></td>
+                </c:if>
             </tr>
         </table>
 

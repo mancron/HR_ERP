@@ -7,7 +7,6 @@
 <meta charset="UTF-8">
 <title>인사발령</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/transfer.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 <script>
     function validateForm() {
         const transferDate = document.querySelector('input[name="transfer_date"]').value;

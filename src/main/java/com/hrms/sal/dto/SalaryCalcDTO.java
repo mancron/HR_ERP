@@ -38,6 +38,8 @@ public class SalaryCalcDTO {
     private int salaryMonth;
     
     
+    
+    
 	public int getSalaryYear() {
 		return salaryYear;
 	}

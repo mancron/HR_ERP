@@ -101,18 +101,22 @@
         <h3>승인 절차</h3>
         <table class="leave-table">
             <tr>
-                <th>1차 결재자</th>
-                <td><input type="text" value="부서장 승인" readonly class="readonly-input"></td>
-                <th>2차 결재자</th>
-                <td><input type="text" value="인사담당자 승인" readonly class="readonly-input"></td>
+            	<c:if test="${sessionScope.userRole != '최종승인자'}">
+	                <th>1차 결재자</th>
+	                <td><input type="text" value="부서장 승인" readonly class="readonly-input"></td>
+	                <th>2차 결재자</th>
+	                <td><input type="text" value="인사담당자 승인" readonly class="readonly-input"></td>
+                </c:if>
                 <th>최종 결재자</th>
-                <td><input type="text" value="관리자 승인" readonly class="readonly-input"></td>
+                <td><input type="text" value="최종승인자 승인" readonly class="readonly-input"></td>
             </tr>
             <tr>
                 <th>부서장</th>
                 <td><input type="text" value="${deptManagerName}" readonly class="readonly-input"></td>
-                <th>처리 기간</th>
-                <td><input type="text" value="영업일 기준 3~5일" readonly class="readonly-input"></td>
+                <c:if test="${sessionScope.userRole != '최종승인자'}">
+	                <th>처리 기간</th>
+	                <td><input type="text" value="영업일 기준 3~5일" readonly class="readonly-input"></td>
+                </c:if>
             </tr>
         </table>
 
