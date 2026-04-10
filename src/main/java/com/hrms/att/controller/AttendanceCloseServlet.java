@@ -22,8 +22,13 @@ public class AttendanceCloseServlet extends HttpServlet {
 
         int actorId = (int) request.getSession().getAttribute("empId");
         
-        service.closeMonth(year, month, actorId);
+        try {
+            service.closeMonth(year, month, actorId);
+            response.getWriter().write("OK");
 
-        response.getWriter().write("OK");
+        } catch (IllegalStateException e) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.getWriter().write(e.getMessage());
+        }
     }
 }

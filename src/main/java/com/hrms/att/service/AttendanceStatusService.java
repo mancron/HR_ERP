@@ -4,15 +4,18 @@ import com.hrms.att.dao.AttendanceCloseDAO;
 import com.hrms.att.dao.AttendanceDAO;
 import com.hrms.att.dao.AttendanceLogDAO;
 import com.hrms.att.dao.LeaveDAO;
+import com.hrms.att.dto.AttIssueDTO;
 import com.hrms.att.dto.AttendanceDTO;
 import com.hrms.common.db.DatabaseConnection;
 import com.hrms.common.util.NotificationUtil;
+import com.hrms.emp.dao.EmpDAO;
 
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 public class AttendanceStatusService {
 
@@ -20,6 +23,8 @@ public class AttendanceStatusService {
 	private LeaveDAO leaveDAO = new LeaveDAO();
 	private AttendanceLogDAO logDAO = new AttendanceLogDAO();
 	private AttendanceCloseDAO closeDAO = new AttendanceCloseDAO();
+	private AttendanceIssueService issueService = new AttendanceIssueService();
+	private EmpDAO empDAO = new EmpDAO();
 
 	public boolean isClosed(int year, int month) {
 		return closeDAO.isClosed(year, month);
@@ -217,14 +222,69 @@ public class AttendanceStatusService {
 
 		return "결근";
 	}
-	
+
 	public void closeMonth(int year, int month, int actorId) {
 
-	    // 이미 마감된 경우 방지
-	    if (isClosed(year, month)) {
-	        throw new RuntimeException("이미 마감된 월입니다.");
-	    }
+		LocalDate now = LocalDate.now();
 
-	    closeDAO.closeMonth(year, month, actorId);
+		// 현재 월 마감 방지
+		if (year == now.getYear() && month == now.getMonthValue()) {
+			throw new IllegalStateException("현재 월은 마감할 수 없습니다.");
+		}
+
+		// 이미 마감된 월
+		if (isClosed(year, month)) {
+			throw new IllegalStateException("이미 마감된 월입니다.");
+		}
+
+		// 미퇴근 체크
+		if (existsUnfinishedCheckoutAll(year, month)) {
+			throw new IllegalStateException("퇴근 미처리 데이터가 존재합니다.");
+		}
+
+		// 결근 후보 체크
+		if (existsAbsentCandidateAll(year, month)) {
+			throw new IllegalStateException("결근 후보 데이터가 존재합니다.");
+		}
+
+		// 마감 처리
+		closeDAO.closeMonth(year, month, actorId);
 	}
+
+	public boolean existsUnfinishedCheckoutAll(int year, int month) {
+
+		List<Integer> empList = empDAO.getAllEmpIds(); // 재직자만 가져오도록 해야 함
+
+		for (int empId : empList) {
+
+			List<AttIssueDTO> issues = issueService.getIssues(empId, year, month);
+
+			boolean hasUnfinished = issues.stream().anyMatch(i -> "미퇴근".equals(i.getType()));
+
+			if (hasUnfinished) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public boolean existsAbsentCandidateAll(int year, int month) {
+
+		List<Integer> empList = empDAO.getAllEmpIds(); // 재직자만
+
+		for (int empId : empList) {
+
+			List<AttIssueDTO> issues = issueService.getIssues(empId, year, month);
+
+			boolean hasAbsent = issues.stream().anyMatch(i -> "결근 후보".equals(i.getType()));
+
+			if (hasAbsent) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 }

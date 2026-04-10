@@ -11,6 +11,8 @@ import com.hrms.emp.dto.EmpDTO;
 import com.hrms.common.db.DatabaseConnection;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.Time;
 import java.time.*;
 import java.util.*;
@@ -23,13 +25,20 @@ public class AttendanceSummaryService {
 	private OvertimeDAO overtimeDAO = new OvertimeDAO();
 	private EmpDAO empDAO = new EmpDAO();
 
-	public List<Map<String, Object>> getSummaryList(String keyword, int deptId, int positionId, String status, int year,
+	public List<Map<String, Object>> getSummaryList(String keyword, String dept, int positionId, String status, int year,
 			int month) {
 
 		List<Map<String, Object>> result = new ArrayList<>();
 
 		Connection conn = null;
+		
+		int deptId = 0;
 
+		if (dept != null && !dept.isEmpty()) {
+		    deptId = getDeptIdByName(dept);
+		}
+
+		
 		try {
 			conn = DatabaseConnection.getConnection();
 
@@ -167,5 +176,26 @@ public class AttendanceSummaryService {
 	
 	public List<String> getDeptList() {
 	    return empDAO.getDeptList();
+	}
+	
+	private int getDeptIdByName(String deptName) {
+
+	    String sql = "SELECT dept_id FROM department WHERE dept_name = ?";
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setString(1, deptName);
+	        ResultSet rs = pstmt.executeQuery();
+
+	        if (rs.next()) {
+	            return rs.getInt("dept_id");
+	        }
+
+	    } catch (Exception e) {
+	        throw new RuntimeException(e);
+	    }
+
+	    return 0;
 	}
 }
