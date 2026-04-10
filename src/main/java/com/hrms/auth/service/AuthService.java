@@ -144,6 +144,8 @@ public class AuthService {
             errorMsg = "❌ 새 비밀번호와 확인 비밀번호가 일치하지 않습니다.";
         } else if ("weak_password".equals(error)) {
             errorMsg = "❌ 비밀번호 정책(영문, 숫자, 특수문자 포함 8자 이상)을 확인해 주세요.";
+        } else if ("same_password".equals(error)) {
+            errorMsg = "❌ 현재 비밀번호와 동일한 비밀번호로 변경할 수 없습니다.";
         } else if ("fail".equals(error)) {
             errorMsg = "❌ 현재 비밀번호가 일치하지 않거나 변경에 실패했습니다.";
         }
@@ -155,7 +157,10 @@ public class AuthService {
     public boolean changePassword(String userId, String currentPw, String newPw) {
         AccountDTO account = accountDAO.getAccountByUsername(userId);
         if (account != null && BCrypt.checkpw(currentPw, account.getPasswordHash())) {
-            String newHashedPw = BCrypt.hashpw(newPw, BCrypt.gensalt());
+        	if (BCrypt.checkpw(newPw, account.getPasswordHash())) {
+                return false; // 동일한 비밀번호이므로 실패 처리
+            }
+        	String newHashedPw = BCrypt.hashpw(newPw, BCrypt.gensalt());
             return accountDAO.updatePassword(userId, newHashedPw);
         }
         return false;

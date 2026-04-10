@@ -36,7 +36,13 @@ public class PwChangeServlet extends HttpServlet {
         String newPw = request.getParameter("newPw");
         String confirmPw = request.getParameter("confirmPw");
 
-        // [추가] 서버 측 복합 유효성 검사 (보안 강화)
+        // 1. 현재 비밀번호와 새 비밀번호가 동일한지 체크 (1차 차단)
+        if (currentPw != null && currentPw.equals(newPw)) {
+            response.sendRedirect(request.getContextPath() + "/auth/pw-change?error=same_password");
+            return;
+        }
+
+        // 2. 서버 측 복합 유효성 검사 (보안 강화)
         boolean isValidPattern = newPw != null && newPw.length() >= 8 
                                 && newPw.matches(".*[a-zA-Z].*") 
                                 && newPw.matches(".*[0-9].*") 
@@ -47,11 +53,13 @@ public class PwChangeServlet extends HttpServlet {
             return;
         }
 
+        // 3. 새 비밀번호와 확인용 비밀번호 일치 여부 체크
         if (!newPw.equals(confirmPw)) {
             response.sendRedirect(request.getContextPath() + "/auth/pw-change?error=mismatch");
             return;
         }
 
+        // 4. 서비스 호출 (BCrypt를 통한 현재 비번 검증 및 최종 변경)
         boolean isSuccess = authService.changePassword(userId, currentPw, newPw);
 
         if (isSuccess) {

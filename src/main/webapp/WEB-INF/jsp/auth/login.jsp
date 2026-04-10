@@ -165,8 +165,13 @@
             if (urlParams.get('msg') === 'session_expired') {
                 alert("세션 시간이 만료되어 자동으로 로그아웃되었습니다.");
             }
-
-            // 3. URL 파라미터 정리 (새로고침 시 중복 알림 방지)
+            
+            //3. 비밀번호 변경 완료 후 강제 로그아웃
+            if (urlParams.get('msg') === 'pw_success') {
+                alert("비밀번호가 성공적으로 변경되었습니다. 새로운 비밀번호로 로그인해주세요.");
+            }
+            
+            // 4. URL 파라미터 정리 (새로고침 시 중복 알림 방지)
             if (window.location.search) {
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
