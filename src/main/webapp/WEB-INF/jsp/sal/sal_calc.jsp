@@ -67,25 +67,59 @@
                         <button type="submit" class="btn btn-secondary btn-sm">재계산</button>
                     </form>
 
-                    <%-- 전체 지급 처리 --%>
-                    <form action="${pageContext.request.contextPath}/sal/calc"
-                          method="post" class="inline-form"
-                          onsubmit="return confirm('대기 중인 급여를 전체 지급 처리합니다.\n이 작업은 되돌릴 수 없습니다. 진행하시겠습니까?')">
-                        <input type="hidden" name="action" value="payAll">
-                        <input type="hidden" name="year"   value="${selectedYear}">
-                        <input type="hidden" name="month"  value="${selectedMonth}">
-                        <button type="submit" class="btn btn-success btn-sm"
-                                ${not hasPending ? 'disabled' : ''}>
-                            전체 지급 처리
-                        </button>
-                    </form>
+							<%-- 전체 지급 처리 버튼 — isClosed && hasPending 일 때만 활성화 --%>
+							<form action="${pageContext.request.contextPath}/sal/calc"
+							      method="post" class="inline-form"
+							      onsubmit="return confirm('대기 중인 급여를 전체 지급 처리합니다.\n이 작업은 되돌릴 수 없습니다. 진행하시겠습니까?')">
+							    <input type="hidden" name="action" value="payAll">
+							    <input type="hidden" name="year"   value="${selectedYear}">
+							    <input type="hidden" name="month"  value="${selectedMonth}">
+							    <button type="submit" class="btn btn-success btn-sm"
+							            ${(!isClosed || !hasPending) ? 'disabled' : ''}>
+							        전체 지급 처리
+							    </button>
+							</form>
+							
+							<%-- 근태 마감 버튼 — 미마감 상태일 때만 노출 --%>
+<c:if test="${!isClosed}">
+    <form action="${pageContext.request.contextPath}/att/close"
+          method="post" class="inline-form"
+          onsubmit="return confirm(
+              '${selectedYear}년 ${selectedMonth}월 근태를 마감합니다.\n' +
+              '대기 상태 급여가 현재 근태 기준으로 자동 재계산됩니다.\n' +
+              '마감 후에는 되돌릴 수 없습니다. 진행하시겠습니까?')">
+        <input type="hidden" name="year"  value="${selectedYear}">
+        <input type="hidden" name="month" value="${selectedMonth}">
+        <button type="submit" class="btn btn-danger btn-sm">
+            🔒 근태 마감
+        </button>
+    </form>
+</c:if>
+<c:if test="${isClosed}">
+    <span class="closed-badge">✅ 근태 마감 완료</span>
+</c:if>
+                    
                 </div>
             </div>
 
-            <%-- 경고 안내 --%>
-            <div class="calc-notice">
-                ⚠ status=완료 급여는 수정 불가 — 재계산은 대기 상태에서만 허용됩니다
-            </div>
+			<%-- 근태 마감 상태 안내 --%>
+			<c:choose>
+			    <c:when test="${isClosed}">
+			        <div class="calc-notice closed">
+			            ✅ 근태가 마감되었습니다. 급여 계산 및 지급 처리가 가능합니다.
+			        </div>
+			    </c:when>
+			    <c:otherwise>
+			        <div class="calc-notice">
+			            ⚠ 근태가 마감되지 않았습니다. 급여 계산은 가능하나 <strong>지급 처리는 근태 마감 후</strong> 가능합니다.
+			        </div>
+			    </c:otherwise>
+			</c:choose>
+			
+			<%-- 경고: 완료 건 수정 불가 --%>
+			<div class="calc-notice warn">
+			    ⚠ status=완료 급여는 수정 불가 — 재계산은 대기 상태에서만 허용됩니다
+			</div>
 
             <%-- 급여 목록 테이블 --%>
             <div class="table-card">
@@ -145,17 +179,27 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <c:if test="${sal.status == '대기'}">
-                                                <form action="${pageContext.request.contextPath}/sal/calc"
-                                                      method="post" class="inline-form"
-                                                      onsubmit="return confirm('${sal.empName}님의 급여를 지급 처리하시겠습니까?')">
-                                                    <input type="hidden" name="action"   value="payOne">
-                                                    <input type="hidden" name="salaryId" value="${sal.salaryId}">
-                                                    <input type="hidden" name="year"     value="${selectedYear}">
-                                                    <input type="hidden" name="month"    value="${selectedMonth}">
-                                                    <button type="submit" class="btn btn-pay btn-xs">지급</button>
-                                                </form>
-                                            </c:if>
+												<%-- 개별 지급 버튼 — isClosed 일 때만 활성화 --%>
+												<c:if test="${sal.status == '대기'}">
+												    <c:choose>
+												        <c:when test="${isClosed}">
+												            <form action="${pageContext.request.contextPath}/sal/calc"
+												                  method="post" class="inline-form"
+												                  onsubmit="return confirm('${sal.empName}님의 급여를 지급 처리하시겠습니까?')">
+												                <input type="hidden" name="action"   value="payOne">
+												                <input type="hidden" name="salaryId" value="${sal.salaryId}">
+												                <input type="hidden" name="year"     value="${selectedYear}">
+												                <input type="hidden" name="month"    value="${selectedMonth}">
+												                <button type="submit" class="btn btn-pay btn-xs">지급</button>
+												            </form>
+												        </c:when>
+												        <c:otherwise>
+												            <span class="lock-mark" title="근태 마감 후 지급 가능">🔒</span>
+												        </c:otherwise>
+												    </c:choose>
+												</c:if>
+                                            
+                                            
                                             <c:if test="${sal.status == '완료'}">
                                                 <span class="done-mark">✓</span>
                                             </c:if>

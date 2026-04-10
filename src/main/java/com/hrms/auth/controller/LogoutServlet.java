@@ -12,10 +12,15 @@ public class LogoutServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        HttpSession session = req.getSession(false);
-        if (session != null) {
-            session.invalidate(); 
-        }
+    	HttpSession session = req.getSession(false);
+    	if (session != null) {
+    	    Object empIdObj = session.getAttribute("empId");
+    	    if (empIdObj != null) {
+    	        String empId = String.valueOf(empIdObj); 
+    	        LoginServlet.getLoginUsers().remove(empId);
+    	    }
+    	    session.invalidate();
+    	}
 
         // 쿠키 무효화
         Cookie cookie = new Cookie("JSESSIONID", "");

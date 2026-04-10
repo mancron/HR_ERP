@@ -17,83 +17,35 @@ public class DeptManageServlet extends HttpServlet {
     private DeptService deptService = new DeptService();
 
     /**
-     * 권한 판정 로직 (수정본)
-     * 1. HR담당자: 모든 부서에 대해 true 반환
-     * 2. 일반 사원: 수정하려는 부서의 manager_id가 본인 사번(empId)과 일치할 때만 true 반환
+     * 권한 판정
+     * - HR담당자 : isPrivileged = true  → 수정/등록/폐지/비활성 탭 모두 허용
+     * - 그 외(관리자 포함) : isPrivileged = false → 조회만 허용 (일반 사용자 취급)
      */
-    private boolean resolvePrivilege(HttpSession session, int targetDeptId) {
+    private boolean resolvePrivilege(HttpSession session) {
         if (session == null) return false;
-
-        // 세션에서 권한(role)과 사번(empId) 추출
         Object roleObj = session.getAttribute("userRole");
-        Object empIdObj = session.getAttribute("empId");
-        
         String userRole = (roleObj != null) ? String.valueOf(roleObj).trim() : "";
-
-        // [1] HR담당자는 프리패스
-        if ("HR담당자".equals(userRole)) {
-            return true;
-        }
-
-        // [2] 부서장 여부 체크 (기존 서비스의 getDeptById 활용)
-        if (empIdObj != null && targetDeptId > 0) {
-            try {
-                int myEmpId = Integer.parseInt(String.valueOf(empIdObj));
-                
-                // DB에서 해당 부서의 상세 정보(manager_id 포함)를 가져옴
-                DeptDTO targetDept = deptService.getDeptById(targetDeptId);
-                
-                // 부서 정보가 존재하고, 해당 부서에 등록된 manager_id가 내 사번과 일치하는지 확인
-                if (targetDept != null && targetDept.getManager_id() == myEmpId) {
-                    return true; // 이 부서의 관리 권한이 있음
-                }
-            } catch (NumberFormatException e) {
-                // 사번 형식이 잘못된 경우 로그 출력 후 false 유지
-                e.printStackTrace();
-            }
-        }
-
-        // 위 조건에 해당하지 않으면 권한 없음
-        return false;
+        return "HR담당자".equals(userRole);
     }
 
+    // ──────────────────────────────────────────
+    // GET
+    // ──────────────────────────────────────────
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         HttpSession session = request.getSession();
+        boolean isPrivileged = resolvePrivilege(session);
         String action = request.getParameter("action");
 
-        // [부서 ID 결정] 파라미터가 없으면 로그인 유저의 부서 ID를 기본값으로 사용
-        String deptIdParam = request.getParameter("deptId");
-        int selectedDeptId = 1;
-
-        if (deptIdParam != null && !deptIdParam.isEmpty()) {
-            try {
-                selectedDeptId = Integer.parseInt(deptIdParam);
-            } catch (NumberFormatException e) {
-                selectedDeptId = 1;
-            }
-        } else {
-            Object loginUserObj = session.getAttribute("loginUser");
-            if (loginUserObj instanceof EmpDTO) {
-                selectedDeptId = ((EmpDTO) loginUserObj).getDept_id();
-            }
+        // 신규 등록 페이지: HR담당자만 접근 가능
+        if ("new".equals(action) && !isPrivileged) {
+            response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
+            return;
         }
 
-        // [권한 판정] 선택된 부서 ID를 기준으로 수정 권한 여부 확인
-        boolean isPrivileged = resolvePrivilege(session, selectedDeptId);
-
-        // 신규 등록(new) 페이지는 오직 HR담당자만 접근 가능하도록 설정
-        if ("new".equals(action)) {
-            Object roleObj = session.getAttribute("userRole");
-            if (!"HR담당자".equals(String.valueOf(roleObj).trim())) {
-                response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
-                return;
-            }
-        }
-
-        // AJAX 사원 검색 처리 (기존 로직 유지)
+        // AJAX 사원 검색 처리
         if ("findDeptByEmp".equals(action)) {
             String searchVal = request.getParameter("empName");
             List<Map<String, Object>> results = deptService.findDeptIdByEmpName(searchVal);
@@ -133,22 +85,39 @@ public class DeptManageServlet extends HttpServlet {
             request.setAttribute("allDepts",     deptService.getAllDepts());
             request.setAttribute("isPrivileged", String.valueOf(isPrivileged));
 
-            // 비활성 부서 목록은 권한이 있을 때만 조회 가능
+            // 비활성 부서 목록: HR담당자만 조회 가능
             if (isPrivileged) {
                 request.setAttribute("inactiveDepts", deptService.getInactiveDeptList());
+            }
+
+            // 선택 부서 결정
+            String deptIdParam = request.getParameter("deptId");
+            int selectedDeptId = 1;
+
+            if (deptIdParam != null && !deptIdParam.isEmpty()) {
+                try {
+                    selectedDeptId = Integer.parseInt(deptIdParam);
+                } catch (NumberFormatException e) {
+                    selectedDeptId = 1;
+                }
+            } else {
+                // 세션에서 본인 부서 ID 가져오기
+                Object loginUserObj = session.getAttribute("loginUser");
+                if (loginUserObj instanceof EmpDTO) {
+                    selectedDeptId = ((EmpDTO) loginUserObj).getDept_id();
+                }
             }
 
             DeptDTO selectedDept = null;
             List<Map<String, Object>> memberList = null;
 
-            if ("new".equals(action)) {
-                // 이미 위에서 HR담당자 체크를 했으므로 바로 생성
+            if ("new".equals(action) && isPrivileged) {
                 selectedDept = new DeptDTO();
                 selectedDept.setIs_active(1);
             } else {
                 selectedDept = deptService.getDeptById(selectedDeptId);
 
-                // 비관리자의 비활성 부서 접근 차단
+                // 비활성 부서: HR담당자가 아니면 접근 차단
                 if (selectedDept != null && selectedDept.getIs_active() == 0 && !isPrivileged) {
                     response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
                     return;
@@ -174,15 +143,24 @@ public class DeptManageServlet extends HttpServlet {
         }
     }
 
+    // ──────────────────────────────────────────
+    // POST — HR담당자만 진입 가능
+    // ──────────────────────────────────────────
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
 
         HttpSession session = request.getSession();
+
+        // POST는 HR담당자만 허용
+        if (!resolvePrivilege(session)) {
+            response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
+            return;
+        }
+
         String action = request.getParameter("action");
         String idStr  = request.getParameter("dept_id");
-        
         int existingId = 0;
         boolean isParsingError = false;
 
@@ -201,14 +179,6 @@ public class DeptManageServlet extends HttpServlet {
             }
         }
 
-        // [POST 권한 판정] 해당 부서에 대한 수정 권한이 있는지 최종 확인
-        boolean isPrivileged = resolvePrivilege(session, existingId);
-
-        if (!isPrivileged) {
-            response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
-            return;
-        }
-
         try {
             if (!"insert".equals(action)) {
                 if (isParsingError || existingId <= 0) {
@@ -218,27 +188,38 @@ public class DeptManageServlet extends HttpServlet {
 
             if ("delete".equals(action)) {
                 String result = deptService.deleteDept(existingId);
-                String msg = "SUCCESS".equals(result) ? "msg=deleted" : "error=" + result.toLowerCase();
+                String msg = "SUCCESS".equals(result)
+                    ? "msg=deleted"
+                    : "error=" + result.toLowerCase();
                 response.sendRedirect(request.getContextPath() + "/org/dept?" + msg);
 
             } else if ("update".equals(action) || "insert".equals(action)) {
                 int deptId = "update".equals(action) ? existingId : 0;
                 DeptDTO dept = createDeptFromRequest(request, deptId);
 
+                // sort_order 범위 검증 (서버사이드)
                 if (dept.getSort_order() > 99) {
-                    String target = "update".equals(action) ? "deptId=" + existingId : "action=new";
-                    response.sendRedirect(request.getContextPath() + "/org/dept?" + target + "&error=sort_order_limit");
+                    String target = "update".equals(action)
+                        ? "deptId=" + existingId
+                        : "action=new";
+                    response.sendRedirect(request.getContextPath()
+                        + "/org/dept?" + target + "&error=sort_order_limit");
                     return;
                 }
 
                 String result = deptService.saveDept(dept);
                 if ("SUCCESS".equals(result)) {
                     int redirectId = (deptId == 0) ? dept.getDept_id() : deptId;
-                    response.sendRedirect(request.getContextPath() + "/org/dept?deptId=" + redirectId + "&msg=success");
+                    response.sendRedirect(request.getContextPath()
+                        + "/org/dept?deptId=" + redirectId + "&msg=success");
                 } else {
-                    String target = "update".equals(action) ? "deptId=" + existingId : "action=new";
-                    response.sendRedirect(request.getContextPath() + "/org/dept?" + target + "&error=" + result.toLowerCase());
+                    String target = "update".equals(action)
+                        ? "deptId=" + existingId
+                        : "action=new";
+                    response.sendRedirect(request.getContextPath()
+                        + "/org/dept?" + target + "&error=" + result.toLowerCase());
                 }
+
             } else {
                 throw new Exception("알 수 없는 액션: " + action);
             }
@@ -251,6 +232,9 @@ public class DeptManageServlet extends HttpServlet {
         }
     }
 
+    // ──────────────────────────────────────────
+    // 헬퍼 메서드
+    // ──────────────────────────────────────────
     private DeptDTO createDeptFromRequest(HttpServletRequest request, int id) {
         DeptDTO dept = new DeptDTO();
         dept.setDept_id(id);

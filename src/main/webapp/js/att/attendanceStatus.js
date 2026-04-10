@@ -5,6 +5,9 @@ function openFixModal(empId) {
 
     const month = document.querySelector("input[name='month']").value;
 
+    // ⭐ 리스트 초기화 (중복 방지)
+    document.getElementById("issueList").innerHTML = "";
+
     fetch(`${contextPath}/att/issues?empId=${empId}&month=${month}`)
         .then(res => res.json())
         .then(data => renderIssueModal(empId, data));
@@ -15,6 +18,12 @@ function openFixModal(empId) {
 // =========================
 function closeModal() {
     document.querySelectorAll(".modal").forEach(m => m.style.display = "none");
+
+    // ⭐ 리스트 초기화 (안전)
+    document.getElementById("issueList").innerHTML = "";
+
+    // ⭐ 전체 선택 체크 해제
+    document.getElementById("checkAllAbsent").checked = false;
 }
 
 function submitFix(actionType) {
@@ -81,7 +90,9 @@ function renderIssueModal(empId, list) {
     const modal = document.getElementById("fixModal");
     const container = document.getElementById("issueList");
 
-    document.getElementById("fixEmpId").value = empId;
+    container.innerHTML = "";
+	
+	document.getElementById("checkAllAbsent").checked = false;
 
     if (list.length === 0) {
         container.innerHTML = "<div style='padding:10px;'>이슈 없음</div>";
@@ -117,6 +128,31 @@ function renderIssueModal(empId, list) {
 
     modal.style.display = "block";
 }
+
+// =========================
+// ⭐ 결근 후보 전체 선택
+// =========================
+document.addEventListener("DOMContentLoaded", function () {
+
+    const checkAll = document.getElementById("checkAllAbsent");
+
+    if (!checkAll) return;
+
+    checkAll.addEventListener("change", function () {
+
+        const isChecked = this.checked;
+
+        document.querySelectorAll("#issueList .issue-row").forEach(row => {
+
+            const type = row.querySelector(".issue-type").innerText;
+            const checkbox = row.querySelector("input[type='checkbox']");
+
+            if (type === "결근 후보") {
+                checkbox.checked = isChecked;
+            }
+        });
+    });
+});
 
 // =========================
 // 날짜 선택

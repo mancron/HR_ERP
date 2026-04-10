@@ -29,10 +29,8 @@ public class DeptDAO {
         dto.setDept_level(rs.getInt("dept_level"));
         dto.setSort_order(rs.getInt("sort_order"));
         dto.setIs_active(rs.getInt("is_active"));
-        // closed_at / created_at 는 컬럼이 없는 쿼리에서 호출될 수도 있으므로 try-catch
         try { dto.setClosed_at(rs.getString("closed_at")); } catch (Exception ignored) {}
         try { dto.setCreated_at(rs.getString("created_at")); } catch (Exception ignored) {}
-        // manager_name: LEFT JOIN 결과 (없으면 null)
         try { dto.setManager_name(rs.getString("manager_name")); } catch (Exception ignored) {}
         return dto;
     }
@@ -149,6 +147,7 @@ public class DeptDAO {
 
     /**
      * 부서 신규 등록 (manager_id 제외 — 인사발령에서 관리)
+     * [FK FIX] parent_dept_id = 0 이면 NULL 저장 (FK 제약 준수)
      */
     public int insertDept(DeptDTO dept) {
         Connection con = null; PreparedStatement pstmt = null; ResultSet rs = null;
@@ -156,17 +155,21 @@ public class DeptDAO {
                      "VALUES (?, ?, ?, ?, 1)";
         try {
             con = DatabaseConnection.getConnection();
-            // Statement.RETURN_GENERATED_KEYS 대신 PreparedStatement 상수를 사용하면 더 안전합니다.
             pstmt = con.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
             pstmt.setString(1, dept.getDept_name());
-            pstmt.setInt(2, dept.getParent_dept_id());
+            // parent_dept_id = 0 → NULL (최상위 부서, FK 제약 준수)
+            if (dept.getParent_dept_id() == 0) {
+                pstmt.setNull(2, java.sql.Types.INTEGER);
+            } else {
+                pstmt.setInt(2, dept.getParent_dept_id());
+            }
             pstmt.setInt(3, dept.getDept_level());
             pstmt.setInt(4, dept.getSort_order());
 
             int result = pstmt.executeUpdate();
             if (result > 0) {
                 rs = pstmt.getGeneratedKeys();
-                if (rs.next()) return rs.getInt(1); // 신규 생성된 dept_id 반환
+                if (rs.next()) return rs.getInt(1);
             }
         } catch (Exception e) { e.printStackTrace(); }
         finally { closeResources(rs, pstmt, con); }
@@ -175,10 +178,11 @@ public class DeptDAO {
 
     /**
      * 부서 수정 (manager_id 제외 — 인사발령에서 관리)
+     * [FK FIX] parent_dept_id = 0 이면 NULL 저장 (FK 제약 준수)
+     * is_active = 1 이면 closed_at 을 NULL 로 초기화
      */
     public boolean updateDept(DeptDTO dept) {
         Connection con = null; PreparedStatement pstmt = null;
-        // is_active가 1(활성)로 들어오면 closed_at을 NULL로 밀어버립니다.
         String sql = "UPDATE department SET dept_name = ?, parent_dept_id = ?, " +
                      "dept_level = ?, sort_order = ?, is_active = ?, " +
                      "closed_at = (CASE WHEN ? = 1 THEN NULL ELSE closed_at END) " +
@@ -187,7 +191,12 @@ public class DeptDAO {
             con = DatabaseConnection.getConnection();
             pstmt = con.prepareStatement(sql);
             pstmt.setString(1, dept.getDept_name());
-            pstmt.setInt(2, dept.getParent_dept_id());
+            // parent_dept_id = 0 → NULL (최상위 부서, FK 제약 준수)
+            if (dept.getParent_dept_id() == 0) {
+                pstmt.setNull(2, java.sql.Types.INTEGER);
+            } else {
+                pstmt.setInt(2, dept.getParent_dept_id());
+            }
             pstmt.setInt(3, dept.getDept_level());
             pstmt.setInt(4, dept.getSort_order());
             pstmt.setInt(5, dept.getIs_active());
@@ -283,12 +292,11 @@ public class DeptDAO {
                 "    UNION ALL " +
                 "    SELECT d.dept_id FROM department d " +
                 "    INNER JOIN SubDepts sd ON d.parent_dept_id = sd.dept_id " +
-                "    WHERE d.is_active = 1 " + // 비활성 하위 부서는 탐색 제외
+                "    WHERE d.is_active = 1 " +
                 ") " +
                 "SELECT COUNT(*) FROM employee " +
                 "WHERE dept_id IN (SELECT dept_id FROM SubDepts) " +
                 "AND status = '재직'";
-                
             pstmt = con.prepareStatement(sql);
             pstmt.setInt(1, deptId);
             rs = pstmt.executeQuery();
@@ -352,26 +360,22 @@ public class DeptDAO {
         Connection con = null; PreparedStatement pstmt = null; ResultSet rs = null;
         try {
             con = DatabaseConnection.getConnection();
-            
-            // 사번(EMP로 시작)인지 이름인지에 따라 조건을 분기하는 쿼리
             String sql = "SELECT e.dept_id, d.dept_name, p.position_name, e.emp_name, e.emp_no " +
                          "FROM employee e " +
                          "LEFT JOIN department d ON e.dept_id = d.dept_id " +
                          "LEFT JOIN job_position p ON e.position_id = p.position_id " +
                          "WHERE (e.emp_name = ? OR e.emp_no = ?) AND e.status != '퇴직'";
-
             pstmt = con.prepareStatement(sql);
-            pstmt.setString(1, searchVal); // 이름으로 검색 시
-            pstmt.setString(2, searchVal); // 사번으로 검색 시 (둘 중 하나만 걸리면 됨)
-            
+            pstmt.setString(1, searchVal);
+            pstmt.setString(2, searchVal);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 Map<String, Object> map = new HashMap<>();
                 map.put("deptId",   rs.getInt("dept_id"));
                 map.put("deptName", rs.getString("dept_name"));
                 map.put("posName",  rs.getString("position_name"));
-                map.put("empName",  rs.getString("emp_name")); // 이 줄이 서버에 반영됐는지 확인!
-                map.put("empNo",    rs.getString("emp_no"));   // 이 줄이 서버에 반영됐는지 확인!
+                map.put("empName",  rs.getString("emp_name"));
+                map.put("empNo",    rs.getString("emp_no"));
                 list.add(map);
             }
         } catch (Exception e) { e.printStackTrace(); }
@@ -393,35 +397,22 @@ public class DeptDAO {
     }
 
     /**
-     * 특정 직원이 활성화된 부서의 부서장인지 확인 (로그인 권한 검증용)
+     * 특정 직원이 활성화된 부서의 부서장인지 확인
      */
     public boolean isManager(int empId) {
         Connection con = null; PreparedStatement pstmt = null; ResultSet rs = null;
         try {
             con = DatabaseConnection.getConnection();
-            // 폐지된 부서의 부서장 권한을 갖는 것을 방지하기 위해 is_active = 1 조건 추가
             pstmt = con.prepareStatement(
-                "SELECT COUNT(*) FROM department WHERE manager_id = ? AND is_active = 1"
-            );
+                "SELECT COUNT(*) FROM department WHERE manager_id = ? AND is_active = 1");
             pstmt.setInt(1, empId);
             rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1) > 0; // 카운트가 0보다 크면 부서장(true)
-            }
-        } catch (Exception e) { 
-            e.printStackTrace(); 
-        } finally { 
-            closeResources(rs, pstmt, con); 
-        }
+            if (rs.next()) return rs.getInt(1) > 0;
+        } catch (Exception e) { e.printStackTrace(); }
+        finally { closeResources(rs, pstmt, con); }
         return false;
     }
-    
-    /**
-     * 특정 상위 부서 내에서 출력 순서가 겹치는 부서들을 뒤로 밀어냄
-     */
-    /**
-     * 특정 상위 부서 내에서 출력 순서 조정 (이동 방향에 따른 범위 업데이트)
-     */
+
     /**
      * 순서 조정 (기존 순서와 변경할 순서 사이의 부서들만 업데이트)
      */
@@ -430,55 +421,49 @@ public class DeptDAO {
         PreparedStatement pstmt = null;
         String sql = "";
 
-        if (oldOrder == 0) { 
-            // Case A: 신규 등록 (나보다 크거나 같은 순서 전부 +1)
+        if (oldOrder == 0) {
+            // 신규 등록: 새 위치 이후를 +1
             sql = "UPDATE department SET sort_order = sort_order + 1 " +
                   "WHERE parent_dept_id = ? AND sort_order >= ? AND is_active = 1";
-        } else if (oldOrder > newOrder) { 
-            // Case B: 높은 번호에서 낮은 번호로 (5 -> 2) : 2,3,4번이 뒤로 한 칸 밀려야 함
+        } else if (oldOrder > newOrder) {
+            // 높은 번호 → 낮은 번호 이동 (사이 번호 +1)
             sql = "UPDATE department SET sort_order = sort_order + 1 " +
                   "WHERE parent_dept_id = ? AND sort_order >= ? AND sort_order < ? AND is_active = 1";
-        } else if (oldOrder < newOrder) { 
-            // Case C: 낮은 번호에서 높은 번호로 (2 -> 5) : 3,4,5번이 앞으로 한 칸 당겨져야 함
+        } else if (oldOrder < newOrder) {
+            // 낮은 번호 → 높은 번호 이동 (사이 번호 -1)
             sql = "UPDATE department SET sort_order = sort_order - 1 " +
                   "WHERE parent_dept_id = ? AND sort_order > ? AND sort_order <= ? AND is_active = 1";
         } else {
-            return; // 변동 없음
+            return;
         }
 
         try {
             con = DatabaseConnection.getConnection();
             pstmt = con.prepareStatement(sql);
             pstmt.setInt(1, parentId);
-            
-            if (oldOrder == 0) { // 신규
+            if (oldOrder == 0) {
                 pstmt.setInt(2, newOrder);
-            } else if (oldOrder > newOrder) { 
+            } else if (oldOrder > newOrder) {
                 pstmt.setInt(2, newOrder);
                 pstmt.setInt(3, oldOrder);
             } else {
                 pstmt.setInt(2, oldOrder);
                 pstmt.setInt(3, newOrder);
             }
-
             pstmt.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            closeResources(null, pstmt, con);
-        }
+        } catch (Exception e) { e.printStackTrace(); }
+        finally { closeResources(null, pstmt, con); }
     }
-    
+
     public void reorderSortOrder(int parentId) {
         Connection con = null;
         PreparedStatement pstmt = null;
-        // @seq 변수를 사용하여 순서대로 1, 2, 3... 부여 (is_active=1인 것만)
         String sql = "UPDATE department d " +
                 "INNER JOIN (" +
                 "    SELECT dept_id, (@seq := @seq + 1) AS new_order " +
                 "    FROM department, (SELECT @seq := 0) temp " +
                 "    WHERE parent_dept_id = ? AND is_active = 1 " +
-                "    ORDER BY sort_order ASC, dept_id ASC" + 
+                "    ORDER BY sort_order ASC, dept_id ASC" +
                 ") AS ordered_data ON d.dept_id = ordered_data.dept_id " +
                 "SET d.sort_order = ordered_data.new_order";
         try {
@@ -486,13 +471,10 @@ public class DeptDAO {
             pstmt = con.prepareStatement(sql);
             pstmt.setInt(1, parentId);
             pstmt.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            closeResources(null, pstmt, con);
-        }
+        } catch (Exception e) { e.printStackTrace(); }
+        finally { closeResources(null, pstmt, con); }
     }
-    
+
     private void closeResources(ResultSet rs, PreparedStatement pstmt, Connection con) {
         try { if (rs    != null) rs.close();    } catch (Exception e) { e.printStackTrace(); }
         try { if (pstmt != null) pstmt.close(); } catch (Exception e) { e.printStackTrace(); }
