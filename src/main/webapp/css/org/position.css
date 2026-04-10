@@ -1,3 +1,7 @@
+/* =============================================
+   직급 관리 & 수정 폼 통합 UI — position.css
+   ============================================= */
+
 /* [1] 기본 컨테이너 및 헤더 (Pretendard 폰트 적용) */
 .pos-container { 
     padding: 30px; 
@@ -10,14 +14,14 @@
 .pos-header h2 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0; }
 .pos-header p { color: #64748b; font-size: 0.875rem; margin-top: 5px; }
 
-/* [2] 카드 스타일 (둥근 모서리, 그림자) */
+/* [2] 카드 스타일 */
 .pos-card {
     background: white; border-radius: 12px; padding: 24px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
     margin-bottom: 20px;
 }
 
-/* [3] 테이블 스타일 (중앙 정렬 완벽 보장) */
+/* [3] 테이블 스타일 */
 .pos-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .pos-table th { 
     background-color: #f1f5f9; color: #475569; padding: 14px; 
@@ -28,7 +32,17 @@
     text-align: center; vertical-align: middle; color: #334155; 
 }
 
-/* [4] 버튼 디자인 (구형 스타일 완전 제거, 모던화) */
+.col-name { width: 12%; }
+.col-level { width: 8%; }
+.col-sal { width: 15%; }
+.col-meal { width: 12%; }
+.col-trans { width: 12%; }
+.col-allow { width: 10%; }
+.col-count { width: 10%; }
+.col-status { width: 12%; }
+.col-manage { width: 17%; }
+
+/* [4] 버튼 디자인 */
 .btn-edit {
     appearance: none;
     -webkit-appearance: none;
@@ -48,9 +62,11 @@
     background: none; border: none; color: #64748b; 
     font-size: 0.875rem; cursor: pointer; font-weight: 500;
     display: flex; align-items: center; gap: 5px;
+    margin-bottom: 10px;
+    padding: 0;
 }
 
-/* [5] 상태 배지 및 하단 안내 문구 (관리자/HR용) */
+/* [5] 상태 배지 */
 .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; background: #f1f5f9; color: #64748b; display: inline-block; }
 .status-active { background-color: #dcfce7; color: #166534; }
 
@@ -60,21 +76,20 @@
     display: flex; align-items: center; gap: 10px; border: 1px solid #f1f5f9;
 }
 
-/* [6] 모달 레이아웃 (정중앙 고정 및 배경 블러) */
+/* [6] 모달 레이아웃 */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(15, 23, 42, 0.5);
     display: none; justify-content: center; align-items: center;
     z-index: 10000; backdrop-filter: blur(2px);
 }
-
 .modal-content {
     background: white; width: 520px; border-radius: 12px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
     overflow: visible; 
 }
 
-/* [7] 모달 헤더 (X 버튼 오른쪽 끝 정렬 완벽 유지) */
+/* [7] 모달 헤더 */
 .modal-header {
     padding: 18px 24px;
     display: flex;
@@ -82,6 +97,7 @@
     align-items: center;
     border-bottom: 1px solid #f1f5f9;
 }
+.modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #1e293b; }
 
 .close-btn {
     appearance: none;
@@ -92,24 +108,18 @@
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; color: #64748b; font-size: 20px;
     transition: all 0.2s;
-    margin: 0;
 }
 .close-btn:hover { background: #fee2e2; color: #ef4444; }
 
-/* [8] iframe 높이 설정 (잘림 방지 핵심) */
-#editFrame {
-    width: 100%;
-    height: 540px; /* 여유 있게 조정 */
-    border: none;
-    display: block;
-}
+/* [8] iframe */
+#editFrame { width: 100%; height: 540px; border: none; display: block; }
 
-/* [9] 추가 및 통합: iframe 내부 폼 전용 스타일 (Refactored) */
+/* [9] 폼 전용 스타일 (pos_edit_form용) */
 .modal-form-body { 
     font-family: 'Pretendard', sans-serif; 
     padding: 24px; 
     background-color: white; 
-    margin: 0; /* 여백 초기화 */
+    margin: 0;
 }
 
 .form-group { margin-bottom: 18px; }
@@ -121,7 +131,6 @@
     margin-bottom: 8px; 
 }
 
-/* .form-control로 통일해서 사용 */
 .form-control {
     appearance: none;
     -webkit-appearance: none;
@@ -140,24 +149,45 @@
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
-.form-control.readonly { 
-    background-color: #f8fafc; 
-    color: #94a3b8; 
-    cursor: not-allowed; 
-}
+.form-control.readonly { background-color: #f8fafc; color: #94a3b8; cursor: not-allowed; }
 
-/* 알림 메시지 레이어 스타일 통합 */
+/* 알림 메시지 레이어 스타일 */
 .msg-layer { 
-    display: none; 
-    padding: 12px; 
+    display: block; /* JSP 조건문에서 제어하므로 기본 block */
+    padding: 12px 20px; 
     border-radius: 8px; 
-    margin-bottom: 15px; 
+    margin-bottom: 20px; 
     font-size: 14px; 
-    text-align: center; 
+    text-align: left; 
     font-weight: 500;
 }
-.msg-success { display: block; background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-.msg-error { display: block; background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.msg-success { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.msg-error { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* [핵심 추가] 권한 없음 안내 블록 */
+.auth-denied-container {
+    padding: 60px 20px;
+    text-align: center;
+}
+.auth-denied-container .msg-layer {
+    display: inline-block;
+    width: auto;
+    padding: 20px 40px;
+    text-align: center;
+    line-height: 1.6;
+}
+.btn-close-modal {
+    margin-top: 25px;
+    background-color: #64748b;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-close-modal:hover { background-color: #475569; }
 
 /* 업데이트 버튼 스타일 */
 .btn-save { 
@@ -174,3 +204,11 @@
     transition: background 0.2s;
 }
 .btn-save:hover { background: #2563eb; }
+
+#inactiveContent { display: none !important; margin-top: 15px; }
+.inactive-wrapper .pos-card {
+    background-color: #fcfcfc;
+    border: 1px dashed #cbd5e1;
+    margin-top: 0;
+    padding: 16px;
+}

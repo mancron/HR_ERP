@@ -101,6 +101,7 @@ public class PosDAO {
     }
 
  // [수정 통합] 감사 로그 연동 업데이트 (트랜잭션 적용 + High 5 Race Condition 방어)
+ // [수정] 원본 로직 유지 + 테이블명 'employee' 반영 버전
     public boolean updatePositionWithLog(PosDTO dto, Integer actorId, String[] columns, String[] oldValues, String[] newValues) {
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -116,8 +117,9 @@ public class PosDAO {
             updateSql.append("WHERE position_id=? ");
             
             // [High 5] 비활성화 시도 시, 그 순간에 직원이 0명인지 DB 레벨에서 다시 확인
+            // 테이블명을 사용자님 DB에 맞춰 'employee'로 수정했습니다.
             if (dto.getIs_active() == 0) {
-                updateSql.append("AND (SELECT COUNT(*) FROM employees WHERE position_id = ?) = 0");
+                updateSql.append("AND (SELECT COUNT(*) FROM employee WHERE position_id = ?) = 0");
             }
 
             pstmt = con.prepareStatement(updateSql.toString());
@@ -135,21 +137,21 @@ public class PosDAO {
 
             int affectedRows = pstmt.executeUpdate();
             
-            // [High 5 대응] 조건에 맞지 않아 업데이트된 행이 없다면 (동시성 충돌 발생 시)
+            // 업데이트된 행이 없다면 (직원이 존재하여 조건에 맞지 않거나, ID가 틀린 경우)
             if (affectedRows == 0) {
-                con.rollback(); // 즉시 롤백
-                return false;   // 실패 반환 -> 서블릿에서 'has_emp' 등으로 처리됨
+                con.rollback(); 
+                return false;   
             }
             pstmt.close(); // 다음 작업을 위해 닫기
 
 
-            // --- 2. audit_log 기록 (기존 로직 유지) ---
+            // --- 2. audit_log 기록 (기본 로직 유지) ---
             String logSql = "INSERT INTO audit_log (actor_id, target_table, target_id, action, column_name, old_value, new_value) VALUES (?, 'job_position', ?, 'UPDATE', ?, ?, ?)";
             pstmt = con.prepareStatement(logSql);
 
             for (int i = 0; i < columns.length; i++) {
-                if (!oldValues[i].equals(newValues[i])) {
-                    // actor_id 외래키 에러 방지 처리 (기존 유지)
+                // 값이 변경된 항목만 로그에 기록 (Null 체크 추가로 안전성 강화)
+                if (oldValues[i] != null && !oldValues[i].equals(newValues[i])) {
                     if (actorId != null && actorId > 0) {
                         pstmt.setInt(1, actorId);
                     } else {
@@ -164,7 +166,7 @@ public class PosDAO {
             }
             
             pstmt.executeBatch();
-            con.commit();
+            con.commit(); // 트랜잭션 커밋
             success = true;
 
         } catch (Exception e) {
