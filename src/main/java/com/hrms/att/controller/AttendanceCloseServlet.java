@@ -21,7 +21,7 @@ public class AttendanceCloseServlet extends HttpServlet {
         int month = Integer.parseInt(request.getParameter("month"));
 
         int actorId = (int) request.getSession().getAttribute("empId");
-
+        
         service.closeMonth(year, month, actorId);
 
         response.getWriter().write("OK");

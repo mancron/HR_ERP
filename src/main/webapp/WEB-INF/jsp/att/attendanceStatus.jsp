@@ -128,11 +128,11 @@
 			</div>
 
 			<div class="modal-buttons">
-				<button class="btn-absent" onclick="submitFix('ABSENT')">결근
+				<button type="button" class="btn-absent" onclick="submitFix('ABSENT')">결근
 					처리</button>
-				<button class="btn-checkin" onclick="submitFix('CHECKIN_FIX')">출근
+				<button type="button" class="btn-checkin" onclick="submitFix('CHECKIN_FIX')">출근
 					보정</button>
-				<button class="btn-checkout" onclick="submitFix('CHECKOUT_FIX')">퇴근
+				<button type="button" class="btn-checkout" onclick="submitFix('CHECKOUT_FIX')">퇴근
 					보정</button>
 				<button type="button" class="btn-cancel" onclick="closeModal()">취소</button>
 			</div>

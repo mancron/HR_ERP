@@ -91,8 +91,8 @@ function renderIssueModal(empId, list) {
     const container = document.getElementById("issueList");
 
     container.innerHTML = "";
-	
-	document.getElementById("checkAllAbsent").checked = false;
+
+    document.getElementById("checkAllAbsent").checked = false;
 
     if (list.length === 0) {
         container.innerHTML = "<div style='padding:10px;'>이슈 없음</div>";
@@ -132,13 +132,13 @@ function renderIssueModal(empId, list) {
 // =========================
 // ⭐ 결근 후보 전체 선택
 // =========================
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function() {
 
     const checkAll = document.getElementById("checkAllAbsent");
 
     if (!checkAll) return;
 
-    checkAll.addEventListener("change", function () {
+    checkAll.addEventListener("change", function() {
 
         const isChecked = this.checked;
 
@@ -172,6 +172,15 @@ function closeMonthFromInput() {
     }
 
     const [year, month] = monthInput.split("-");
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    if (parseInt(year) === currentYear && parseInt(month) === currentMonth) {
+        alert("현재 월은 마감할 수 없습니다.");
+        return;
+    }
 
     closeMonth(year, parseInt(month));
 }
