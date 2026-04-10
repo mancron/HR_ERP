@@ -8,6 +8,11 @@
 <title>HR ERP - 로그인</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/login.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<script>sessionStorage.removeItem('openNavGroups');
+	if (self !== top) {
+    	top.location.href = self.location.href;
+	}
+</script>
 </head>
 <body>
 

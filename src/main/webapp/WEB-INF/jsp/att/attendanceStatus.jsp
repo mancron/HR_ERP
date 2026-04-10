@@ -9,6 +9,7 @@
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/attendanceStatus.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+
 </head>
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
@@ -114,7 +115,10 @@
 	<div class="modal-content">
 
 		<h3>근태 보정</h3>
-
+		<div style="margin-bottom: 10px;">
+			<input type="checkbox" id="checkAllAbsent"> <label
+				for="checkAllAbsent">결근 후보 전체 선택</label>
+		</div>
 		<form id="fixForm">
 
 			<input type="hidden" name="empId" id="fixEmpId">
@@ -137,6 +141,7 @@
 
 	</div>
 </div>
-
+<script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
 <script
 	src="${pageContext.request.contextPath}/js/att/attendanceStatus.js"></script>
+<script src="${pageContext.request.contextPath}/js/sidebar.js"></script>

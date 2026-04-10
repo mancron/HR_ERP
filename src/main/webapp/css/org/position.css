@@ -71,17 +71,15 @@
 .modal-content {
     background: white; width: 520px; border-radius: 12px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
-    
-    /* 핵심 수정: overflow를 visible로 바꿔야 내부 iframe이 잘리지 않습니다. */
     overflow: visible; 
 }
 
 /* [7] 모달 헤더 (X 버튼 오른쪽 끝 정렬 완벽 유지) */
 .modal-header {
     padding: 18px 24px;
-    display: flex;            /* 가로 배치 */
-    justify-content: space-between; /* 제목 왼쪽, 버튼 오른쪽 끝 */
-    align-items: center;      /* 세로 중앙 정렬 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     border-bottom: 1px solid #f1f5f9;
 }
 
@@ -99,34 +97,80 @@
 .close-btn:hover { background: #fee2e2; color: #ef4444; }
 
 /* [8] iframe 높이 설정 (잘림 방지 핵심) */
-/* image_7.png에서 절반만 보이던 문제를 해결합니다. */
 #editFrame {
     width: 100%;
-    height: 520px; /* 인풋 5개+라벨+버튼 영역을 고려한 넉넉한 높이 */
+    height: 540px; /* 여유 있게 조정 */
     border: none;
     display: block;
 }
 
-/* [9] iframe 내부 폼 요소 (iframe 내부에도 이 CSS가 링크되어야 합니다) */
-.modal-form-container { padding: 24px; background-color: white; }
+/* [9] 추가 및 통합: iframe 내부 폼 전용 스타일 (Refactored) */
+.modal-form-body { 
+    font-family: 'Pretendard', sans-serif; 
+    padding: 24px; 
+    background-color: white; 
+    margin: 0; /* 여백 초기화 */
+}
 
-.form-group { margin-bottom: 20px; }
-.form-group label { display: block; font-size: 0.875rem; font-weight: 600; color: #475569; margin-bottom: 8px; }
+.form-group { margin-bottom: 18px; }
+.form-group label { 
+    display: block; 
+    font-size: 0.875rem; 
+    font-weight: 600; 
+    color: #475569; 
+    margin-bottom: 8px; 
+}
 
+/* .form-control로 통일해서 사용 */
 .form-control {
     appearance: none;
     -webkit-appearance: none;
     width: 100%;
-    padding: 12px;
+    padding: 11px 12px;
     font-size: 0.9rem;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     background-color: #ffffff;
     color: #1e293b;
-    box-sizing: border-box; /* 패딩이 너비를 넘지 않도록 고정 */
+    box-sizing: border-box;
+    transition: all 0.2s;
 }
-
 .form-control:focus {
-    outline: none; border-color: #3b82f6;
+    outline: none; 
+    border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
+.form-control.readonly { 
+    background-color: #f8fafc; 
+    color: #94a3b8; 
+    cursor: not-allowed; 
+}
+
+/* 알림 메시지 레이어 스타일 통합 */
+.msg-layer { 
+    display: none; 
+    padding: 12px; 
+    border-radius: 8px; 
+    margin-bottom: 15px; 
+    font-size: 14px; 
+    text-align: center; 
+    font-weight: 500;
+}
+.msg-success { display: block; background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.msg-error { display: block; background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* 업데이트 버튼 스타일 */
+.btn-save { 
+    width: 100%; 
+    padding: 14px; 
+    background: #3b82f6; 
+    color: white; 
+    border: none; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: 600; 
+    font-size: 1rem;
+    margin-top: 5px; 
+    transition: background 0.2s;
+}
+.btn-save:hover { background: #2563eb; }

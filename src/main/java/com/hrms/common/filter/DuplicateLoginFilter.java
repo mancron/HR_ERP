@@ -26,34 +26,28 @@ public class DuplicateLoginFilter implements Filter {
         HttpSession session = req.getSession(false);
         String path = req.getRequestURI();
 
-        // 1. 제외 경로 체크 (이 구간에서는 로그를 찍지 않아 콘솔을 깨끗하게 유지합니다)
+        // 1. 제외 경로 체크 (기존 유지)
         if (path.contains("/auth/") || path.contains("/css/") || path.contains("/js/") || 
             path.contains("/images/") || path.contains("/favicon.ico")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 2. 실제 검사가 필요한 페이지 요청에 대해서만 로그 시작
-        System.out.println("[Filter] 진입 요청 경로: " + path);
-
-        // 3. 세션 체크
+        // 2. 세션 및 중복 체크 시작 (불필요한 "진입" 로그 삭제)
         if (session != null && session.getAttribute("empId") != null) {
             String empId = String.valueOf(session.getAttribute("empId"));
             String currentSessionId = session.getId();
-            
             Map<String, String> loginUsers = LoginServlet.getLoginUsers();
             
-            System.out.println("[Filter] 검사 대상자 - 사번: " + empId + " | 세션ID: " + currentSessionId);
-
             if (loginUsers != null && loginUsers.containsKey(empId)) {
                 String validSessionId = loginUsers.get(empId);
-                System.out.println("[Filter] 맵에 등록된 최신 ID: " + validSessionId);
 
-                // 4. 중복 판단
+                // 3. 중복 판단 (여기가 핵심!)
                 if (validSessionId != null && !currentSessionId.equals(validSessionId)) {
-                    System.err.println("!!! [Filter] 중복 로그인 감지 - 사번 " + empId + " 차단함 !!!");
+                    // 차단될 때만 빨간색(err)으로 한 줄 강렬하게 남김
+                    System.err.println("[DuplicateLogin] 차단됨 - 사번: " + empId + " (새 세션에 의해 밀려남)");
                     
-                    session.invalidate(); // 현재 가짜 세션 파기
+                    session.invalidate(); 
                     
                     res.setContentType("text/html; charset=UTF-8");
                     res.getWriter().println("<script>");
@@ -62,11 +56,7 @@ public class DuplicateLoginFilter implements Filter {
                     res.getWriter().println("</script>");
                     res.getWriter().flush();
                     return; 
-                } else {
-                    System.out.println("[Filter] 결과: 최신 세션입니다. (정상)");
                 }
-            } else {
-                System.out.println("[Filter] 결과: 맵에 정보가 없습니다.");
             }
         }
 

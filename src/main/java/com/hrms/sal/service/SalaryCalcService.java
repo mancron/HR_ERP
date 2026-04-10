@@ -1,5 +1,6 @@
 package com.hrms.sal.service;
 
+import com.hrms.att.service.AttendanceStatusService;
 import com.hrms.common.db.DatabaseConnection;
 import com.hrms.common.util.NotificationUtil;
 import com.hrms.sal.dao.SalaryCalcDAO;
@@ -15,11 +16,17 @@ import java.util.List;
 public class SalaryCalcService {
 
     private final SalaryCalcDAO dao = new SalaryCalcDAO();
+    private AttendanceStatusService attendanceStatusService = new AttendanceStatusService();
 
     // ─────────────────────────────────────────────
     //  급여 계산 (전 직원 INSERT)
     // ─────────────────────────────────────────────
     public void calculate(int year, int month) {
+    	
+    	if (!attendanceStatusService.isClosed(year, month)) {
+            throw new RuntimeException("마감되지 않은 월은 급여 계산이 불가능합니다.");
+        }
+    	
         Connection conn = null;
         try {
             conn = DatabaseConnection.getConnection();
@@ -153,6 +160,11 @@ public class SalaryCalcService {
     //  전체 지급 처리
     // ─────────────────────────────────────────────
     public void payAll(int year, int month, int actorEmpId) {
+    	
+    	if (!attendanceStatusService.isClosed(year, month)) {
+            throw new RuntimeException("마감되지 않은 월은 지급할 수 없습니다.");
+        }
+    	
         Connection conn = null;
         List<Integer> paidIds = null;
         try {

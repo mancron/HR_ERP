@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.LocalDate;
 
+import com.hrms.common.util.NotificationUtil;
 import com.hrms.emp.dto.EmpDTO;
 import com.hrms.emp.dto.LeaveDTO;
 import com.hrms.emp.service.EmpService;
@@ -187,10 +188,14 @@ public class LeaveServlet extends HttpServlet {
             return;
         }
         
-        boolean isSuccess = leaveService.insertLeaveRequest(dto);
-
-        if (isSuccess) {
-            // 신청 완료 후 상세 페이지로 이동
+        int newRequestId = leaveService.insertLeaveRequest(dto);
+        if (newRequestId > 0) {
+            if (deptManagerId > 0) {
+                EmpDTO loginUser = (EmpDTO) session.getAttribute("loginUser"); // ← 수정
+                String loginEmpName = loginUser != null ? loginUser.getEmp_name() : "";
+                NotificationUtil.sendApprovalPending(deptManagerId, loginEmpName,
+                    dto.getLeave_type(), newRequestId); // ← 실제 requestId
+            }
             response.setContentType("text/html; charset=UTF-8");
             java.io.PrintWriter out = response.getWriter();
             out.println("<script>");
