@@ -205,7 +205,7 @@ CREATE TABLE resign_request (
     president_approved_at DATETIME     NULL                   COMMENT '최종승인자 승인일시',
     reject_reason     VARCHAR(200) NULL                   COMMENT '반려 사유',
     created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '신청일시',
-    is_applied TINYINT NOT NULL DEFAULT 0COMMENT '0=미처리, 1=처리완료 (적용일 기준 employee 반영 여부)',
+    is_applied TINYINT NOT NULL DEFAULT 0 COMMENT '0=미처리, 1=처리완료 (적용일 기준 employee 반영 여부)',
     PRIMARY KEY (request_id),
     FOREIGN KEY (emp_id)          REFERENCES employee(emp_id),
     FOREIGN KEY (dept_manager_id) REFERENCES employee(emp_id) ON DELETE SET NULL,
