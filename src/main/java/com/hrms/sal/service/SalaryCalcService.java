@@ -23,10 +23,6 @@ public class SalaryCalcService {
     // ─────────────────────────────────────────────
     public void calculate(int year, int month) {
     	
-    	if (!attendanceStatusService.isClosed(year, month)) {
-            throw new RuntimeException("마감되지 않은 월은 급여 계산이 불가능합니다.");
-        }
-    	
         Connection conn = null;
         try {
             conn = DatabaseConnection.getConnection();
@@ -106,120 +102,154 @@ public class SalaryCalcService {
         }
     }
 
-    // ─────────────────────────────────────────────
-    //  개별 지급 처리
-    // ─────────────────────────────────────────────
-    public void payOne(int salaryId, int actorEmpId) {
-        Connection conn = null;
+ // ─────────────────────────────────────────────
+//  근태 마감 여부 조회 (외부에서 호출용)
+// ─────────────────────────────────────────────
+public boolean isAttendanceClosed(int year, int month) {
+    Connection conn = null;
+    try {
+        conn = DatabaseConnection.getConnection();
+        return dao.isAttendanceClosed(year, month, conn);
+    } catch (SQLException e) {
+        e.printStackTrace();
+        throw new RuntimeException("근태 마감 조회 중 오류가 발생했습니다.", e);
+    } finally {
+        close(conn);
+    }
+}
+
+// ─────────────────────────────────────────────
+//  개별 지급 처리
+// ─────────────────────────────────────────────
+public void payOne(int salaryId, int actorEmpId, int year, int month) {
+
+    // ── 근태 마감 여부 검증 ──
+    if (!isAttendanceClosed(year, month)) {
+        throw new RuntimeException(year + "년 " + month + "월 근태가 마감되지 않았습니다. 근태 마감 후 지급 처리해주세요.");
+    }
+
+    Connection conn = null;
+    try {
+        conn = DatabaseConnection.getConnection();
+        conn.setAutoCommit(false);
+
+        int updated = dao.updatePayOne(salaryId, conn);
+        if (updated == 0) {
+            throw new RuntimeException("이미 지급 완료된 급여이거나 존재하지 않는 데이터입니다.");
+        }
+        dao.insertAuditLog(actorEmpId, salaryId, "대기", "완료", conn);
+        conn.commit();
+
+    } catch (SQLException e) {
+        rollback(conn);
+        e.printStackTrace();
+        throw new RuntimeException("지급 처리 중 오류가 발생했습니다.", e);
+    } catch (RuntimeException e) {
+        rollback(conn);
+        throw e;
+    } finally {
+        close(conn);
+    }
+
+    // 알림: 트랜잭션 외부 격리
+    try {
+        Connection tmpConn = DatabaseConnection.getConnection();
         try {
-            conn = DatabaseConnection.getConnection();
-            conn.setAutoCommit(false);
-
-            int updated = dao.updatePayOne(salaryId, conn);
-            if (updated == 0) {
-                throw new RuntimeException("이미 지급 완료된 급여이거나 존재하지 않는 데이터입니다.");
+            SalaryCalcDTO info = dao.selectSalaryById(salaryId, tmpConn);
+            if (info != null) {
+                NotificationUtil.sendSalaryPaid(
+                    info.getEmpId(), info.getSalaryYear(),
+                    info.getSalaryMonth(), info.getNetSalary(), salaryId
+                );
             }
-            dao.insertAuditLog(actorEmpId, salaryId, "대기", "완료", conn);
+        } finally { tmpConn.close(); }
+    } catch (Exception e) {
+        System.err.println("[알림 실패 무시] payOne: " + e.getMessage());
+    }
+}
 
-            conn.commit();
+// ─────────────────────────────────────────────
+//  전체 지급 처리
+// ─────────────────────────────────────────────
+public void payAll(int year, int month, int actorEmpId) {
 
-        } catch (SQLException e) {
-            rollback(conn);
-            e.printStackTrace();
-            throw new RuntimeException("지급 처리 중 오류가 발생했습니다.", e);
-        } catch (RuntimeException e) {
-            rollback(conn);
-            throw e;
-        } finally {
-            close(conn);
+    // ── 근태 마감 여부 검증 ──
+    if (!isAttendanceClosed(year, month)) {
+        throw new RuntimeException(year + "년 " + month + "월 근태가 마감되지 않았습니다. 근태 마감 후 지급 처리해주세요.");
+    }
+
+    Connection conn = null;
+    List<Integer> paidIds = null;
+    try {
+        conn = DatabaseConnection.getConnection();
+        conn.setAutoCommit(false);
+
+        int updated = dao.updatePayAll(year, month, conn);
+        if (updated == 0) {
+            throw new RuntimeException("지급 처리할 대기 급여가 없습니다.");
         }
 
-        // 알림: 트랜잭션 외부 격리
-        try {
-            Connection tmpConn = DatabaseConnection.getConnection();
+        paidIds = dao.selectSalaryIdsByMonth(year, month, conn);
+        for (int sid : paidIds) {
+            dao.insertAuditLog(actorEmpId, sid, "대기", "완료", conn);
+        }
+        conn.commit();
+
+    } catch (SQLException e) {
+        rollback(conn);
+        e.printStackTrace();
+        throw new RuntimeException("전체 지급 처리 중 오류가 발생했습니다.", e);
+    } catch (RuntimeException e) {
+        rollback(conn);
+        throw e;
+    } finally {
+        close(conn);
+    }
+
+    // 알림: 트랜잭션 외부 격리
+    if (paidIds != null) {
+        for (int sid : paidIds) {
             try {
-                SalaryCalcDTO info = dao.selectSalaryById(salaryId, tmpConn);
-                if (info != null) {
-                    NotificationUtil.sendSalaryPaid(
-                        info.getEmpId(),
-                        info.getSalaryYear(),
-                        info.getSalaryMonth(),
-                        info.getNetSalary(),
-                        salaryId
-                    );
-                }
-            } finally {
-                tmpConn.close();
-            }
-        } catch (Exception e) {
-            System.err.println("[알림 실패 무시] payOne: " + e.getMessage());
-        }
-    }
-
-    // ─────────────────────────────────────────────
-    //  전체 지급 처리
-    // ─────────────────────────────────────────────
-    public void payAll(int year, int month, int actorEmpId) {
-    	
-    	if (!attendanceStatusService.isClosed(year, month)) {
-            throw new RuntimeException("마감되지 않은 월은 지급할 수 없습니다.");
-        }
-    	
-        Connection conn = null;
-        List<Integer> paidIds = null;
-        try {
-            conn = DatabaseConnection.getConnection();
-            conn.setAutoCommit(false);
-
-            int updated = dao.updatePayAll(year, month, conn);
-            if (updated == 0) {
-                throw new RuntimeException("지급 처리할 대기 급여가 없습니다.");
-            }
-
-            // 방금 완료된 salary_id 목록 조회 → audit_log 일괄 INSERT
-            paidIds = dao.selectSalaryIdsByMonth(year, month, conn);
-            for (int sid : paidIds) {
-                dao.insertAuditLog(actorEmpId, sid, "대기", "완료", conn);
-            }
-
-            conn.commit();
-
-        } catch (SQLException e) {
-            rollback(conn);
-            e.printStackTrace();
-            throw new RuntimeException("전체 지급 처리 중 오류가 발생했습니다.", e);
-        } catch (RuntimeException e) {
-            rollback(conn);
-            throw e;
-        } finally {
-            close(conn);
-        }
-
-        // 알림: 트랜잭션 외부 격리
-        if (paidIds != null) {
-            for (int sid : paidIds) {
+                Connection tmpConn = DatabaseConnection.getConnection();
                 try {
-                    Connection tmpConn = DatabaseConnection.getConnection();
-                    try {
-                        SalaryCalcDTO info = dao.selectSalaryById(sid, tmpConn);
-                        if (info != null) {
-                            NotificationUtil.sendSalaryPaid(
-                                info.getEmpId(),
-                                info.getSalaryYear(),
-                                info.getSalaryMonth(),
-                                info.getNetSalary(),
-                                sid
-                            );
-                        }
-                    } finally {
-                        tmpConn.close();
+                    SalaryCalcDTO info = dao.selectSalaryById(sid, tmpConn);
+                    if (info != null) {
+                        NotificationUtil.sendSalaryPaid(
+                            info.getEmpId(), info.getSalaryYear(),
+                            info.getSalaryMonth(), info.getNetSalary(), sid
+                        );
                     }
-                } catch (Exception e) {
-                    System.err.println("[알림 실패 무시] payAll salaryId=" + sid + ": " + e.getMessage());
-                }
+                } finally { tmpConn.close(); }
+            } catch (Exception e) {
+                System.err.println("[알림 실패 무시] payAll salaryId=" + sid + ": " + e.getMessage());
             }
         }
     }
+}
+
+/**
+ * 외부 트랜잭션에서 호출용 재계산
+ * AttendanceCloseService에서 근태 마감과 같은 트랜잭션으로 묶음
+ */
+public void recalculateInTransaction(int year, int month,
+                                     Connection conn) throws SQLException {
+
+    // 대기 상태만 삭제 (완료 건 보호)
+    dao.deleteUnpaidSalaries(year, month, conn);
+
+    DeductionRateDTO rate = dao.selectDeductionRate(year, conn);
+    if (rate == null) {
+        throw new RuntimeException(year + "년 공제율 데이터가 없습니다.");
+    }
+
+    List<SalaryCalcDTO> empList = dao.selectEmployeesForCalc(conn);
+    for (SalaryCalcDTO dto : empList) {
+        // 완료 처리된 직원은 건너뜀
+        if (dao.existsSalary(dto.getEmpId(), year, month, conn)) continue;
+        calcAndFill(dto, year, month, rate, conn);
+        dao.insertSalary(dto, year, month, conn);
+    }
+}
 
     // ─────────────────────────────────────────────
     //  화면 출력용 목록 조회
