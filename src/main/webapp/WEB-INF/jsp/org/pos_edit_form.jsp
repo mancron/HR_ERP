@@ -3,29 +3,29 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/org/position.css">
 </head>
 <body class="modal-form-body"> 
 
-    <%-- [핵심 수정] HR담당자가 아니면 폼 자체를 렌더링하지 않고 차단 메시지만 표시 --%>
+    <%-- HR담당자가 아니면 차단 메시지 표시 --%>
     <c:choose>
         <c:when test="${sessionScope.userRole != 'HR담당자'}">
-            <div style="padding: 50px 20px; text-align: center;">
-                <div class="msg-layer msg-error" style="display: inline-block; width: auto; padding: 20px 40px;">
+            <div class="auth-denied-container">
+                <div class="msg-layer msg-error">
                     <strong>접근 권한 없음</strong><br>
                     직급 수정 권한이 없습니다. HR담당자만 이용 가능합니다.
                 </div>
-                <div style="margin-top: 20px;">
-                    <button type="button" onclick="parent.closeModal()" class="btn-edit" style="background-color: #64748b;">닫기</button>
+                <div>
+                    <button type="button" onclick="parent.closeModal()" class="btn-close-modal">닫기</button>
                 </div>
             </div>
         </c:when>
 
         <c:otherwise>
-            <%-- HR담당자일 때만 아래 기존 폼이 보입니다 --%>
+            <%-- 에러 상태 메시지 표시 --%>
             <c:if test="${not empty param.status and param.status != 'success'}">
-                <c:set var="statusClass" value="msg-error" />
-                <div id="statusMsg" class="msg-layer ${statusClass}">
+                <div id="statusMsg" class="msg-layer msg-error">
                     <c:choose>
                         <c:when test="${param.status == 'no_change'}">변경된 내용이 없습니다.</c:when>
                         <c:when test="${param.status == 'has_emp'}">직원이 존재하여 비활성화가 불가능합니다.</c:when>
