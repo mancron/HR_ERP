@@ -338,7 +338,7 @@ CREATE TABLE overtime_request (
     CONSTRAINT chk_ot_status     CHECK (status IN ('대기', '승인', '반려','취소'))
 ) COMMENT '초과근무 신청 - 초과근무 승인 및 관리';
 
---근태 현황 보정 로그
+-- 근태 현황 보정 로그
 CREATE TABLE att_log (
 log_id INT AUTO_INCREMENT PRIMARY KEY,
 emp_id INT NOT NULL,              
@@ -358,7 +358,7 @@ INDEX idx_emp_date (emp_id, work_date),
 INDEX idx_actor (actor_id)
 );
 
---근태 현황 마감 테이블 - 급여 계산할 때 조건으로 사용
+-- 근태 현황 마감 테이블 - 급여 계산할 때 조건으로 사용
 CREATE TABLE attendance_close (
 id INT AUTO_INCREMENT PRIMARY KEY,
 year INT NOT NULL,
@@ -784,9 +784,9 @@ LIMIT 20;
 -- ================================================
 
 -- Ai 전용 계정삭제
-DROP USER 'ai_reader'@'%';
+-- DROP USER 'ai_reader'@'%';
 
-FLUSH PRIVILEGES;
+-- FLUSH PRIVILEGES;
 -- AI 전용 계정 생성 (비밀번호는 원하는 대로 변경)
 CREATE USER 'ai_reader'@'%' IDENTIFIED BY '123456!';
 
