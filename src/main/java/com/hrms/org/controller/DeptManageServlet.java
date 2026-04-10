@@ -81,8 +81,11 @@ public class DeptManageServlet extends HttpServlet {
         }
 
         try {
+            // 모든 부서 목록을 먼저 가져옴 (하위 부서 수집에 필요)
+            List<DeptDTO> allDepts = deptService.getAllDepts();
+            
             request.setAttribute("deptTree",     deptService.getDeptTree());
-            request.setAttribute("allDepts",     deptService.getAllDepts());
+            request.setAttribute("allDepts",     allDepts);
             request.setAttribute("isPrivileged", String.valueOf(isPrivileged));
 
             // 비활성 부서 목록: HR담당자만 조회 가능
@@ -110,12 +113,18 @@ public class DeptManageServlet extends HttpServlet {
 
             DeptDTO selectedDept = null;
             List<Map<String, Object>> memberList = null;
+            // [추가] 하위 부서 ID들을 담을 리스트
+            java.util.List<Integer> childIds = new java.util.ArrayList<>();
 
             if ("new".equals(action) && isPrivileged) {
                 selectedDept = new DeptDTO();
                 selectedDept.setIs_active(1);
             } else {
                 selectedDept = deptService.getDeptById(selectedDeptId);
+
+                if (selectedDept != null && allDepts != null) {
+                    collectChildIds(selectedDept.getDept_id(), allDepts, childIds);
+                }
 
                 // 비활성 부서: HR담당자가 아니면 접근 차단
                 if (selectedDept != null && selectedDept.getIs_active() == 0 && !isPrivileged) {
@@ -133,7 +142,7 @@ public class DeptManageServlet extends HttpServlet {
             request.setAttribute("selectedDept",   selectedDept);
             request.setAttribute("selectedDeptId", selectedDeptId);
             request.setAttribute("memberList",      memberList);
-
+            request.setAttribute("childIds",        childIds);
             request.setAttribute("viewPage", "/WEB-INF/jsp/org/deptManage.jsp");
             request.getRequestDispatcher("/index.jsp").forward(request, response);
 
@@ -275,7 +284,16 @@ public class DeptManageServlet extends HttpServlet {
         if (map.containsKey(upperSnake.toLowerCase())) return map.get(upperSnake.toLowerCase());
         return null;
     }
-
+    
+    private void collectChildIds(int parentId, List<DeptDTO> allDepts, List<Integer> childIds) {
+        if (allDepts == null) return;
+        for (DeptDTO d : allDepts) {
+            if (d.getParent_dept_id() == parentId) {
+                childIds.add(d.getDept_id());
+                collectChildIds(d.getDept_id(), allDepts, childIds);
+            }
+        }
+    }
     private String escapeJsonValue(Object value) {
         if (value == null) return "";
         return value.toString()

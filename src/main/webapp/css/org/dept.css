@@ -114,6 +114,11 @@
 }
 .dept-tab.active { background: #fff; color: var(--dc-blue); box-shadow: 0 1px 4px rgba(0,0,0,.1); }
 
+/* [추가] 탭 컨텐츠 제어 클래스 */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.inactive-tab-hidden { display: none !important; }
+
 /* ════════════════════════════
    🌳 조직도 트리
 ════════════════════════════ */
@@ -175,6 +180,8 @@
 }
 .tree-icon { font-size: 13px; flex-shrink: 0; }
 .tree-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-text.text-muted { color: var(--dc-text-muted) !important; }
+
 .tree-manager {
     font-size: 11px; color: var(--dc-text-muted); background: var(--dc-hover);
     border-radius: 4px; padding: 2px 7px; flex-shrink: 0; white-space: nowrap;
@@ -205,6 +212,9 @@
     font-size: 16px; font-weight: 700; color: var(--dc-text);
     margin-bottom: 22px; display: flex; align-items: center; gap: 8px;
 }
+.new-mode-badge {
+    font-size: 13px; font-weight: 400; color: var(--dc-text-sub); margin-left: 5px;
+}
 
 .dept-form-grid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px 24px; margin-bottom: 28px;
@@ -221,9 +231,14 @@
 }
 .dept-form-group input:focus,
 .dept-form-group select:focus { border-color: var(--dc-blue); outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+
+/* [추가] 읽기전용 및 상태별 인풋 스타일 */
 .dept-form-group input[readonly],
 .dept-form-group input:disabled,
 .dept-form-group select:disabled { background: var(--dc-hover); color: var(--dc-text-sub); cursor: default; }
+.status-active-input { background-color: var(--dc-blue-lt) !important; color: var(--dc-blue) !important; font-weight: 600; }
+.closed-date-input { color: var(--dc-red) !important; font-weight: 500; }
+
 .dept-form-group input.input-error { border-color: var(--dc-red) !important; }
 .field-error-msg { font-size: 12px; color: var(--dc-red); margin-top: 2px; display: none; }
 .required { color: var(--dc-red); margin-left: 2px; }
@@ -264,6 +279,10 @@
 .member-table td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid var(--dc-border); color: var(--dc-text); }
 .member-table tbody tr:hover td { background: var(--dc-hover); }
 
+/* [추가] 사번 및 이름 강조 */
+.emp-no-cell { color: var(--dc-text-sub); font-size: 13px; }
+.emp-name-cell { font-weight: 600; }
+
 .badge-active  { display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0; }
 .badge-leave   { display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;background:#fff7ed;color:#9a3412;border:1px solid #ffedd5; }
 .badge-inactive{ display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;background:var(--dc-hover);color:var(--dc-text-sub);border:1px solid var(--dc-border); }
@@ -293,8 +312,7 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   [신규 추가] 중앙 동명이인 선택 모달 (JSP style에서 이동)
-   기존 .custom-modal 스타일과 충돌하지 않도록 명칭 유지
+   [신규 추가] 중앙 동명이인 선택 모달
    ───────────────────────────────────────────────────────────── */
 .emp-modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
