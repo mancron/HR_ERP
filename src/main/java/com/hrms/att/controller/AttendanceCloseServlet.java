@@ -48,8 +48,12 @@ public class AttendanceCloseServlet extends HttpServlet {
             session.setAttribute("errorMsg", e.getMessage());
         }
 
-        // PRG 패턴
-        response.sendRedirect(
-            request.getContextPath() + "/sal/calc?year=" + year + "&month=" + month);
+        String referer = request.getHeader("Referer");
+        if (referer != null && !referer.isEmpty()) {
+            response.sendRedirect(referer);
+        } else {
+            response.sendRedirect(
+                request.getContextPath() + "/att/status?year=" + year + "&month=" + month);
+        }
     }
 }
