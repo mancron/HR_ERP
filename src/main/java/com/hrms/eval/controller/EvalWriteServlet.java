@@ -16,7 +16,7 @@ import java.util.*;
 public class EvalWriteServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private EvaluationService evalService = new EvaluationService();
-    private EvaluationDAO      evalDao      = new EvaluationDAO();
+    private EvaluationDAO     evalDao     = new EvaluationDAO();
 
     /** doGet/doPost 공통 기본 속성 세팅 */
     private void setCommonAttributes(HttpServletRequest request, int loginEmpId, String userRole) {
@@ -48,7 +48,7 @@ public class EvalWriteServlet extends HttpServlet {
 
         setCommonAttributes(request, loginEmpId, userRole);
 
-        String idParam      = request.getParameter("id");
+        String idParam     = request.getParameter("id");
         String currentGrade = "A";
 
         if (idParam != null && !idParam.isEmpty()) {
@@ -61,10 +61,10 @@ public class EvalWriteServlet extends HttpServlet {
                     return;
                 }
 
-                String  evalStatus      = (String)  evalData.get("evalStatus");
-                Object  ownerObj        = evalData.get("evaluatorId");
+                String  evalStatus       = (String)  evalData.get("evalStatus");
+                Object  ownerObj         = evalData.get("evaluatorId");
                 int     ownerEvaluatorId = (ownerObj != null) ? (Integer) ownerObj : -1;
-                boolean isOwner         = (ownerEvaluatorId == loginEmpId);
+                boolean isOwner          = (ownerEvaluatorId == loginEmpId);
 
                 if ("최종확정".equals(evalStatus)) {
                     response.sendRedirect(request.getContextPath() + "/eval/status?error=already_confirmed");
@@ -79,12 +79,34 @@ public class EvalWriteServlet extends HttpServlet {
                 List<BigDecimal> itemScores = evalDao.getItemScoresByEvalId(evalId, itemNames);
                 currentGrade = (String) evalData.getOrDefault("grade", "A");
 
-                String  evalComment = (String) evalData.get("evalComment");
-                boolean isRejected  = (evalComment != null && evalComment.startsWith("[반려]"));
+                String evalComment = (String) evalData.get("evalComment");
+                if (evalComment == null) evalComment = "";
 
-                request.setAttribute("isRejected", isRejected);
-                request.setAttribute("evalData",   evalData);
-                request.setAttribute("itemScores", itemScores);
+                // 반려 여부: [반려] 태그로 판별
+                boolean isRejected = evalComment.contains("[반려]");
+
+                // ── 반려 사유 추출 (서버사이드) ──────────────────────
+                // 저장 형식: "[반려] 평가자코멘트\n[반려 사유] HR이 적은 사유"
+                // cleanComment: [반려] 태그 + [반려 사유] 이하 모두 제거한 순수 코멘트
+                // rejectReason: [반려 사유] 이후 텍스트만 추출
+                String cleanComment = evalComment;
+                String rejectReason = "";
+
+                // 1. [반려 사유] 이하 추출 및 제거
+                int reasonIdx = cleanComment.indexOf("[반려 사유]");
+                if (reasonIdx >= 0) {
+                    rejectReason = cleanComment.substring(reasonIdx + "[반려 사유]".length()).trim();
+                    cleanComment = cleanComment.substring(0, reasonIdx).trim();
+                }
+
+                // 2. [반려] 태그 제거
+                cleanComment = cleanComment.replace("[반려]", "").trim();
+
+                request.setAttribute("isRejected",   isRejected);
+                request.setAttribute("cleanComment", cleanComment);
+                request.setAttribute("rejectReason", rejectReason);
+                request.setAttribute("evalData",     evalData);
+                request.setAttribute("itemScores",   itemScores);
 
             } catch (NumberFormatException e) { e.printStackTrace(); }
         }
@@ -92,15 +114,9 @@ public class EvalWriteServlet extends HttpServlet {
         String evalTypeForList = request.getParameter("evalType");
         if (evalTypeForList == null || evalTypeForList.isEmpty()) evalTypeForList = "상위평가";
 
-        System.out.println("\n=== [DEBUG] EvalWriteServlet.doGet 실행 ===");
-        System.out.println(">> loginEmpId: " + loginEmpId + ", evalType: " + evalTypeForList);
-
-        // 서비스 호출 및 리스트 조회 로그
-        Vector<Map<String, Object>> targetList = evalService.getEmployeeListForEvaluator(loginEmpId, userRole, evalTypeForList);
-        System.out.println(">> 조회된 대상자 수: " + (targetList != null ? targetList.size() : "NULL"));
-
         request.setAttribute("selectedEvalType", evalTypeForList);
-        request.setAttribute("targetList", targetList);
+        request.setAttribute("targetList",
+                evalService.getEmployeeListForEvaluator(loginEmpId, userRole, evalTypeForList));
         request.setAttribute("gradeColor", evalService.getGradeColor(currentGrade));
 
         request.setAttribute("viewPage", "/WEB-INF/jsp/eval/write.jsp");
@@ -140,21 +156,18 @@ public class EvalWriteServlet extends HttpServlet {
         String evalType    = request.getParameter("evalType");
 
         try {
+            // ── 수정 모드 보안 검증 ──
             if (evalIdStr != null && !evalIdStr.isEmpty()) {
                 int checkEvalId = Integer.parseInt(evalIdStr);
                 Map<String, Object> currentEval = evalDao.getEvaluationById(checkEvalId);
-
                 if (currentEval != null && !currentEval.isEmpty()) {
                     String dbStatus = (String) currentEval.get("evalStatus");
                     Object ownerObj = currentEval.get("evaluatorId");
                     int ownerId = (ownerObj != null) ? (Integer) ownerObj : -1;
-
-                    if ("최종확정".equals(dbStatus)) {
+                    if ("최종확정".equals(dbStatus))
                         throw new Exception("already_confirmed");
-                    }
-                    if (ownerId != loginEmpId && !"HR담당자".equals(userRole)) {
+                    if (ownerId != loginEmpId && !"HR담당자".equals(userRole))
                         throw new Exception("forbidden");
-                    }
                 }
             }
 
@@ -189,6 +202,7 @@ public class EvalWriteServlet extends HttpServlet {
                 }
             }
 
+            // 신규 작성 중복 체크
             boolean isNewWrite = (eval.getEvalId() == 0);
             if (isNewWrite) {
                 Map<String, Object> myExisting = evalService.loadExistingEval(
@@ -197,10 +211,10 @@ public class EvalWriteServlet extends HttpServlet {
                 if (myExisting != null)
                     throw new Exception("duplicate");
 
+                // 타인 작성중 건 덮어쓰기 방지
                 if (isOccupiedByOther(targetEmpId, eval.getEvalYear(),
-                        eval.getEvalPeriod(), eval.getEvalType(), loginEmpId)) {
+                        eval.getEvalPeriod(), eval.getEvalType(), loginEmpId))
                     throw new Exception("occupied_by_other");
-                }
 
                 if (evalService.isAlreadyConfirmed(targetEmpId, eval.getEvalYear(),
                         eval.getEvalPeriod(), eval.getEvalType()))
@@ -213,13 +227,14 @@ public class EvalWriteServlet extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
             setCommonAttributes(request, loginEmpId, userRole);
-            request.setAttribute("errorCode",  e.getMessage());
+            request.setAttribute("errorCode",   e.getMessage());
             request.setAttribute("tempComment", evalComment);
 
             if (evalIdStr != null && !evalIdStr.isEmpty()) {
                 try {
                     int evalId = Integer.parseInt(evalIdStr);
-                    request.setAttribute("evalData", evalDao.getEvaluationById(evalId));
+                    request.setAttribute("evalData",
+                            evalDao.getEvaluationById(evalId));
                     request.setAttribute("itemScores",
                             evalDao.getItemScoresByEvalId(evalId, evalService.getEvaluationItemNames()));
                 } catch (Exception ex) { ex.printStackTrace(); }
@@ -235,6 +250,7 @@ public class EvalWriteServlet extends HttpServlet {
         }
     }
 
+    /** 타인이 동일 조건으로 이미 작성중인 평가가 있는지 확인 */
     private boolean isOccupiedByOther(int empId, int year, String period,
                                        String type, int myEmpId) {
         String sql = "SELECT evaluator_id FROM evaluation "
@@ -245,10 +261,7 @@ public class EvalWriteServlet extends HttpServlet {
             pstmt.setInt(1, empId); pstmt.setInt(2, year);
             pstmt.setString(3, period); pstmt.setString(4, type);
             try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    int existingEvaluatorId = rs.getInt("evaluator_id");
-                    return existingEvaluatorId != myEmpId;
-                }
+                if (rs.next()) return rs.getInt("evaluator_id") != myEmpId;
             }
         } catch (Exception e) { e.printStackTrace(); }
         return false;
@@ -257,17 +270,13 @@ public class EvalWriteServlet extends HttpServlet {
     // ── AJAX: 대상자 목록 갱신 ───────────────────────────────
     private void handleGetTargets(HttpServletRequest request, HttpServletResponse response,
                                    int loginEmpId, String userRole) throws IOException {
-        System.out.println("\n=== [DEBUG] AJAX handleGetTargets 호출됨 ===");
         response.setContentType("application/json; charset=UTF-8");
         try {
             String evalType = request.getParameter("evalType");
             if (evalType == null || evalType.isEmpty()) evalType = "상위평가";
-            System.out.println(">> 파라미터 evalType: " + evalType);
 
             Vector<Map<String, Object>> list =
                     evalService.getEmployeeListForEvaluator(loginEmpId, userRole, evalType);
-            
-            System.out.println(">> 서비스로부터 받은 리스트 크기: " + (list != null ? list.size() : "NULL"));
 
             StringBuilder json = new StringBuilder("[");
             for (int i = 0; i < list.size(); i++) {
@@ -280,11 +289,8 @@ public class EvalWriteServlet extends HttpServlet {
                     .append(",\"pos\":\"").append(pos).append("\"}");
             }
             json.append("]");
-            
-            System.out.println(">> 응답 JSON: " + json.toString());
             response.getWriter().write(json.toString());
         } catch (Exception e) {
-            System.out.println(">> [ERROR] handleGetTargets 내부 오류!");
             e.printStackTrace();
             response.setStatus(500);
             response.getWriter().write("[]");
@@ -293,7 +299,7 @@ public class EvalWriteServlet extends HttpServlet {
 
     // ── AJAX: 기존 평가 불러오기 ─────────────────────────────
     private void handleLoadExisting(HttpServletRequest request, HttpServletResponse response,
-                                     int loginEmpId) throws IOException {
+                                    int loginEmpId) throws IOException {
         response.setContentType("application/json; charset=UTF-8");
         try {
             String empIdStr = request.getParameter("empId");
@@ -316,7 +322,7 @@ public class EvalWriteServlet extends HttpServlet {
             if (existing != null) {
                 int    evalId    = (Integer) existing.get("evalId");
                 String comment   = (String)  existing.get("evalComment");
-                boolean isRejected = (comment != null && comment.startsWith("[반려]"));
+                boolean isRejected = (comment != null && comment.contains("[반려]"));
                 response.getWriter().write("{\"found\":true,\"evalId\":" + evalId
                         + ",\"isRejected\":" + isRejected + "}");
             } else {

@@ -49,23 +49,34 @@ public class EvalConfirmServlet extends HttpServlet {
             return;
         }
 
-        // [C-1 / NEW-7 수정] isRejected를 evalData Map에 추가
+        // [C-1] isRejected를 evalData Map에 추가
         // getEvaluationById()는 evalComment만 반환하므로 여기서 직접 계산해서 주입
         String evalComment = (String) evalData.get("evalComment");
-        evalData.put("isRejected", evalComment != null && evalComment.startsWith("[반려]"));
+        boolean isRejected = evalComment != null && evalComment.contains("[반려]");
+        evalData.put("isRejected", isRejected);
+
+        // [반려 사유] 추출해서 별도 attribute로 전달
+        // 형식: "평가자 코멘트\n[반려 사유] HR이 적은 사유"
+        String rejectReason = "";
+        if (evalComment != null && evalComment.contains("[반려 사유]")) {
+            int idx = evalComment.indexOf("[반려 사유]");
+            rejectReason = evalComment.substring(idx + "[반려 사유]".length()).trim();
+        }
 
         Vector<String>   itemNames  = evalService.getEvaluationItemNames();
         List<BigDecimal> itemScores = evalService.getItemScoresByEvalId(evalId, itemNames);
 
         // iframe 내부 EL contextPath 문제 방지 → attribute로 직접 전달
-        request.setAttribute("evalData",   evalData);
-        request.setAttribute("itemNames",  itemNames);
-        request.setAttribute("itemScores", itemScores);
-        request.setAttribute("gradeColor", evalService.getGradeColor((String) evalData.get("grade")));
-        request.setAttribute("userRole",   userRole);
-        request.setAttribute("isHr",       isHr);
-        request.setAttribute("ctxPath",    request.getContextPath());
-        request.setAttribute("evalId",     evalId);
+        request.setAttribute("evalData",     evalData);
+        request.setAttribute("itemNames",    itemNames);
+        request.setAttribute("itemScores",   itemScores);
+        request.setAttribute("gradeColor",   evalService.getGradeColor((String) evalData.get("grade")));
+        request.setAttribute("userRole",     userRole);
+        request.setAttribute("isHr",         isHr);
+        request.setAttribute("isRejected",   isRejected);
+        request.setAttribute("rejectReason", rejectReason);
+        request.setAttribute("ctxPath",      request.getContextPath());
+        request.setAttribute("evalId",       evalId);
 
         request.getRequestDispatcher("/WEB-INF/jsp/eval/confirm.jsp").forward(request, response);
     }
@@ -102,8 +113,6 @@ public class EvalConfirmServlet extends HttpServlet {
             int evalId = Integer.parseInt(idParam.trim());
 
             if ("confirm".equals(action)) {
-                // [NEW-1 수정] confirmEvaluation이 throws Exception → try-catch로 메시지 처리
-                // 셀프 확정, 권한 없음 등의 서비스 예외 메시지를 그대로 클라이언트에 전달
                 boolean ok = evalService.confirmEvaluation(evalId, userRole, loginEmpId);
 
                 // TODO [급여 인상 연동 포인트]
@@ -114,7 +123,12 @@ public class EvalConfirmServlet extends HttpServlet {
                 sendJson(response, ok, ok ? "success" : "처리 중 오류가 발생했습니다.");
 
             } else if ("reject".equals(action)) {
-                boolean ok = evalService.rejectEvaluation(evalId, userRole, loginEmpId);
+                // 반려 사유 파라미터 수신
+                String rejectReason = request.getParameter("rejectReason");
+                if (rejectReason == null) rejectReason = "";
+                rejectReason = rejectReason.trim();
+
+                boolean ok = evalService.rejectEvaluation(evalId, userRole, loginEmpId, rejectReason);
                 sendJson(response, ok, ok ? "success" : "처리 중 오류가 발생했습니다.");
 
             } else {
@@ -124,8 +138,6 @@ public class EvalConfirmServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             sendJson(response, false, "잘못된 접근입니다 (ID 형식 오류).");
         } catch (Exception e) {
-            // [NEW-1 수정] 서비스에서 던진 예외 메시지 ("본인의 평가 결과는 직접 확정할 수 없습니다." 등)
-            // 를 그대로 클라이언트에 반환하여 confirm.jsp의 rmsg에 표시됨
             e.printStackTrace();
             sendJson(response, false, e.getMessage());
         }
@@ -133,8 +145,7 @@ public class EvalConfirmServlet extends HttpServlet {
 
     private void sendJson(HttpServletResponse response, boolean ok, String msg) throws IOException {
         response.setContentType("application/json; charset=UTF-8");
-        // msg에 따옴표가 포함될 수 있으므로 이스케이프 처리
-        String safeMsg = (msg != null) ? msg.replace("\"", "\\\"") : "";
+        String safeMsg = (msg != null) ? msg.replace("\\", "\\\\").replace("\"", "\\\"") : "";
         response.getWriter().write("{\"ok\":" + ok + ",\"msg\":\"" + safeMsg + "\"}");
     }
 }
