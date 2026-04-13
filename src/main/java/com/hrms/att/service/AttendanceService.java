@@ -161,6 +161,11 @@ public class AttendanceService {
 					result.add(dto);
 
 				} else {
+					if ("결근".equals(found.getStatus())) {
+						setDayOfWeek(found, date);
+						result.add(found);
+						continue;
+					}
 					applyNoCheckoutStatus(found);
 					setDayOfWeek(found, date);
 					result.add(found);

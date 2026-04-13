@@ -13,68 +13,83 @@ import com.hrms.att.service.OvertimeService;
 @WebServlet("/att/overtime/approve")
 public class OvertimeApprovePageServlet extends HttpServlet {
 
-    private OvertimeService service = new OvertimeService();
+	private OvertimeService service = new OvertimeService();
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        Integer approverId = (Integer) req.getSession().getAttribute("empId");
+		Integer approverId = (Integer) req.getSession().getAttribute("empId");
 
-        if (approverId == null) {
-            resp.sendRedirect(req.getContextPath() + "/login.jsp");
-            return;
-        }
+		if (approverId == null) {
+			resp.sendRedirect(req.getContextPath() + "/login.jsp");
+			return;
+		}
 
-        // 🔥 1. 파라미터 받기
-        String dept = req.getParameter("dept");
-        String sort = req.getParameter("sort");
-        String startDate = req.getParameter("startDate");
-        String endDate = req.getParameter("endDate");
+		// 🔥 1. 파라미터 받기
+		String dept = req.getParameter("dept");
+		String sort = req.getParameter("sort");
+		String startDate = req.getParameter("startDate");
+		String endDate = req.getParameter("endDate");
+		int page = 1;
+		int size = 10;
 
-        // null 방지
-        if (dept == null) dept = "";
-        if (sort == null) sort = "";
-        if (startDate == null) startDate = "";
-        if (endDate == null) endDate = "";
+		String pageParam = req.getParameter("page");
+		if (pageParam != null && !pageParam.trim().isEmpty()) {
+			page = Integer.parseInt(pageParam.trim());
+		}
 
-        // 🔥 날짜 역전 방지 (휴가랑 동일)
-        if (!startDate.isEmpty() && !endDate.isEmpty()) {
-            if (startDate.compareTo(endDate) > 0) {
+		int offset = (page - 1) * size;
 
-                req.setAttribute("error", "invalid_date");
+		// null 방지
+		if (dept == null)
+			dept = "";
+		if (sort == null)
+			sort = "";
+		if (startDate == null)
+			startDate = "";
+		if (endDate == null)
+			endDate = "";
 
-                req.setAttribute("dept", dept);
-                req.setAttribute("sort", sort);
-                req.setAttribute("startDate", startDate);
-                req.setAttribute("endDate", endDate);
+		// 🔥 날짜 역전 방지 (휴가랑 동일)
+		if (!startDate.isEmpty() && !endDate.isEmpty()) {
+			if (startDate.compareTo(endDate) > 0) {
 
-                // 부서 리스트만 조회
-                List<String> deptList = service.getPendingDeptList();
-                req.setAttribute("deptList", deptList);
+				req.setAttribute("error", "invalid_date");
 
-                req.getRequestDispatcher("/WEB-INF/jsp/att/overtimeApprove.jsp")
-                        .forward(req, resp);
-                return;
-            }
-        }
+				req.setAttribute("dept", dept);
+				req.setAttribute("sort", sort);
+				req.setAttribute("startDate", startDate);
+				req.setAttribute("endDate", endDate);
 
-        // 🔥 2. 데이터 조회
-        List<OvertimeDTO> list =
-                service.getPendingOvertimes(dept, sort, startDate, endDate, approverId);
+				// 부서 리스트만 조회
+				List<String> deptList = service.getPendingDeptList();
+				req.setAttribute("deptList", deptList);
 
-        // 🔥 3. 부서 목록
-        List<String> deptList = service.getPendingDeptList();
+				req.getRequestDispatcher("/WEB-INF/jsp/att/overtimeApprove.jsp").forward(req, resp);
+				return;
+			}
+		}
 
-        // 🔥 4. 전달
-        req.setAttribute("list", list);
-        req.setAttribute("deptList", deptList);
-        req.setAttribute("dept", dept);
-        req.setAttribute("sort", sort);
-        req.setAttribute("startDate", startDate);
-        req.setAttribute("endDate", endDate);
+		// 🔥 2. 데이터 조회
+		List<OvertimeDTO> list = service.getPendingOvertimes(dept, sort, startDate, endDate, approverId, offset, size);
 
-        req.getRequestDispatcher("/WEB-INF/jsp/att/overtimeApprove.jsp")
-                .forward(req, resp);
-    }
+		int totalCount = service.getPendingOvertimeCount(dept, startDate, endDate, approverId);
+
+		int totalPage = (int) Math.ceil((double) totalCount / size);
+
+		// 🔥 3. 부서 목록
+		List<String> deptList = service.getPendingDeptList();
+
+		// 🔥 4. 전달
+		req.setAttribute("list", list);
+		req.setAttribute("deptList", deptList);
+		req.setAttribute("dept", dept);
+		req.setAttribute("sort", sort);
+		req.setAttribute("startDate", startDate);
+		req.setAttribute("endDate", endDate);
+		req.setAttribute("currentPage", page);
+		req.setAttribute("totalPage", totalPage);
+
+		req.getRequestDispatcher("/WEB-INF/jsp/att/overtimeApprove.jsp").forward(req, resp);
+	}
 }

@@ -224,14 +224,25 @@ public class OvertimeService {
 	}
 
 	public List<OvertimeDTO> getPendingOvertimes(String dept, String sort, String startDate, String endDate,
-			int approverId) {
+			int approverId, int offset, int size) {
 
 		try (Connection conn = DatabaseConnection.getConnection()) {
-			return overtimeDAO.getPendingList(conn, dept, sort, startDate, endDate, approverId);
+			return overtimeDAO.getPendingList(conn, dept, sort, startDate, endDate, approverId, offset, size);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	public int getPendingOvertimeCount(
+		    String dept, String startDate, String endDate,
+		    int approverId
+		) {
+		    try (Connection conn = DatabaseConnection.getConnection()) {
+		        return overtimeDAO.getPendingCount(conn, dept, startDate, endDate, approverId);
+		    } catch (Exception e) {
+		        throw new RuntimeException(e);
+		    }
+		}
 
 	public List<String> getPendingDeptList() {
 

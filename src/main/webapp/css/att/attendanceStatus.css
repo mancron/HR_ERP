@@ -31,6 +31,11 @@
     font-weight: bold;
 }
 
+.absent-candidate {
+    color: orange;
+    font-weight: bold;
+}
+
 .btn-edit {
     background: #4CAF50;
     color: white;
@@ -235,4 +240,24 @@
     color: red;
     font-weight: bold;
     margin-bottom: 5px;
+}
+
+.pagination {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.pagination a {
+    display: inline-block;
+    padding: 6px 12px;
+    margin: 0 3px;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    color: #333;
+}
+
+.pagination a.active {
+    background: #4CAF50;
+    color: white;
+    font-weight: bold;
 }

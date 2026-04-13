@@ -43,13 +43,29 @@ public class AttendanceStatusServlet extends HttpServlet {
 		int positionId = 0;
 		String status = "재직";
 
+		int page = 1;
+		int size = 10;
+
+		String pageParam = request.getParameter("page");
+		if (pageParam != null && !pageParam.trim().isEmpty()) {
+		    page = Integer.parseInt(pageParam.trim());
+		}
+
+		int offset = (page - 1) * size;
+		
 		List<Map<String, Object>> list = summaryService.getSummaryList(keyword, dept, positionId, status, year,
-				month);
+				month, offset, size);
+		int totalCount = summaryService.getSummaryCount(keyword, dept, positionId, status);
+
+		int totalPage = (int) Math.ceil((double) totalCount / size);
+		
 		List<String> deptList = summaryService.getDeptList();
 		request.setAttribute("deptList", deptList);
 		request.setAttribute("list", list);
 		request.setAttribute("year", year);
 		request.setAttribute("month", month);
+		request.setAttribute("currentPage", page);
+		request.setAttribute("totalPage", totalPage);
 		
 		boolean isClosed = statusService.isClosed(year, month);
 		boolean hasUnfinished = statusService.existsUnfinishedCheckoutAll(year, month);

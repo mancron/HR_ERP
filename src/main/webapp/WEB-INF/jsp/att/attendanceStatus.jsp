@@ -88,6 +88,7 @@
 							<th>출근</th>
 							<th>지각</th>
 							<th>결근</th>
+							<th>결근 후보</th>
 							<th>휴가</th>
 							<th>퇴근 미처리</th>
 							<th>관리</th>
@@ -105,6 +106,7 @@
 								<td>${item.workDays}</td>
 								<td>${item.lateCount}</td>
 								<td class="absent">${item.absentCount}</td>
+								<td class="absent-candidate">${item.absentCandidateCount}</td>
 								<td>${item.leaveDays}</td>
 								<td>${item.noCheckoutCount}</td>
 
@@ -125,6 +127,29 @@
 					</tbody>
 
 				</table>
+				<div class="pagination">
+
+					<!-- 이전 -->
+					<c:if test="${currentPage > 1}">
+						<a
+							href="?page=${currentPage - 1}&month=${param.month}&dept=${param.dept}">
+							이전 </a>
+					</c:if>
+
+					<!-- 페이지 번호 -->
+					<c:forEach var="i" begin="1" end="${totalPage}">
+						<a href="?page=${i}&month=${param.month}&dept=${param.dept}"
+							class="${i == currentPage ? 'active' : ''}"> ${i} </a>
+					</c:forEach>
+
+					<!-- 다음 -->
+					<c:if test="${currentPage < totalPage}">
+						<a
+							href="?page=${currentPage + 1}&month=${param.month}&dept=${param.dept}">
+							다음 </a>
+					</c:if>
+
+				</div>
 
 			</div>
 

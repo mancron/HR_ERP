@@ -2,6 +2,7 @@ package com.hrms.att.controller;
 
 import com.hrms.att.dao.LeaveDAO;
 import com.hrms.att.dto.AnnualLeaveDTO;
+import com.hrms.emp.dao.EmpDAO;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,6 +16,7 @@ import java.util.List;
 public class AnnualLeaveServlet extends HttpServlet {
 
 	private LeaveDAO dao = new LeaveDAO();
+	private EmpDAO edao = new EmpDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -32,7 +34,7 @@ public class AnnualLeaveServlet extends HttpServlet {
         // 2. 데이터 조회
         List<AnnualLeaveDTO> list = dao.getAnnualLeaveList(year, dept, name);
         List<Integer> yearList = dao.getAvailableYears();
-        List<String> deptList = dao.getPendingDeptList(); // 재사용
+        List<String> deptList = edao.getDeptList();
 
         // 3. request 저장
         request.setAttribute("list", list);

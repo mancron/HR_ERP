@@ -40,10 +40,12 @@ public class LeaveService {
 				throw new RuntimeException("부서 없음");
 			}
 
+			int managerId = dept.getManager_id();
+			
 			// ⭐ 팀장 있으면 바로 반환
-			if (dept.getManager_id() != 0) {
-				return dept.getManager_id();
-			}
+			if (managerId != 0 && managerId != empId) {
+	            return managerId;
+	        }
 
 			// ⭐ 없으면 상위 부서로 이동
 			deptId = dept.getParent_dept_id();
@@ -218,13 +220,17 @@ public class LeaveService {
 	}
 
 	// 필터 + 정렬 포함 (신규 기능)
-	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int approverId) {
-		return leaveDAO.getPendingLeaves(dept, sort, startDate, endDate, approverId);
+	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int approverId, int offset, int size) {
+		return leaveDAO.getPendingLeaves(dept, sort, startDate, endDate, approverId, offset, size);
+	}
+	
+	public int getPendingLeavesCount(String dept, String startDate, String endDate, int approverId) {
+		return leaveDAO.getPendingLeavesCount(dept, startDate, endDate, approverId);
 	}
 
 	// 부서 목록 조회 (드롭다운용)
-	public List<String> getPendingDeptList() {
-		return leaveDAO.getPendingDeptList();
+	public List<String> getPendingDeptList(int approverId) {
+		return leaveDAO.getPendingDeptList(approverId);
 	}
 
 	// 휴가 승인 반려 처리
