@@ -33,29 +33,30 @@ public class TransferDAO {
 	 * 2. 발령 이력 테이블에 내역 삽입 (INSERT INTO personnel_history) 설계서 흐름도: [발력이력 등록] 단계
 	 */
 	public int insertPersonnelHistory(Connection con, HistoryDTO dto) throws SQLException {
-		String sql = "INSERT INTO personnel_history " +
+	    String sql = "INSERT INTO personnel_history " +
 	             "(emp_id, change_type, change_date, from_dept_id, to_dept_id, " +
-	             "from_position_id, from_role, to_position_id, to_role, reason, approved_by) " +
-	             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        PreparedStatement pstmt = null;
-        try {
-        	pstmt = con.prepareStatement(sql);
-        	pstmt.setInt(1, dto.getEmp_id());
-        	pstmt.setString(2, dto.getChange_type());
-        	pstmt.setObject(3, dto.getChange_date());
-        	pstmt.setInt(4, dto.getFrom_dept_id());
-        	pstmt.setInt(5, dto.getTo_dept_id());
-        	pstmt.setInt(6, dto.getFrom_position_id());
-        	pstmt.setString(7, dto.getFrom_role());
-        	pstmt.setInt(8, dto.getTo_position_id());
-        	pstmt.setString(9, dto.getTo_role());
-        	pstmt.setString(10, dto.getReason());
-        	pstmt.setInt(11, dto.getApproved_by());
-            return pstmt.executeUpdate();
-        } finally {
-            if (pstmt != null) pstmt.close();
-        }
-    }
+	             "from_position_id, from_role, to_position_id, to_role, reason, approved_by, is_applied) " +
+	             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; // ← is_applied 추가
+	    PreparedStatement pstmt = null;
+	    try {
+	        pstmt = con.prepareStatement(sql);
+	        pstmt.setInt(1, dto.getEmp_id());
+	        pstmt.setString(2, dto.getChange_type());
+	        pstmt.setObject(3, dto.getChange_date());
+	        pstmt.setInt(4, dto.getFrom_dept_id());
+	        pstmt.setInt(5, dto.getTo_dept_id());
+	        pstmt.setInt(6, dto.getFrom_position_id());
+	        pstmt.setString(7, dto.getFrom_role());
+	        pstmt.setInt(8, dto.getTo_position_id());
+	        pstmt.setString(9, dto.getTo_role());
+	        pstmt.setString(10, dto.getReason());
+	        pstmt.setInt(11, dto.getApproved_by());
+	        pstmt.setInt(12, dto.getIs_applied());
+	        return pstmt.executeUpdate();
+	    } finally {
+	        if (pstmt != null) pstmt.close();
+	    }
+	}
 
 	//부서 목록 가져오기
 	public List<EmpDTO> getDeptList(Connection con) throws SQLException {
@@ -222,6 +223,46 @@ public class TransferDAO {
 	        pstmt.setInt(2, deptId);
 	        pstmt.executeUpdate();
 	    } finally {
+	        if (pstmt != null) pstmt.close();
+	    }
+	}
+	
+	// 인사발령 is_applied 업데이트
+	public void markTransferAsApplied(Connection con, int historyId) throws SQLException {
+	    String sql = "UPDATE personnel_history SET is_applied=1 WHERE history_id=?";
+	    PreparedStatement pstmt = null;
+	    try {
+	        pstmt = con.prepareStatement(sql);
+	        pstmt.setInt(1, historyId);
+	        pstmt.executeUpdate();
+	    } finally {
+	        if (pstmt != null) pstmt.close();
+	    }
+	}
+
+	// 미처리 인사발령 건 조회 (적용일 <= 오늘, is_applied=0, change_type='발령')
+	public List<HistoryDTO> getPendingTransferApprovals(Connection con) throws SQLException {
+	    String sql = "SELECT history_id, emp_id, to_dept_id, to_position_id, to_role, change_date " +
+	                 "FROM personnel_history " +
+	                 "WHERE change_type='발령' AND is_applied=0 AND change_date <= NOW()";
+	    PreparedStatement pstmt = null;
+	    ResultSet rs = null;
+	    List<HistoryDTO> list = new ArrayList<>();
+	    try {
+	        pstmt = con.prepareStatement(sql);
+	        rs = pstmt.executeQuery();
+	        while (rs.next()) {
+	            HistoryDTO dto = new HistoryDTO();
+	            dto.setHistory_id(rs.getInt("history_id"));
+	            dto.setEmp_id(rs.getInt("emp_id"));
+	            dto.setTo_dept_id(rs.getInt("to_dept_id"));
+	            dto.setTo_position_id(rs.getInt("to_position_id"));
+	            dto.setTo_role(rs.getString("to_role"));
+	            list.add(dto);
+	        }
+	        return list;
+	    } finally {
+	        if (rs != null) rs.close();
 	        if (pstmt != null) pstmt.close();
 	    }
 	}

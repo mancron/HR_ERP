@@ -5,6 +5,7 @@ import com.hrms.auth.dto.AccountDTO;
 import com.hrms.auth.dto.LoginResultDTO;
 import com.hrms.auth.service.AuthService;
 import com.hrms.emp.dto.EmpDTO;
+import com.hrms.emp.service.PendingApplyService;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -68,6 +69,8 @@ public class LoginServlet extends HttpServlet {
                     session.setAttribute("loginUser", empInfo);
                     // 맵에 현재 사번과 세션ID 등록
                     loginUsers.put(sEmpId, session.getId());
+                    // 미처리 상태 인사 처리 실행
+                    new PendingApplyService().processPending();
                 }
                 
                 response.sendRedirect(request.getContextPath() + "/main");

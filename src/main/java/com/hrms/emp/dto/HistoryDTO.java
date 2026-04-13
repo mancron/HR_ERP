@@ -17,6 +17,7 @@ public class HistoryDTO {
 	private String reason;
 	private int approved_by;
 	private LocalDateTime created_at;
+	private int is_applied;  // 0=미처리, 1=처리완료
 	
 	//JOIN 결과 필드
 	private String emp_name;           // 직원 이름
@@ -150,5 +151,11 @@ public class HistoryDTO {
 	}
 	public void setApproved_by_name(String approved_by_name) {
 		this.approved_by_name = approved_by_name;
+	}
+	public int getIs_applied() {
+		return is_applied;
+	}
+	public void setIs_applied(int is_applied) {
+		this.is_applied = is_applied;
 	}
 }

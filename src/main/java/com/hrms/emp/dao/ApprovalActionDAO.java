@@ -489,4 +489,94 @@ public class ApprovalActionDAO {
             if (pstmt != null) pstmt.close();
         }
     }
+    
+    // 휴직/복직 is_applied 업데이트
+    public void markLeaveAsApplied(Connection con, int requestId) throws SQLException {
+        String sql = "UPDATE leave_of_absence_request SET is_applied=1 WHERE request_id=?";
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, requestId);
+            pstmt.executeUpdate();
+        } finally {
+            if (pstmt != null) pstmt.close();
+        }
+    }
+
+    // 퇴직 is_applied 업데이트
+    public void markResignAsApplied(Connection con, int requestId) throws SQLException {
+        String sql = "UPDATE resign_request SET is_applied=1 WHERE request_id=?";
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, requestId);
+            pstmt.executeUpdate();
+        } finally {
+            if (pstmt != null) pstmt.close();
+        }
+    }
+
+    // 미처리 휴직/복직 건 조회 (적용일 <= 오늘, is_applied=0, 최종승인)
+    public List<int[]> getPendingLeaveApprovals(Connection con) throws SQLException {
+        String sql = "SELECT request_id, emp_id, leave_type, start_date " +
+                     "FROM leave_of_absence_request " +
+                     "WHERE status='최종승인' AND is_applied=0 AND start_date <= CURDATE()";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        List<int[]> list = new java.util.ArrayList<>();
+        try {
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                list.add(new int[]{
+                    rs.getInt("request_id"),
+                    rs.getInt("emp_id")
+                });
+            }
+            return list;
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
+
+    // 미처리 퇴직 건 조회 (퇴직일 <= 오늘, is_applied=0, 최종승인)
+    public List<int[]> getPendingResignApprovals(Connection con) throws SQLException {
+        String sql = "SELECT request_id, emp_id, resign_date " +
+                     "FROM resign_request " +
+                     "WHERE status='최종승인' AND is_applied=0 AND resign_date <= CURDATE()";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        List<int[]> list = new java.util.ArrayList<>();
+        try {
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                list.add(new int[]{
+                    rs.getInt("request_id"),
+                    rs.getInt("emp_id")
+                });
+            }
+            return list;
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
+    
+    // emp_id로 emp_no 조회
+    public String getEmpNo(Connection con, int empId) throws SQLException {
+        String sql = "SELECT emp_no FROM employee WHERE emp_id = ?";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, empId);
+            rs = pstmt.executeQuery();
+            return rs.next() ? rs.getString("emp_no") : null;
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+        }
+    }
 }
