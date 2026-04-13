@@ -115,49 +115,36 @@ public class DeptService {
             if (deptDao.getChildDeptCount(dept.getDept_id()) > 0) return "HAS_CHILDREN_INACTIVE";
         }
 
-        // 8. 순서 조정
-        //    [BUG-1 FIX] parent_dept_id = 0 (최상위) 인 경우 shiftSortOrder 건너뜀
-        //    → 0 기준 UPDATE 는 의도치 않은 전체 부서 정렬을 건드릴 수 있음
         int newParentId = dept.getParent_dept_id();
         int oldParentId = (oldDept != null) ? oldDept.getParent_dept_id() : -1;
 
-        if (newParentId != 0) {
-            if (oldDept != null && oldParentId == newParentId) {
-                // 같은 부모 내 순서 이동
-                int oldOrder = oldDept.getSort_order();
-                int newOrder = dept.getSort_order();
-                if (oldOrder != newOrder) {
-                    deptDao.shiftSortOrder(newParentId, oldOrder, newOrder);
-                }
-            } else {
-                // 신규 등록 또는 부모 변경
-                deptDao.shiftSortOrder(newParentId, 0, dept.getSort_order());
-            }
-        }
-
-        // 9. 저장
-        boolean success = false;
-        if (dept.getDept_id() == 0) {
-            int newId = deptDao.insertDept(dept);
-            if (newId > 0) {
-                dept.setDept_id(newId);
-                success = true;
+        if (oldDept != null && oldParentId == newParentId) {
+            // 같은 부모 내 순서 이동 (최상위 부서 간 이동 포함)
+            int oldOrder = oldDept.getSort_order();
+            int newOrder = dept.getSort_order();
+            if (oldOrder != newOrder) {
+                deptDao.shiftSortOrder(newParentId, oldOrder, newOrder);
             }
         } else {
-            success = deptDao.updateDept(dept);
+            // 신규 등록 또는 부모 변경
+            deptDao.shiftSortOrder(newParentId, 0, dept.getSort_order());
         }
 
+        // 9. 저장 (기존과 동일)
+        boolean success = (dept.getDept_id() == 0) ? (deptDao.insertDept(dept) > 0) : deptDao.updateDept(dept);
+
         // 10. 순서 재정렬 (빈자리 메우기)
-        //     [BUG-1 FIX] parent_dept_id = 0 인 경우 reorderSortOrder 건너뜀
+        // [수정] 여기서도 parent_dept_id != 0 제약을 풀어서 최상위 부서들도 이빨을 맞춰줍니다.
         if (success) {
-            if (newParentId != 0) {
-                deptDao.reorderSortOrder(newParentId);
-            }
-            if (oldDept != null && oldParentId != newParentId && oldParentId != 0) {
+            // 현재 부모의 하위 부서들 재정렬
+            deptDao.reorderSortOrder(newParentId);
+            
+            // 부모가 바뀌었다면 이전 부모의 하위 부서들도 재정렬
+            if (oldDept != null && oldParentId != newParentId) {
                 deptDao.reorderSortOrder(oldParentId);
             }
 
-            // 11. 하위 부서 레벨 동기화
+            // 11. 하위 부서 레벨 동기화 (기존과 동일)
             if (oldDept != null && oldDept.getDept_level() != newLevel) {
                 int diff = newLevel - oldDept.getDept_level();
                 updateChildLevelsRecursive(dept.getDept_id(), diff);

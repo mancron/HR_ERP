@@ -1,214 +1,269 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
 <%-- 현재 월을 가져와서 변수에 저장 (기간 제어용) --%>
-<c:set var="currentMonth" value="<%= java.time.LocalDate.now().getMonthValue() %>" />
+<c:set var="currentMonth"
+	value="<%=java.time.LocalDate.now().getMonthValue()%>" />
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/eval/evaluation.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/css/eval/evaluation.css">
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/css/style.css">
 
 <%-- ── 에러 메시지 ── --%>
-<c:set var="errorVal" value="${not empty param.error ? param.error : errorCode}" />
+<c:set var="errorVal"
+	value="${not empty param.error ? param.error : errorCode}" />
 <c:if test="${not empty errorVal}">
-    <div class="eval-error-msg auto-hide">
-        <c:choose>
-            <c:when test="${errorVal == 'self_eval'}">⚠ 자기 자신을 상위/동료 평가 대상으로 선택할 수 없습니다.</c:when>
-            <c:when test="${errorVal == 'position_denied'}">⚠ 권한 없음: 본인보다 높거나 같은 직급은 상위평가 대상이 될 수 없습니다.</c:when>
-            <c:when test="${errorVal == 'forbidden'}">⚠ 접근 권한이 없습니다.</c:when>
-            <c:when test="${errorVal == 'already_confirmed'}">⚠ 이미 최종확정된 평가는 수정할 수 없습니다.</c:when>
-            <c:when test="${errorVal == 'save_fail'}">⚠ 저장 중 오류가 발생했습니다.</c:when>
-            <c:when test="${errorVal == 'comment_required'}">⚠ 평가 의견(코멘트)을 입력해주세요.</c:when>
-            <c:when test="${errorVal == 'target_required'}">⚠ 평가 대상자를 반드시 선택해야 합니다.</c:when>
-            <c:when test="${errorVal == 'duplicate'}">⚠ 해당 조건으로 이미 작성 중인 데이터가 있습니다.</c:when>
-            <c:when test="${errorVal == 'occupied_by_other'}">⚠ 다른 평가자가 이미 해당 대상에 평가를 작성 중입니다.</c:when>
-            <c:otherwise>⚠ 잘못된 요청입니다. (${errorVal})</c:otherwise>
-        </c:choose>
-    </div>
+	<div class="eval-error-msg auto-hide">
+		<c:choose>
+			<c:when test="${errorVal == 'self_eval'}">⚠ 자기 자신을 상위/동료 평가 대상으로 선택할 수 없습니다.</c:when>
+			<c:when test="${errorVal == 'position_denied'}">⚠ 권한 없음: 본인보다 높거나 같은 직급은 상위평가 대상이 될 수 없습니다.</c:when>
+			<c:when test="${errorVal == 'forbidden'}">⚠ 접근 권한이 없습니다.</c:when>
+			<c:when test="${errorVal == 'already_confirmed'}">⚠ 이미 최종확정된 평가는 수정할 수 없습니다.</c:when>
+			<c:when test="${errorVal == 'save_fail'}">⚠ 저장 중 오류가 발생했습니다.</c:when>
+			<c:when test="${errorVal == 'comment_required'}">⚠ 평가 의견(코멘트)을 입력해주세요.</c:when>
+			<c:when test="${errorVal == 'target_required'}">⚠ 평가 대상자를 반드시 선택해야 합니다.</c:when>
+			<c:when test="${errorVal == 'duplicate'}">⚠ 해당 조건으로 이미 작성 중인 데이터가 있습니다.</c:when>
+			<c:when test="${errorVal == 'occupied_by_other'}">⚠ 다른 평가자가 이미 해당 대상에 평가를 작성 중입니다.</c:when>
+			<c:otherwise>⚠ 잘못된 요청입니다. (${errorVal})</c:otherwise>
+		</c:choose>
+	</div>
 </c:if>
 
-<%-- ── 반려 안내 배너 ── --%>
+<%-- ── 통합 반려 안내 영역 ── --%>
 <c:if test="${isRejected == true}">
-    <div class="eval-reject-banner">⚠ 이 평가는 반려되었습니다. 내용을 검토하고 수정 후 재제출해 주세요.</div>
-</c:if>
-
-<%-- ── 반려 사유 안내박스 (반려됐고 사유가 있을 때만 표시) ── --%>
-<c:if test="${isRejected == true && not empty rejectReason}">
-    <div style="margin:0 0 14px; padding:12px 16px; background:#fff7ed;
-                border-left:4px solid #f97316; border-radius:0 8px 8px 0;
-                font-size:13px; color:#7c2d12;">
-        <strong style="display:block;margin-bottom:4px;color:#c2410c;">📌 반려 사유</strong>
-        <c:out value="${rejectReason}"/>
-        <div style="font-size:11px;color:#9a3412;margin-top:6px;">
+    <div class="eval-reject-banner">
+        <div class="reject-title">
+            <span>⚠️</span> 이 평가는 반려되었습니다. 내용을 검토하고 수정 후 재제출해 주세요.
+        </div>       
+<div class="reject-content"><strong>반려 사유:</strong><c:choose><c:when test="${not empty rejectReason}">${fn:trim(rejectReason)}</c:when><c:when test="${not empty evaluation.rejectReason}">${fn:trim(evaluation.rejectReason)}</c:when><c:otherwise>지정된 사유 없음</c:otherwise></c:choose></div>
+        <div class="reject-footer">
             ※ 재제출 시 위 반려 사유는 자동으로 삭제됩니다.
         </div>
     </div>
 </c:if>
 
 <div class="eval-wrapper">
-    <div class="eval-main">
-        <div class="section-title">
-            <c:choose>
-                <c:when test="${not empty evalData}">${evalData.empName} 평가 수정</c:when>
-                <c:otherwise>평가 작성</c:otherwise>
-            </c:choose>
-        </div>
+	<div class="eval-main">
+		<div class="section-title">
+			<c:choose>
+				<c:when test="${not empty evalData}">${evalData.empName} 평가 수정</c:when>
+				<c:otherwise>평가 작성</c:otherwise>
+			</c:choose>
+		</div>
 
-        <form action="${pageContext.request.contextPath}/eval/write" method="post" id="evalForm">
-            <c:if test="${not empty evalData}">
-                <input type="hidden" name="evalId" value="${evalData.evalId}">
-            </c:if>
+		<form action="${pageContext.request.contextPath}/eval/write"
+			method="post" id="evalForm">
+			<c:if test="${not empty evalData}">
+				<input type="hidden" name="evalId" value="${evalData.evalId}">
+			</c:if>
 
-            <div class="form-grid">
-                <c:choose>
-                    <c:when test="${not empty evalData}">
-                        <%-- 수정 모드: 4개 필드 완전 고정 --%>
-                        <input type="hidden" name="evalType"   value="${evalData.evalType}">
-                        <input type="hidden" name="empId"      value="${evalData.empId}">
-                        <input type="hidden" name="evalYear"   value="${evalData.evalYear}">
-                        <input type="hidden" name="evalPeriod" value="${evalData.evalPeriod}">
+			<div class="form-grid">
+				<c:choose>
+					<c:when test="${not empty evalData}">
+						<%-- 수정 모드: 4개 필드 완전 고정 --%>
+						<input type="hidden" name="evalType" value="${evalData.evalType}">
+						<input type="hidden" name="empId" value="${evalData.empId}">
+						<input type="hidden" name="evalYear" value="${evalData.evalYear}">
+						<input type="hidden" name="evalPeriod"
+							value="${evalData.evalPeriod}">
 
-                        <div class="form-group"><label>평가 유형</label><input type="text" class="field-readonly" value="${evalData.evalType}" readonly></div>
-                        <div class="form-group"><label>평가 대상자</label><input type="text" class="field-readonly" value="${evalData.empName}" readonly></div>
-                        <div class="form-group"><label>평가 연도</label><input type="text" class="field-readonly" value="${evalData.evalYear}년" readonly></div>
-                        <div class="form-group"><label>평가 기간</label><input type="text" class="field-readonly" value="${evalData.evalPeriod}" readonly></div>
-                    </c:when>
-                    <c:otherwise>
-                        <%-- 신규 작성 모드: 선택 가능 --%>
-                        <div class="form-group">
-                            <label>평가 유형 *</label>
-                            <select name="evalType" id="sel_evalType" onchange="onEvalTypeChange(); checkLoadable();">
-                                <option value="상위평가" ${(empty selectedEvalType or selectedEvalType == '상위평가') ? 'selected' : ''}>상위평가</option>
-                                <option value="자기평가" ${selectedEvalType == '자기평가' ? 'selected' : ''}>자기평가</option>
-                                <option value="동료평가" ${selectedEvalType == '동료평가' ? 'selected' : ''}>동료평가</option>
-                                <option value="하위평가" ${selectedEvalType == '하위평가' ? 'selected' : ''}>하위평가</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>평가 대상자 *</label>
-                            <select name="empId" id="sel_empId" required onchange="checkLoadable()">
-                                <option value="">대상자를 선택하세요</option>
-                                <c:forEach var="emp" items="${targetList}">
-                                    <option value="${emp.empId}" ${param.empId == emp.empId ? 'selected' : ''}>${emp.empName} (${emp.pos})</option>
-                                </c:forEach>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>평가 연도 *</label>
-                            <select name="evalYear" id="sel_evalYear" onchange="checkLoadable()">
-                                <c:forEach var="y" items="${yearList}">
-                                    <option value="${y}" ${param.evalYear == y ? 'selected' : ''}>${y}년</option>
-                                </c:forEach>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>평가 기간 *</label>
-                            <select name="evalPeriod" id="sel_evalPeriod" onchange="checkLoadable()">
-                                <option value="상반기" ${param.evalPeriod == '상반기' ? 'selected' : ''}
-                                    ${(currentMonth >= 4 && currentMonth <= 6) ? '' : 'disabled'}>
-                                    상반기 ${(currentMonth >= 4 && currentMonth <= 6) ? '' : '(기간 아님)(4~6월)'}
-                                </option>
-                                <option value="하반기" ${param.evalPeriod == '하반기' ? 'selected' : ''}
-                                    ${(currentMonth == 11 || currentMonth == 12) ? '' : 'disabled'}>
-                                    하반기 ${(currentMonth == 11 || currentMonth == 12) ? '' : '(기간 아님)(11~12월)'}
-                                </option>
-                                <option value="연간" ${param.evalPeriod == '연간' ? 'selected' : ''}
-                                    ${(currentMonth == 12 || currentMonth == 1) ? '' : 'disabled'}>
-                                    연간 ${(currentMonth == 12 || currentMonth == 1) ? '' : '(기간 아님)(12~1월)'}
-                                </option>
-                            </select>
-                        </div>
-                    </c:otherwise>
-                </c:choose>
-            </div>
+						<div class="form-group">
+							<label>평가 유형</label><input type="text" class="field-readonly"
+								value="${evalData.evalType}" readonly>
+						</div>
+						<div class="form-group">
+							<label>평가 대상자</label><input type="text" class="field-readonly"
+								value="${evalData.empName}" readonly>
+						</div>
+						<div class="form-group">
+							<label>평가 연도</label><input type="text" class="field-readonly"
+								value="${evalData.evalYear}년" readonly>
+						</div>
+						<div class="form-group">
+							<label>평가 기간</label><input type="text" class="field-readonly"
+								value="${evalData.evalPeriod}" readonly>
+						</div>
+					</c:when>
+					<c:otherwise>
+						<%-- 신규 작성 모드: 선택 가능 --%>
+						<div class="form-group">
+							<label>평가 유형 *</label> <select name="evalType" id="sel_evalType"
+								onchange="onEvalTypeChange(); checkLoadable();">
+								<option value="상위평가"
+									${(empty selectedEvalType or selectedEvalType == '상위평가') ? 'selected' : ''}>상위평가</option>
+								<option value="자기평가"
+									${selectedEvalType == '자기평가' ? 'selected' : ''}>자기평가</option>
+								<option value="동료평가"
+									${selectedEvalType == '동료평가' ? 'selected' : ''}>동료평가</option>
+								<option value="하위평가"
+									${selectedEvalType == '하위평가' ? 'selected' : ''}>하위평가</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label>평가 대상자 *</label> <select name="empId" id="sel_empId"
+								required onchange="checkLoadable()">
+								<option value="">대상자를 선택하세요</option>
+								<c:forEach var="emp" items="${targetList}">
+									<option value="${emp.empId}"
+										${param.empId == emp.empId ? 'selected' : ''}>${emp.empName}
+										(${emp.pos})</option>
+								</c:forEach>
+							</select>
+						</div>
+						<div class="form-group">
+							<label>평가 연도 *</label> <select name="evalYear" id="sel_evalYear"
+								onchange="checkLoadable()">
+								<c:forEach var="y" items="${yearList}">
+									<option value="${y}" ${param.evalYear == y ? 'selected' : ''}>${y}년</option>
+								</c:forEach>
+							</select>
+						</div>
+						<div class="form-group">
+							<label>평가 기간 *</label> <select name="evalPeriod"
+								id="sel_evalPeriod" onchange="checkLoadable()">
+								<option value="상반기"
+									${param.evalPeriod == '상반기' ? 'selected' : ''}
+									${(currentMonth >= 4 && currentMonth <= 6) ? '' : 'disabled'}>
+									상반기 ${(currentMonth >= 4 && currentMonth <= 6) ? '' : '(기간 아님)(4~6월)'}
+								</option>
+								<option value="하반기"
+									${param.evalPeriod == '하반기' ? 'selected' : ''}
+									${(currentMonth == 11 || currentMonth == 12) ? '' : 'disabled'}>
+									하반기 ${(currentMonth == 11 || currentMonth == 12) ? '' : '(기간 아님)(11~12월)'}
+								</option>
+								<option value="연간" ${param.evalPeriod == '연간' ? 'selected' : ''}
+									${(currentMonth == 12 || currentMonth == 1) ? '' : 'disabled'}>
+									연간 ${(currentMonth == 12 || currentMonth == 1) ? '' : '(기간 아님)(12~1월)'}
+								</option>
+							</select>
+						</div>
+					</c:otherwise>
+				</c:choose>
+			</div>
 
-            <%-- 불러오기 버튼 (신규 작성만) --%>
-            <c:if test="${empty evalData}">
-                <div class="load-area">
-                    <button type="button" id="btnLoad" class="btn btn-load" disabled onclick="loadExisting()">📂 기존 평가 불러오기</button>
-                    <span id="loadMsg" class="helper-text">유형·대상자·연도·기간을 모두 선택하면 활성화됩니다.</span>
-                </div>
-            </c:if>
+			<%-- 불러오기 버튼 (신규 작성만) --%>
+			<c:if test="${empty evalData}">
+				<div class="load-area">
+					<button type="button" id="btnLoad" class="btn btn-load" disabled
+						onclick="loadExisting()">📂 기존 평가 불러오기</button>
+					<span id="loadMsg" class="helper-text">유형·대상자·연도·기간을 모두 선택하면
+						활성화됩니다.</span>
+				</div>
+			</c:if>
 
-            <div class="score-title">📊 항목별 점수 (각 100점 만점)</div>
-            <c:forEach var="itemName" items="${itemNames}" varStatus="loop">
-                <div class="score-item">
-                    <div class="score-info"><span>${itemName}</span></div>
-                    <div class="slider-container">
-                        <input type="hidden" name="itemNames" value="${itemName}">
-                        <fmt:parseNumber var="intScore"
-                            value="${not empty itemScores ? itemScores[loop.index] : (not empty paramValues.scores ? paramValues.scores[loop.index] : 80)}"
-                            integerOnly="true"/>
-                        <input type="range" name="scores" min="0" max="100" value="${intScore}"
-                               oninput="document.getElementById('out${loop.index}').innerText=this.value; updateEvaluation();"
-                               ${sessionScope.userRole == '최종승인자' ? 'disabled' : ''}>
-                        <span class="current-val" id="out${loop.index}">${intScore}</span><span class="max-val">/100</span>
-                    </div>
-                </div>
-            </c:forEach>
+			<div class="score-title">📊 항목별 점수 (각 100점 만점)</div>
+			<c:forEach var="itemName" items="${itemNames}" varStatus="loop">
+				<div class="score-item">
+					<div class="score-info">
+						<span>${itemName}</span>
+					</div>
+					<div class="slider-container">
+						<input type="hidden" name="itemNames" value="${itemName}">
+						<fmt:parseNumber var="intScore"
+							value="${not empty itemScores ? itemScores[loop.index] : (not empty paramValues.scores ? paramValues.scores[loop.index] : 80)}"
+							integerOnly="true" />
+						<input type="range" name="scores" min="0" max="100"
+							value="${intScore}"
+							oninput="document.getElementById('out${loop.index}').innerText=this.value; updateEvaluation();"
+							${sessionScope.userRole == '최종승인자' ? 'disabled' : ''}> <span
+							class="current-val" id="out${loop.index}">${intScore}</span><span
+							class="max-val">/100</span>
+					</div>
+				</div>
+			</c:forEach>
 
-            <div class="result-box">
-                <div class="res-left">
-                    <div class="res-label">종합 점수 (평균)</div>
-                    <div class="avg-value" id="avgScore">${not empty evalData && evalData.totalScore != null ? evalData.totalScore : '80.0'}점</div>
-                </div>
-                <div class="res-right">
-                    <div class="res-label">등급</div>
-                    <div class="grade-badge" id="gradeBadge" style="color:${gradeColor};">${not empty evalData ? evalData.grade : 'A'}</div>
-                </div>
-            </div>
+			<div class="result-box">
+				<div class="res-left">
+					<div class="res-label">종합 점수 (평균)</div>
+					<div class="avg-value" id="avgScore">${not empty evalData && evalData.totalScore != null ? evalData.totalScore : '80.0'}점</div>
+				</div>
+				<div class="res-right">
+					<div class="res-label">등급</div>
+					<div class="grade-badge" id="gradeBadge"
+						style="color:${gradeColor};">${not empty evalData ? evalData.grade : 'A'}</div>
+				</div>
+			</div>
 
-            <%-- 평가 코멘트
+			<%-- 평가 코멘트
                  수정 모드: 서버에서 cleanComment(반려태그+사유 제거된 순수 코멘트) attribute 제공
                  신규/에러 재진입: tempComment or 빈값
             --%>
-            <div class="comment-group">
-                <label class="res-label">평가 코멘트</label>
-                <textarea name="evalComment" id="evalComment"
-                          placeholder="평가 의견을 입력하세요." required
-                          ${sessionScope.userRole == '최종승인자' ? 'readonly' : ''}><c:choose><c:when test="${not empty tempComment}">${tempComment}</c:when><c:when test="${not empty cleanComment}">${cleanComment}</c:when><c:when test="${not empty evalData}">${evalData.evalComment}</c:when></c:choose></textarea>
-            </div>
+			<div class="comment-group">
+    <label class="res-label">평가 코멘트</label>
+    <textarea name="evalComment" id="evalComment" placeholder="평가 의견을 입력하세요." required ${sessionScope.userRole=='최종승인자' ? 'readonly' : ''}><c:choose><c:when test="${not empty tempComment}">${tempComment}</c:when><c:when test="${not empty cleanComment}">${cleanComment}</c:when><c:when test="${not empty evalData}">${evalData.evalComment}</c:when></c:choose></textarea>
+</div>
 
-            <div class="btn-area">
-                <c:choose>
-                    <c:when test="${sessionScope.userRole == '최종승인자'}">
-                        <div class="admin-notice" style="border-left-color: #3b82f6;">
-                            <span class="notice-icon" style="color: #3b82f6;">ℹ</span>
-                            <p class="notice-text">
-                                <strong>조회 전용 모드:</strong> 사장님(최종승인자) 계정은 조회만 가능합니다.
-                            </p>
-                        </div>
-                    </c:when>
-                    <c:otherwise>
-                        <c:if test="${isHr}">
-                            <div class="admin-notice">
-                                <span class="notice-icon">ℹ</span>
-                                <p class="notice-text">
-                                    <strong>관리자 권한:</strong> HR 권한으로 접속 중입니다. 제출 후 [평가 현황]에서 확정이 가능합니다.
-                                </p>
-                            </div>
-                        </c:if>
-                        <button type="submit" name="status" value="작성중" class="btn btn-submit">제출하기</button>
-                    </c:otherwise>
-                </c:choose>
-            </div>
-        </form>
-    </div>
+			<div class="btn-area">
+				<c:choose>
+					<c:when test="${sessionScope.userRole == '최종승인자'}">
+						<div class="admin-notice" style="border-left-color: #3b82f6;">
+							<span class="notice-icon" style="color: #3b82f6;">ℹ</span>
+							<p class="notice-text">
+								<strong>조회 전용 모드:</strong> 사장님(최종승인자) 계정은 조회만 가능합니다.
+							</p>
+						</div>
+					</c:when>
+					<c:otherwise>
+						<c:if test="${isHr}">
+							<div class="admin-notice">
+								<span class="notice-icon">ℹ</span>
+								<p class="notice-text">
+									<strong>관리자 권한:</strong> HR 권한으로 접속 중입니다. 제출 후 [평가 현황]에서 확정이
+									가능합니다.
+								</p>
+							</div>
+						</c:if>
+						<button type="submit" name="status" value="작성중"
+							class="btn btn-submit">제출하기</button>
+					</c:otherwise>
+				</c:choose>
+			</div>
+		</form>
+	</div>
 
-    <div class="eval-side">
-        <div class="side-title">등급 기준표</div>
-        <table class="grade-table">
-            <thead><tr><th>등급</th><th>점수 범위</th><th>의미</th></tr></thead>
-            <tbody>
-                <tr class="row-s"><td><strong>S</strong></td><td>95점 이상</td><td>최우수</td></tr>
-                <tr class="row-a"><td><strong>A</strong></td><td>85 ~ 94</td><td>우수</td></tr>
-                <tr><td><strong>B</strong></td><td>75 ~ 84</td><td>양호</td></tr>
-                <tr><td><strong>C</strong></td><td>60 ~ 74</td><td>보통</td></tr>
-                <tr><td><strong>D</strong></td><td>60점 미만</td><td>미흡</td></tr>
-            </tbody>
-        </table>
-    </div>
+	<div class="eval-side">
+		<div class="side-title">등급 기준표</div>
+		<table class="grade-table">
+			<thead>
+				<tr>
+					<th>등급</th>
+					<th>점수 범위</th>
+					<th>의미</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="row-s">
+					<td><strong>S</strong></td>
+					<td>95점 이상</td>
+					<td>최우수</td>
+				</tr>
+				<tr class="row-a">
+					<td><strong>A</strong></td>
+					<td>85 ~ 94</td>
+					<td>우수</td>
+				</tr>
+				<tr>
+					<td><strong>B</strong></td>
+					<td>75 ~ 84</td>
+					<td>양호</td>
+				</tr>
+				<tr>
+					<td><strong>C</strong></td>
+					<td>60 ~ 74</td>
+					<td>보통</td>
+				</tr>
+				<tr>
+					<td><strong>D</strong></td>
+					<td>60점 미만</td>
+					<td>미흡</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
 </div>
 
 <script>
@@ -234,8 +289,20 @@ function updateEvaluation() {
 
 function onEvalTypeChange() {
     if (isEditMode) return;
+    
+    const empSel = document.getElementById('sel_empId');
+    const userRole = '${sessionScope.userRole}'; // 세션에서 권한 확인
+
+    // 1. 사장님(최종승인자)인 경우 서버 요청 차단 및 안내 문구 출력
+    if (userRole === '최종승인자') {
+        empSel.innerHTML = '<option value="">조회 전용 모드입니다</option>';
+        empSel.disabled = true;
+        if (typeof checkLoadable === 'function') checkLoadable();
+        return; 
+    }
+
+    // 2. 일반 사용자인 경우 기존 조회 로직 수행
     const evalType = document.getElementById('sel_evalType').value;
-    const empSel   = document.getElementById('sel_empId');
     empSel.innerHTML = '<option value="">조회 중...</option>';
     empSel.disabled  = true;
 
@@ -258,7 +325,7 @@ function onEvalTypeChange() {
             });
         }
         empSel.disabled = false;
-        checkLoadable();
+        if (typeof checkLoadable === 'function') checkLoadable();
     })
     .catch(() => {
         empSel.innerHTML = '<option value="">조회 실패</option>';
