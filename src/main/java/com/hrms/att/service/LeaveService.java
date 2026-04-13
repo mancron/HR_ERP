@@ -104,7 +104,10 @@ public class LeaveService {
 			conn = DatabaseConnection.getConnection();
 			conn.setAutoCommit(false);
 
-			// 6. 휴가 저장
+			int approverId = findApprover(empId);
+			dto.setApproverId(approverId);
+			
+			// 6. 휴가 저장			
 			boolean result = leaveDAO.insertLeave(dto);
 			if (!result) {
 				throw new Exception("휴가 저장 실패");
@@ -229,13 +232,17 @@ public class LeaveService {
 	        return leaveDAO.getPendingLeavesAll(dept, sort, startDate, endDate, loginEmpId, offset, size);
 	    } else {
 	        // 🔥 팀장 → 자기 부서만
-	        int deptId = empDAO.getDeptIdByEmpId(loginEmpId);
-	        return leaveDAO.getPendingLeavesByDept(deptId, dept, sort, startDate, endDate, loginEmpId, offset, size);
+	    	return leaveDAO.getPendingByApprover(loginEmpId, offset, size);
 	    }
 	}
 	
-	public int getPendingLeavesCount(String dept, String startDate, String endDate, int approverId) {
-		return leaveDAO.getPendingLeavesCount(dept, startDate, endDate, approverId);
+	public int getPendingLeavesCount(String dept, String startDate, String endDate, int loginEmpId) {
+
+	    if (isHR(loginEmpId)) {
+	        return leaveDAO.getPendingCountAll(dept, startDate, endDate, loginEmpId);
+	    } else {
+	    	return leaveDAO.getPendingCountByApprover(loginEmpId);
+	    }
 	}
 
 	// 부서 목록 조회 (드롭다운용)
