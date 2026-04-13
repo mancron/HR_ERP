@@ -26,7 +26,7 @@ public class AttendanceSummaryService {
 	private EmpDAO empDAO = new EmpDAO();
 
 	public List<Map<String, Object>> getSummaryList(String keyword, String dept, int positionId, String status,
-			int year, int month) {
+			int year, int month, int offset, int size) {
 
 		List<Map<String, Object>> result = new ArrayList<>();
 
@@ -41,14 +41,15 @@ public class AttendanceSummaryService {
 		try {
 			conn = DatabaseConnection.getConnection();
 
-			// 1️⃣ 직원 조회 (네 DAO 그대로 사용)
-			Vector<EmpDTO> empList = empDAO.searchEmpList(conn, keyword, deptId, positionId, status);
+			// 1️ 직원 조회 
+			Vector<EmpDTO> empList = empDAO.searchEmpListPaging(conn, keyword, deptId, positionId, status, offset,
+					size);
 
 			for (EmpDTO emp : empList) {
 
 				int empId = emp.getEmp_id();
 
-				// 2️⃣ 근태 데이터 조회
+				// 2️ 근태 데이터 조회
 				List<AttendanceDTO> attList = attendanceDAO.getMonthlyAttendance(empId,
 						String.format("%04d-%02d", year, month));
 
@@ -174,6 +175,22 @@ public class AttendanceSummaryService {
 		map.put("leaveDays", leaveDays);
 
 		return map;
+	}
+
+	// 페이징용 카운트
+	public int getSummaryCount(String keyword, String dept, int positionId, String status) {
+
+		int deptId = 0;
+
+		if (dept != null && !dept.isEmpty()) {
+			deptId = getDeptIdByName(dept);
+		}
+
+		try (Connection conn = DatabaseConnection.getConnection()) {
+			return empDAO.getEmpCount(conn, keyword, deptId, positionId, status);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	private boolean isWeekend(LocalDate date) {

@@ -127,6 +127,29 @@
 					</tbody>
 
 				</table>
+				<div class="pagination">
+
+					<!-- 이전 -->
+					<c:if test="${currentPage > 1}">
+						<a
+							href="?page=${currentPage - 1}&month=${param.month}&dept=${param.dept}">
+							이전 </a>
+					</c:if>
+
+					<!-- 페이지 번호 -->
+					<c:forEach var="i" begin="1" end="${totalPage}">
+						<a href="?page=${i}&month=${param.month}&dept=${param.dept}"
+							class="${i == currentPage ? 'active' : ''}"> ${i} </a>
+					</c:forEach>
+
+					<!-- 다음 -->
+					<c:if test="${currentPage < totalPage}">
+						<a
+							href="?page=${currentPage + 1}&month=${param.month}&dept=${param.dept}">
+							다음 </a>
+					</c:if>
+
+				</div>
 
 			</div>
 

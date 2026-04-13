@@ -291,4 +291,149 @@ public class EmpDAO {
 		return list;
 	}
 
+	//페이징용 직원 리스트 출력
+	public Vector<EmpDTO> searchEmpListPaging(
+	        Connection conn,
+	        String keyword, int deptId, int positionId, String status,
+	        int offset, int size) {
+
+	    Vector<EmpDTO> list = new Vector<>();
+
+	    StringBuilder sql = new StringBuilder();
+
+	    sql.append("SELECT e.*, d.dept_name, p.position_name ");
+	    sql.append("FROM employee e ");
+	    sql.append("JOIN department d ON e.dept_id = d.dept_id ");
+	    sql.append("JOIN job_position p ON e.position_id = p.position_id ");
+	    sql.append("WHERE 1=1 ");
+
+	    if (keyword != null && !keyword.isEmpty()) {
+	        sql.append("AND e.emp_name LIKE ? ");
+	    }
+
+	    if (deptId != 0) {
+	        sql.append("AND e.dept_id = ? ");
+	    }
+
+	    if (positionId != 0) {
+	        sql.append("AND e.position_id = ? ");
+	    }
+
+	    if (status != null && !status.isEmpty()) {
+	        sql.append("AND e.status = ? ");
+	    }
+
+	    sql.append("ORDER BY e.emp_id ");
+	    sql.append("LIMIT ?, ? ");
+
+	    try (PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+	        int idx = 1;
+
+	        if (keyword != null && !keyword.isEmpty()) {
+	            pstmt.setString(idx++, "%" + keyword + "%");
+	        }
+
+	        if (deptId != 0) {
+	            pstmt.setInt(idx++, deptId);
+	        }
+
+	        if (positionId != 0) {
+	            pstmt.setInt(idx++, positionId);
+	        }
+
+	        if (status != null && !status.isEmpty()) {
+	            pstmt.setString(idx++, status);
+	        }
+
+	        pstmt.setInt(idx++, offset);
+	        pstmt.setInt(idx++, size);
+
+	        ResultSet rs = pstmt.executeQuery();
+
+	        while (rs.next()) {
+	            EmpDTO dto = new EmpDTO();
+
+	            dto.setEmp_id(rs.getInt("emp_id"));
+	            dto.setEmp_name(rs.getString("emp_name"));
+	            dto.setDept_name(rs.getString("dept_name"));
+	            dto.setPosition_name(rs.getString("position_name"));
+
+	            list.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        throw new RuntimeException(e);
+	    }
+
+	    return list;
+	}
+	
+	//페이징용 카운트
+	public int getEmpCount(Connection conn,
+	        String keyword, int deptId, int positionId, String status) {
+
+	    int count = 0;
+
+	    StringBuilder sql = new StringBuilder();
+
+	    sql.append("SELECT COUNT(*) ");
+	    sql.append("FROM employee e ");
+	    sql.append("JOIN department d ON e.dept_id = d.dept_id ");
+	    sql.append("JOIN job_position p ON e.position_id = p.position_id ");
+	    sql.append("WHERE 1=1 ");
+
+	    // 🔥 이름 검색
+	    if (keyword != null && !keyword.isEmpty()) {
+	        sql.append("AND e.emp_name LIKE ? ");
+	    }
+
+	    // 🔥 부서
+	    if (deptId != 0) {
+	        sql.append("AND e.dept_id = ? ");
+	    }
+
+	    // 🔥 직급
+	    if (positionId != 0) {
+	        sql.append("AND e.position_id = ? ");
+	    }
+
+	    // 🔥 상태
+	    if (status != null && !status.isEmpty()) {
+	        sql.append("AND e.status = ? ");
+	    }
+
+	    try (PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+	        int idx = 1;
+
+	        if (keyword != null && !keyword.isEmpty()) {
+	            pstmt.setString(idx++, "%" + keyword + "%");
+	        }
+
+	        if (deptId != 0) {
+	            pstmt.setInt(idx++, deptId);
+	        }
+
+	        if (positionId != 0) {
+	            pstmt.setInt(idx++, positionId);
+	        }
+
+	        if (status != null && !status.isEmpty()) {
+	            pstmt.setString(idx++, status);
+	        }
+
+	        ResultSet rs = pstmt.executeQuery();
+
+	        if (rs.next()) {
+	            count = rs.getInt(1);
+	        }
+
+	    } catch (Exception e) {
+	        throw new RuntimeException("직원 수 조회 실패", e);
+	    }
+
+	    return count;
+	}
+	
 }
