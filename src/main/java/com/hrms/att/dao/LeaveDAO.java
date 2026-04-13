@@ -14,8 +14,8 @@ public class LeaveDAO {
 	// 1. 휴가 신청 (INSERT)
 	public boolean insertLeave(LeaveDTO dto) {
 		String sql = "INSERT INTO leave_request "
-				+ "(emp_id, leave_type, half_type, start_date, end_date, days, reason, status, approver_id) "
-				+ "VALUES (?, ?, ?, ?, ?, ?, ?, '대기', ?)";
+				+ "(emp_id, leave_type, half_type, start_date, end_date, days, reason, status) "
+				+ "VALUES (?, ?, ?, ?, ?, ?, ?, '대기')";
 
 		try (Connection conn = DatabaseConnection.getConnection();
 				PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -27,7 +27,6 @@ public class LeaveDAO {
 			pstmt.setDate(5, dto.getEndDate());
 			pstmt.setDouble(6, dto.getDays());
 			pstmt.setString(7, dto.getReason());
-			pstmt.setInt(8, dto.getApproverId());
 
 			return pstmt.executeUpdate() > 0;
 
@@ -200,111 +199,6 @@ public class LeaveDAO {
 
 					list.add(dto);
 				}
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return list;
-	}
-
-	// 대기 휴가 목록
-	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int approverId,
-			int offset, int size) {
-
-		List<LeaveDTO> list = new ArrayList<>();
-
-		StringBuilder sql = new StringBuilder();
-
-		sql.append("SELECT lr.*, e.emp_name, jp.position_name, d.dept_name ");
-		sql.append("FROM leave_request lr ");
-		sql.append("JOIN employee e ON lr.emp_id = e.emp_id ");
-		sql.append("JOIN job_position jp ON e.position_id = jp.position_id ");
-		sql.append("JOIN department d ON e.dept_id = d.dept_id ");
-		sql.append("WHERE lr.status = '대기' ");
-		sql.append("AND lr.emp_id != ? ");
-		sql.append("AND lr.approver_id = ? ");
-
-		// 🔥 1. 부서 필터
-		if (dept != null && !dept.isEmpty()) {
-			sql.append("AND d.dept_name = ? ");
-		}
-
-		// 🔥 2. 기간 필터 (겹침 기준)
-		if (startDate != null && endDate != null && !startDate.isEmpty() && !endDate.isEmpty()) {
-
-			sql.append("AND lr.start_date <= ? ");
-			sql.append("AND lr.end_date >= ? ");
-		}
-
-		// 🔥 3. 정렬
-		if ("name_asc".equals(sort)) {
-			sql.append("ORDER BY e.emp_name ASC ");
-		} else if ("name_desc".equals(sort)) {
-			sql.append("ORDER BY e.emp_name DESC ");
-		} else if ("position_asc".equals(sort)) {
-			sql.append("ORDER BY jp.position_level ASC ");
-		} else if ("position_desc".equals(sort)) {
-			sql.append("ORDER BY jp.position_level DESC ");
-		} else {
-			sql.append("ORDER BY lr.created_at DESC ");
-		}
-		
-		sql.append("LIMIT ?, ? ");
-
-		try (Connection conn = DatabaseConnection.getConnection();
-				PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
-
-			int idx = 1;
-
-			// 1. approverId 먼저 넣어야 함 (중요)
-			pstmt.setInt(idx++, approverId);
-
-			// 2. 승인자 조건 (approver_id = ?)
-			pstmt.setInt(idx++, approverId);
-
-			// 3. dept
-			if (dept != null && !dept.isEmpty()) {
-				pstmt.setString(idx++, dept);
-			}
-
-			// 4. 날짜
-			if (startDate != null && endDate != null && !startDate.isEmpty() && !endDate.isEmpty()) {
-
-				pstmt.setDate(idx++, Date.valueOf(endDate));
-				pstmt.setDate(idx++, Date.valueOf(startDate));
-			}
-
-			pstmt.setInt(idx++, offset);
-			pstmt.setInt(idx++, size);
-
-			ResultSet rs = pstmt.executeQuery();
-
-			while (rs.next()) {
-
-				LeaveDTO dto = new LeaveDTO();
-
-				dto.setLeaveId(rs.getInt("leave_id"));
-				dto.setEmpId(rs.getInt("emp_id"));
-				dto.setLeaveType(rs.getString("leave_type"));
-				dto.setHalfType(rs.getString("half_type"));
-				dto.setStartDate(rs.getDate("start_date"));
-				dto.setEndDate(rs.getDate("end_date"));
-				dto.setDays(rs.getDouble("days"));
-				dto.setReason(rs.getString("reason"));
-				dto.setStatus(rs.getString("status"));
-
-				dto.setApproverId((Integer) rs.getObject("approver_id"));
-				dto.setApprovedAt(rs.getTimestamp("approved_at"));
-				dto.setRejectReason(rs.getString("reject_reason"));
-				dto.setCreatedAt(rs.getTimestamp("created_at"));
-
-				dto.setEmpName(rs.getString("emp_name"));
-				dto.setPosition(rs.getString("position_name"));
-				dto.setDeptName(rs.getString("dept_name"));
-
-				list.add(dto);
 			}
 
 		} catch (Exception e) {
@@ -675,4 +569,179 @@ public class LeaveDAO {
 		}
 	}
 
+	public List<LeaveDTO> getPendingLeavesAll(
+	        String dept, String sort,
+	        String startDate, String endDate,
+	        int empId, int offset, int size) {
+
+	    List<LeaveDTO> list = new ArrayList<>();
+
+	    StringBuilder sql = new StringBuilder();
+
+	    sql.append("SELECT lr.*, e.emp_name, jp.position_name, d.dept_name ");
+	    sql.append("FROM leave_request lr ");
+	    sql.append("JOIN employee e ON lr.emp_id = e.emp_id ");
+	    sql.append("JOIN job_position jp ON e.position_id = jp.position_id ");
+	    sql.append("JOIN department d ON e.dept_id = d.dept_id ");
+	    sql.append("WHERE lr.status = '대기' ");
+	    sql.append("AND lr.emp_id != ? "); // 자기 제외
+
+	    // 🔥 부서 필터
+	    if (dept != null && !dept.isEmpty()) {
+	        sql.append("AND d.dept_name = ? ");
+	    }
+
+	    // 🔥 기간 필터
+	    if (startDate != null && endDate != null && !startDate.isEmpty() && !endDate.isEmpty()) {
+	        sql.append("AND lr.start_date <= ? ");
+	        sql.append("AND lr.end_date >= ? ");
+	    }
+
+	    // 🔥 정렬
+	    if ("name_asc".equals(sort)) {
+	        sql.append("ORDER BY e.emp_name ASC ");
+	    } else if ("name_desc".equals(sort)) {
+	        sql.append("ORDER BY e.emp_name DESC ");
+	    } else if ("position_asc".equals(sort)) {
+	        sql.append("ORDER BY jp.position_level ASC ");
+	    } else if ("position_desc".equals(sort)) {
+	        sql.append("ORDER BY jp.position_level DESC ");
+	    } else {
+	        sql.append("ORDER BY lr.created_at DESC ");
+	    }
+
+	    sql.append("LIMIT ?, ? ");
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+	        int idx = 1;
+
+	        pstmt.setInt(idx++, empId);
+
+	        if (dept != null && !dept.isEmpty()) {
+	            pstmt.setString(idx++, dept);
+	        }
+
+	        if (startDate != null && endDate != null && !startDate.isEmpty() && !endDate.isEmpty()) {
+	            pstmt.setDate(idx++, Date.valueOf(endDate));
+	            pstmt.setDate(idx++, Date.valueOf(startDate));
+	        }
+
+	        pstmt.setInt(idx++, offset);
+	        pstmt.setInt(idx++, size);
+
+	        ResultSet rs = pstmt.executeQuery();
+
+	        while (rs.next()) {
+	            list.add(mapRow(rs));
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return list;
+	}
+	
+	public List<LeaveDTO> getPendingLeavesByDept(
+	        int deptId,
+	        String dept, String sort,
+	        String startDate, String endDate,
+	        int empId, int offset, int size) {
+
+	    List<LeaveDTO> list = new ArrayList<>();
+
+	    StringBuilder sql = new StringBuilder();
+
+	    sql.append("SELECT lr.*, e.emp_name, jp.position_name, d.dept_name ");
+	    sql.append("FROM leave_request lr ");
+	    sql.append("JOIN employee e ON lr.emp_id = e.emp_id ");
+	    sql.append("JOIN job_position jp ON e.position_id = jp.position_id ");
+	    sql.append("JOIN department d ON e.dept_id = d.dept_id ");
+	    sql.append("WHERE lr.status = '대기' ");
+	    sql.append("AND lr.emp_id != ? ");
+	    sql.append("AND e.dept_id = ? "); // 🔥 핵심
+
+	    if (dept != null && !dept.isEmpty()) {
+	        sql.append("AND d.dept_name = ? ");
+	    }
+
+	    if (startDate != null && endDate != null && !startDate.isEmpty() && !endDate.isEmpty()) {
+	        sql.append("AND lr.start_date <= ? ");
+	        sql.append("AND lr.end_date >= ? ");
+	    }
+
+	    if ("name_asc".equals(sort)) {
+	        sql.append("ORDER BY e.emp_name ASC ");
+	    } else if ("name_desc".equals(sort)) {
+	        sql.append("ORDER BY e.emp_name DESC ");
+	    } else if ("position_asc".equals(sort)) {
+	        sql.append("ORDER BY jp.position_level ASC ");
+	    } else if ("position_desc".equals(sort)) {
+	        sql.append("ORDER BY jp.position_level DESC ");
+	    } else {
+	        sql.append("ORDER BY lr.created_at DESC ");
+	    }
+
+	    sql.append("LIMIT ?, ? ");
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+	        int idx = 1;
+
+	        pstmt.setInt(idx++, empId);
+	        pstmt.setInt(idx++, deptId);
+
+	        if (dept != null && !dept.isEmpty()) {
+	            pstmt.setString(idx++, dept);
+	        }
+
+	        if (startDate != null && endDate != null && !startDate.isEmpty() && !endDate.isEmpty()) {
+	            pstmt.setDate(idx++, Date.valueOf(endDate));
+	            pstmt.setDate(idx++, Date.valueOf(startDate));
+	        }
+
+	        pstmt.setInt(idx++, offset);
+	        pstmt.setInt(idx++, size);
+
+	        ResultSet rs = pstmt.executeQuery();
+
+	        while (rs.next()) {
+	            list.add(mapRow(rs));
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return list;
+	}
+	
+	private LeaveDTO mapRow(ResultSet rs) throws Exception {
+
+	    LeaveDTO dto = new LeaveDTO();
+
+	    dto.setLeaveId(rs.getInt("leave_id"));
+	    dto.setEmpId(rs.getInt("emp_id"));
+	    dto.setLeaveType(rs.getString("leave_type"));
+	    dto.setHalfType(rs.getString("half_type"));
+	    dto.setStartDate(rs.getDate("start_date"));
+	    dto.setEndDate(rs.getDate("end_date"));
+	    dto.setDays(rs.getDouble("days"));
+	    dto.setReason(rs.getString("reason"));
+	    dto.setStatus(rs.getString("status"));
+
+	    dto.setApprovedAt(rs.getTimestamp("approved_at"));
+	    dto.setRejectReason(rs.getString("reject_reason"));
+	    dto.setCreatedAt(rs.getTimestamp("created_at"));
+
+	    dto.setEmpName(rs.getString("emp_name"));
+	    dto.setPosition(rs.getString("position_name"));
+	    dto.setDeptName(rs.getString("dept_name"));
+
+	    return dto;
+	}
+	
 }

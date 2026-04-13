@@ -436,4 +436,49 @@ public class EmpDAO {
 	    return count;
 	}
 	
+	//HR담당자 리스트 출력 - 휴가, 초과근무 신청할 시 알림 발송할때 사용
+	public List<Integer> getHRList() {
+
+	    List<Integer> list = new ArrayList<>();
+
+	    String sql = "SELECT emp_id FROM account WHERE role = 'HR담당자'";
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql);
+	         ResultSet rs = ps.executeQuery()) {
+
+	        while (rs.next()) {
+	            list.add(rs.getInt("emp_id"));
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return list;
+	}
+	
+	//HR담당자인지 확인
+	public String getRoleByEmpId(int empId) {
+
+	    String sql = "SELECT role FROM account WHERE emp_id = ?";
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, empId);
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next()) {
+	                return rs.getString("role");
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return null;
+	}
+	
 }
