@@ -38,10 +38,17 @@
                 <option value="동료평가" ${selectedType == '동료평가' ? 'selected' : ''}>동료평가</option>
                 <option value="하위평가" ${selectedType == '하위평가' ? 'selected' : ''}>하위평가</option>
             </select>
-            <input type="text" name="searchTarget"    value="${searchTarget}"
+            
+            <%-- [팁] 사원은 다른 사람을 검색할 수 없도록 검색창 제어 (선택 사항) --%>
+            <input type="text" name="searchTarget" value="${searchTarget}"
                 placeholder="대상자 이름" class="search-input">
-            <input type="text" name="searchEvaluator" value="${searchEvaluator}"
-                placeholder="평가자 이름" class="search-input">
+            
+            <%-- [핵심] 일반 사원은 '평가자 이름'으로 검색하지 못하게 하거나 숨김 처리 가능 --%>
+            <c:if test="${isHr || sessionScope.userRole == '최종승인자'}">
+                <input type="text" name="searchEvaluator" value="${searchEvaluator}"
+                    placeholder="평가자 이름" class="search-input">
+            </c:if>
+            
             <button type="submit" class="btn-search">조회</button>
             <button type="button" class="btn-reset" onclick="resetFilter()">초기화</button>
         </form>
@@ -107,17 +114,22 @@
                                 </c:otherwise>
                             </c:choose>
                         </td>
+                        
+                        <%-- ── 평가자 이름 익명화 로직 ── --%>
                         <td>
                             <c:choose>
-                                <%-- 하위평가이더라도 인사담당자(isHr)이거나 사장님(최종승인자)이면 실명 노출 --%>
-                                <c:when test="${item.evalType == '하위평가' && !isHr && sessionScope.userRole != '최종승인자'}">
-                                    <span class="eval-anon">익명</span>
-                                </c:when>
-                                <c:otherwise>
+                                <%-- 1. 인사담당자(isHr)이거나 사장님(최종승인자)이면 모든 실명 노출 --%>
+                                <%-- 2. 로그인한 사람(loginEmpId)이 평가 작성자 본인인 경우 실명 노출 --%>
+                                <c:when test="${isHr || sessionScope.userRole == '최종승인자' || loginEmpId == item.evaluatorId}">
                                     ${item.evaluatorName}
+                                </c:when>
+                                <%-- 3. 피평가자가 본인 기록을 볼 때는 무조건 '익명' 처리 --%>
+                                <c:otherwise>
+                                    <span class="eval-anon" style="color: #999; font-style: italic;">익명</span>
                                 </c:otherwise>
                             </c:choose>
                         </td>
+                        
                         <td>
                             <c:choose>
                                 <c:when test="${not empty item.confirmedAt}">
@@ -126,29 +138,32 @@
                                 <c:otherwise>—</c:otherwise>
                             </c:choose>
                         </td>
+                        
+                        <%-- ── 상세 버튼 제어 (피평가자는 버튼 미노출) ── --%>
                         <td>
                             <c:set var="isOwner" value="${item.evaluatorId == loginEmpId}"/>
                             <c:set var="isCEO" value="${sessionScope.userRole == '최종승인자'}"/>
+                            
                             <c:choose>
-                                <%-- 1. 최종확정된 상태일 때 --%>
+                                <%-- 최종확정 상태: 권한자(HR, 작성자, CEO)에게만 '조회' 버튼 노출 --%>
                                 <c:when test="${item.status == '최종확정'}">
                                     <c:if test="${isHr || isOwner || isCEO}">
-                                        <button class="btn-view" onclick="openModal(${item.evalId})">보기</button>
+                                        <button class="btn-view" onclick="openModal(${item.evalId})">조회</button>
                                     </c:if>
                                 </c:when>
                                 
-                                <%-- 2. 작성 중이거나 반려 상태일 때 --%>
+                                <%-- 작성 중/반려 상태 --%>
                                 <c:otherwise>
                                     <c:choose>
-                                        <%-- 사장님은 본인 것이 아닐 때 '조회' 버튼 (조회만 가능) --%>
+                                        <%-- 사장님: 조회 버튼 --%>
                                         <c:when test="${isCEO && !isOwner}">
                                             <button class="btn-view" onclick="openModal(${item.evalId})">조회</button>
                                         </c:when>
-                                        <%-- 인사담당자는 본인 것이 아닐 때 '확정' 버튼 (확정 처리 권한) --%>
+                                        <%-- 인사담당자: 확정 버튼 --%>
                                         <c:when test="${isHr && !isOwner}">
                                             <button class="btn-edit" onclick="openModal(${item.evalId})">확정</button>
                                         </c:when>
-                                        <%-- 본인이 작성 중인 것은 '수정' 버튼 --%>
+                                        <%-- 작성자 본인: 수정 버튼 --%>
                                         <c:when test="${isOwner}">
                                             <button class="btn-edit"
                                                 onclick="location.href='${pageContext.request.contextPath}/eval/write?id=${item.evalId}'">
@@ -158,6 +173,7 @@
                                     </c:choose>
                                 </c:otherwise>
                             </c:choose>
+                            <%-- 피평가자(loginEmpId == item.empId)인 경우 위 조건들에 해당하지 않으면 아무것도 출력되지 않음 --%>
                         </td>
                     </tr>
                 </c:forEach>
@@ -186,7 +202,6 @@ function resetFilter() {
     location.href = ctx + '/eval/status?year=' + currentYear;
 }
 
-// 오버레이 및 ESC 닫기 로직
 document.getElementById('confirmOverlay').addEventListener('click', e => { if (e.target.id === 'confirmOverlay') closeConfirmModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeConfirmModal(); });
 </script>

@@ -30,6 +30,7 @@ public class AuthenticationFilter implements Filter {
         "/sal/slip",
         "/eval/write",
         "/eval/status",
+        "/eval/confirm",
         "/emp/list",
         "/emp/detail",
         "/emp/approvalHistory",
@@ -90,6 +91,17 @@ public class AuthenticationFilter implements Filter {
         Boolean isManagerAttr = (Boolean) session.getAttribute("isManager");
         boolean isManager     = (isManagerAttr != null && isManagerAttr);
 
+        if (path.startsWith("/eval/confirm")) {
+            // POST(확정/반려)는 HR담당자만 가능
+            if ("POST".equalsIgnoreCase(method) && !"HR담당자".equals(role)) {
+                sendForbidden(req, res);
+                return;
+            }
+            // GET(조회)은 일단 통과 -> 서블릿에서 본인 사번인지 체크함
+            chain.doFilter(request, response);
+            return;
+        }
+        
         // [관리자] 허용 경로 외 전면 차단
         if ("관리자".equals(role)) {
             boolean allowed = ADMIN_ALLOWED_PREFIXES.stream()
@@ -220,7 +232,7 @@ public class AuthenticationFilter implements Filter {
                 }
             }
         }
-
+       
         chain.doFilter(request, response);
     }
     

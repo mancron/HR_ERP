@@ -31,10 +31,15 @@ public class EvalConfirmServlet extends HttpServlet {
             return;
         }
 
+        // 세션 정보 및 권한 설정
+        int loginEmpId = (Integer) session.getAttribute("empId");
         String userRole = (String) session.getAttribute("userRole");
         if (userRole == null) userRole = "일반사원";
+        
         boolean isHr = "HR담당자".equals(userRole);
+        boolean isCEO = "사장님".equals(userRole) || "최종승인자".equals(userRole);
 
+        // 파라미터 확인
         String idParam = request.getParameter("id");
         if (idParam == null || idParam.isEmpty()) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -49,24 +54,47 @@ public class EvalConfirmServlet extends HttpServlet {
             return;
         }
 
-        // [C-1] isRejected를 evalData Map에 추가
-        // getEvaluationById()는 evalComment만 반환하므로 여기서 직접 계산해서 주입
+        // 1. 권한 체크를 위한 사번 추출 (평가자 및 피평가자)
+        Object evalIdObj = evalData.get("evaluatorId");
+        if (evalIdObj == null) evalIdObj = evalData.get("EVALUATOR_ID");
+        int evaluatorId = (evalIdObj != null) ? Integer.parseInt(String.valueOf(evalIdObj)) : 0;
+
+        Object targetIdObj = evalData.get("empId"); 
+        if (targetIdObj == null) targetIdObj = evalData.get("EMP_ID");
+        int targetEmpId = (targetIdObj != null) ? Integer.parseInt(String.valueOf(targetIdObj)) : 0;
+
+        // 2. 보안 필터: HR, CEO, 평가자(작성자), 피평가자(본인) 모두 일단 접근은 허용
+        boolean isAuthorized = isHr || isCEO || (loginEmpId == evaluatorId) || (loginEmpId == targetEmpId);
+
+        if (!isAuthorized) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "상세 정보 조회 권한이 없습니다.");
+            return;
+        }
+
+        // 3. [핵심] 피평가자 본인이 조회하는 경우, 평가자 정보를 익명 처리
+        // HR/CEO가 아니고, 내가 '피평가자' 본인이며, 내가 나를 평가한 것이 아닐 때 실행
+        if (!isHr && !isCEO && loginEmpId == targetEmpId && loginEmpId != evaluatorId) {
+            evalData.put("evaluatorName", "익명");
+            evalData.put("evaluatorId", 0);
+            evalData.put("evaluatorDept", "비공개");
+        }
+
+        // --- 반려 여부 및 사유 처리 ---
         String evalComment = (String) evalData.get("evalComment");
         boolean isRejected = evalComment != null && evalComment.contains("[반려]");
         evalData.put("isRejected", isRejected);
 
-        // [반려 사유] 추출해서 별도 attribute로 전달
-        // 형식: "평가자 코멘트\n[반려 사유] HR이 적은 사유"
         String rejectReason = "";
         if (evalComment != null && evalComment.contains("[반려 사유]")) {
             int idx = evalComment.indexOf("[반려 사유]");
             rejectReason = evalComment.substring(idx + "[반려 사유]".length()).trim();
         }
 
-        Vector<String>   itemNames  = evalService.getEvaluationItemNames();
+        // 항목별 점수 조회
+        Vector<String> itemNames = evalService.getEvaluationItemNames();
         List<BigDecimal> itemScores = evalService.getItemScoresByEvalId(evalId, itemNames);
 
-        // iframe 내부 EL contextPath 문제 방지 → attribute로 직접 전달
+        // JSP 데이터 바인딩
         request.setAttribute("evalData",     evalData);
         request.setAttribute("itemNames",    itemNames);
         request.setAttribute("itemScores",   itemScores);
