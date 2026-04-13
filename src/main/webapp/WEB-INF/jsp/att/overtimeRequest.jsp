@@ -1,5 +1,8 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <head>
 <meta charset="UTF-8">
@@ -12,7 +15,8 @@
 	href="${pageContext.request.contextPath}/css/att/common/requestDetail.css">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/overtime.css">
-	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/css/style.css">
 </head>
 
 <!-- 사이드바 -->
@@ -45,12 +49,14 @@
 
 							<tr>
 								<th>시작 시간</th>
-								<td><input type="time" name="startTime" required></td>
+								<td><input type="text" name="startTime" class="time-picker"
+									required></td>
 							</tr>
 
 							<tr>
 								<th>종료 시간</th>
-								<td><input type="time" name="endTime" required></td>
+								<td><input type="text" name="endTime" class="time-picker"
+									required></td>
 							</tr>
 
 							<tr>
@@ -110,6 +116,22 @@
 <script>
 	const contextPath = "${pageContext.request.contextPath}";
 	const currentPath = "/att/overtime";
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    flatpickr(".time-picker", {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        time_24hr: true,
+        minuteIncrement: 30,   // 🔥 30분 단위
+        minTime: "09:00",      // 🔥 최소 09시
+        maxTime: "22:00"       // 🔥 최대 22시
+    });
+
+});
 </script>
 
 <script
