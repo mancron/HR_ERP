@@ -447,28 +447,71 @@ public class EvaluationDAO {
 			e.printStackTrace();
 		}
 
-// 2. 미완료 인원 계산 (사장님 제외 재직자 - 현재 기수 확정자)
-		int totalTarget = 0;
-// 사장님(position_level=6)을 제외한 재직자 수 조회
-		String sqlTargetCount = "SELECT COUNT(*) FROM employee e "
-				+ "JOIN job_position p ON e.position_id = p.position_id "
-				+ "WHERE e.status='재직' AND p.position_level < 6";
+// 2. 미완료 계산
+// - 전체/전체: 사람 수 기준(고유 미확정 대상자 직접 집계)
+// - 그 외 필터: 남은 인원 기준(전체 대상자 - 필터 확정 대상자)
+		boolean isAllPeriod = (period == null || period.isEmpty() || "전체".equals(period));
+		boolean isAllType = (type == null || type.isEmpty() || "전체".equals(type));
 
-		try (Connection conn = DatabaseConnection.getConnection();
-				PreparedStatement pstmt = conn.prepareStatement(sqlTargetCount);
-				ResultSet rs = pstmt.executeQuery()) {
-			if (rs.next())
-				totalTarget = rs.getInt(1);
-		} catch (SQLException e) {
-			e.printStackTrace();
+		if (isAllPeriod && isAllType) {
+			String sqlPendingAll = "SELECT COUNT(DISTINCT emp_id) AS pending_cnt FROM evaluation "
+					+ "WHERE eval_status <> '최종확정' AND eval_year=? ";
+			try (Connection conn = DatabaseConnection.getConnection();
+					PreparedStatement pstmt = conn.prepareStatement(sqlPendingAll)) {
+				pstmt.setInt(1, year);
+				try (ResultSet rs = pstmt.executeQuery()) {
+					if (rs.next()) {
+						summary.put("미완료", rs.getInt("pending_cnt"));
+					}
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		} else {
+			int totalTarget = 0;
+			String sqlTargetCount = "SELECT COUNT(*) FROM employee e "
+					+ "JOIN job_position p ON e.position_id = p.position_id "
+					+ "WHERE e.status='재직' AND p.position_level < 6";
+			try (Connection conn = DatabaseConnection.getConnection();
+					PreparedStatement pstmt = conn.prepareStatement(sqlTargetCount);
+					ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					totalTarget = rs.getInt(1);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			StringBuilder sqlConfirmedTarget = new StringBuilder(
+					"SELECT COUNT(DISTINCT emp_id) AS confirmed_cnt FROM evaluation "
+							+ "WHERE eval_status='최종확정' AND eval_year=? ");
+			List<Object> confirmedParams = new ArrayList<>();
+			confirmedParams.add(year);
+			if (!isAllPeriod) {
+				sqlConfirmedTarget.append("AND eval_period=? ");
+				confirmedParams.add(period);
+			}
+			if (!isAllType) {
+				sqlConfirmedTarget.append("AND eval_type=? ");
+				confirmedParams.add(type);
+			}
+
+			int confirmedTargetCount = 0;
+			try (Connection conn = DatabaseConnection.getConnection();
+					PreparedStatement pstmt = conn.prepareStatement(sqlConfirmedTarget.toString())) {
+				for (int i = 0; i < confirmedParams.size(); i++) {
+					pstmt.setObject(i + 1, confirmedParams.get(i));
+				}
+				try (ResultSet rs = pstmt.executeQuery()) {
+					if (rs.next()) {
+						confirmedTargetCount = rs.getInt("confirmed_cnt");
+					}
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			summary.put("미완료", Math.max(0, totalTarget - confirmedTargetCount));
 		}
-
-// (S+A+B+C+D) 합계 계산
-		int totalConfirmed = summary.get("S") + summary.get("A") + summary.get("B") + summary.get("C")
-				+ summary.get("D");
-
-// 미완료 = (사장님 제외 전체 재직자) - (현재 필터링된 확정 인원)
-		summary.put("미완료", Math.max(0, totalTarget - totalConfirmed));
 
 		return summary;
 	}
