@@ -46,11 +46,18 @@ public class EvaluationService {
         if (eval.getEvalComment() == null || eval.getEvalComment().trim().isEmpty())
             throw new Exception("평가 의견(코멘트)을 입력해 주세요.");
 
-        // 코멘트에 [반려] 태그가 남아있으면 제거 후 저장
+        // 재제출 시 [반려] 태그 + [반려 사유] 이하 모두 제거
         String comment = eval.getEvalComment().trim();
-        while (comment.startsWith("[반려]")) {
-            comment = comment.substring("[반려]".length()).trim();
+
+        // [반려 사유] 이하 제거
+        int reasonIdx = comment.indexOf("[반려 사유]");
+        if (reasonIdx >= 0) {
+            comment = comment.substring(0, reasonIdx).trim();
         }
+
+        // [반려] 태그 제거
+        comment = comment.replace("[반려]", "").trim();
+
         eval.setEvalComment(comment);
 
         if (isSelfEvalBlocked(eval.getEmpId(), eval.getEvaluatorId(), eval.getEvalType()))
@@ -83,12 +90,21 @@ public class EvaluationService {
      * [NEW-4 수정] ADMIN_ALL 특수 분기 제거 — 실제로 사용되지 않는 사문 코드였음
      * HR담당자도 평가 작성 시 본인 직급 기반 목록 표시 (확정/반려와 별개)
      */
+    /**
+     * 평가 유형별 대상자 목록
+     * - 사장/최종승인자: posLevel=999로 설정 → DAO에서 전체 재직자 반환
+     * - 그 외: 본인 직급 기반 필터링
+     */
     public Vector<Map<String, Object>> getEmployeeListForEvaluator(
-        int evaluatorId, String userRole, String evalType) {
+            int evaluatorId, String userRole, String evalType) {
         int posLevel = evalDao.getPositionLevelByEmpId(evaluatorId);
-        
-        // [중요] DAO의 getEmployeeListForEvaluator 메서드로 evalType을 넘겨서 
-        // DAO 내부에서 "하위평가"일 때의 SQL이 실행되도록 해야 합니다.
+
+        // 최고직급자 또는 관리자 역할은 전체 조회 허용
+        // posLevel=999는 DAO에서 "본인 제외 전체 재직자" 분기로 처리됨
+        if ("최종승인자".equals(userRole) || "사장님".equals(userRole)) {
+            posLevel = 999;
+        }
+
         return evalDao.getEmployeeListForEvaluator(evaluatorId, posLevel, evalType);
     }
 
@@ -107,23 +123,32 @@ public class EvaluationService {
 
     /**
      * 직급 역전 차단
+     * [NEW-3 수정] 제미나이 코드가 방향을 반전시킨 것을 원복
+     *
      * 상위평가: 내가 대상자보다 상위여야 함 → 대상자 레벨 >= 내 레벨이면 차단
+     *   예) 나=부장(5), 대상=사원(1) → targetLevel(1) < myLevel(5) → 허용
+     *   예) 나=사원(1), 대상=부장(5) → targetLevel(5) >= myLevel(1) → 차단
+     *
      * 동료평가: 직급이 같아야 함 → 다르면 차단
+     *   [M-1 보완] POST 위변조 방어
      */
     public boolean isPositionBlocked(int targetEmpId, int evaluatorId, String evalType) {
         int myLevel     = evalDao.getPositionLevelByEmpId(evaluatorId);
         int targetLevel = evalDao.getPositionLevelByEmpId(targetEmpId);
 
         if ("상위평가".equals(evalType)) {
-            return targetLevel >= myLevel; // 대상이 나보다 높거나 같으면 차단
+            // 대상이 나보다 높거나 같으면(= 내 하위가 아니면) 차단
+            return targetLevel >= myLevel;
         }
         if ("하위평가".equals(evalType)) {
-            return targetLevel <= myLevel; // 반대로 대상 레벨이 나보다 높거나 같으면 차단
+            // 대상이 나보다 낮거나 같으면(= 내 상위가 아니면) 차단
+            return targetLevel <= myLevel;
         }
         if ("동료평가".equals(evalType)) {
-            return targetLevel != myLevel; // 동일 직급이 아니면 차단
+            // 동일 직급이 아니면 차단
+            return targetLevel != myLevel;
         }
-        return false;
+        return false; // 자기평가는 isSelfEvalBlocked에서 처리
     }
 
     // ── 조회 ─────────────────────────────────────────────
@@ -150,17 +175,31 @@ public class EvaluationService {
         return evalDao.getEvaluationStatusList(year, period, type, sTarget, sEval);
     }
 
-    /** * [NEW-6 해결] 평가 현황 요약 데이터 조회
-     * 검색 필터(대상자명, 평가자명)를 포함하여 요약 카드를 집계하도록 파라미터 확장
+    public Map<String, Integer> getEvaluationSummary(int year, String period, String type) {
+        return evalDao.getEvaluationSummary(year, period, type);
+    }
+
+    /**
+     * 검색 파라미터 포함 버전 (제미나이 코드 시그니처 호환)
+     * 현재 정책: summary 카드는 이름 검색과 무관하게 전체 집계
      */
-    public Map<String, Integer> getEvaluationSummary(int year, String period, String type, String searchTarget, String searchEvaluator) {
-        return evalDao.getEvaluationSummary(year, period, type, searchTarget, searchEvaluator);
+    public Map<String, Integer> getEvaluationSummary(int year, String period, String type,
+                                                       String searchTarget, String searchEvaluator) {
+        return evalDao.getEvaluationSummary(year, period, type);
     }
 
     // ── 확정 / 반려 ───────────────────────────────────────
 
     /**
      * 최종확정 (HR담당자만)
+     * M-2: 셀프 확정 차단
+     * audit_log + 알림 발송
+     *
+     * TODO [급여 인상 연동 포인트]
+     * 확정 후 등급 기반 급여 인상 처리:
+     *   1. SalaryPolicyService.getRaiseRate(grade)
+     *   2. SalaryService.applyRaise(empId, raiseRate)
+     *   3. audit_log 급여 변경 이력
      */
     public boolean confirmEvaluation(int evalId, String userRole, int actorId) throws Exception {
         if (!isHrOnly(userRole))
@@ -170,6 +209,7 @@ public class EvaluationService {
         if (evalData == null || evalData.isEmpty())
             throw new Exception("존재하지 않는 평가 데이터입니다.");
 
+        // M-2: HR담당자가 자기 자신의 평가를 확정하는 셀프 확정 차단
         int targetEmpId = (Integer) evalData.get("empId");
         if (targetEmpId == actorId)
             throw new Exception("본인의 평가 결과는 직접 확정할 수 없습니다.");
@@ -178,6 +218,7 @@ public class EvaluationService {
         if (confirmedEmpId < 0)
             throw new Exception("DB 처리 중 오류가 발생했습니다.");
 
+        // 알림 발송 (commit 후 — 실패해도 확정은 유지)
         try {
             int    evalYear   = (Integer) evalData.get("evalYear");
             String evalPeriod = (String)  evalData.get("evalPeriod");
@@ -190,13 +231,21 @@ public class EvaluationService {
 
     /**
      * 반려 (HR담당자만)
+     * audit_log + 알림 발송
+     * DB CHECK 제약 우회: eval_status='작성중' + [반려] 태그
      */
-    public boolean rejectEvaluation(int evalId, String userRole, int actorId) {
+    /**
+     * 반려 (HR담당자만) + rejectReason 포함
+     * rejectReason: HR담당자가 confirm.jsp에서 입력한 사유
+     * eval_comment 형식: "[반려] 기존코멘트\n[반려 사유] HR이 입력한 사유"
+     */
+    public boolean rejectEvaluation(int evalId, String userRole, int actorId, String rejectReason) {
         if (!isHrOnly(userRole)) return false;
 
-        int evaluatorId = evalDao.rejectEvaluationWithLog(evalId, actorId);
+        int evaluatorId = evalDao.rejectEvaluationWithLog(evalId, actorId, rejectReason);
         if (evaluatorId < 0) return false;
 
+        // 알림 발송
         try {
             Map<String, Object> evalData = evalDao.getEvaluationById(evalId);
             if (evalData != null) {
@@ -209,6 +258,17 @@ public class EvaluationService {
         return true;
     }
 
+    /** 기존 시그니처 호환 (rejectReason 없는 경우 빈 문자열로 처리) */
+    public boolean rejectEvaluation(int evalId, String userRole, int actorId) {
+        return rejectEvaluation(evalId, userRole, actorId, "");
+    }
+
+    /**
+     * 반려 알림 발송
+     * NotificationUtil.send()가 private이라 NotificationDAO 직접 사용
+     * → NotificationUtil에 sendEvalRejected 추가 시 교체:
+     *   NotificationUtil.sendEvalRejected(evaluatorId, year, period, evalId);
+     */
     private void sendEvalRejectedNotification(int evaluatorId, int year, String period, int evalId) {
         try (java.sql.Connection conn = com.hrms.common.db.DatabaseConnection.getConnection()) {
             com.hrms.sys.dao.NotificationDAO notificationDAO = new com.hrms.sys.dao.NotificationDAO();

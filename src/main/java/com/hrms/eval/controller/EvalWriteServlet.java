@@ -61,10 +61,10 @@ public class EvalWriteServlet extends HttpServlet {
                     return;
                 }
 
-                String  evalStatus      = (String)  evalData.get("evalStatus");
-                Object  ownerObj        = evalData.get("evaluatorId");
+                String  evalStatus       = (String)  evalData.get("evalStatus");
+                Object  ownerObj         = evalData.get("evaluatorId");
                 int     ownerEvaluatorId = (ownerObj != null) ? (Integer) ownerObj : -1;
-                boolean isOwner         = (ownerEvaluatorId == loginEmpId);
+                boolean isOwner          = (ownerEvaluatorId == loginEmpId);
 
                 if ("최종확정".equals(evalStatus)) {
                     response.sendRedirect(request.getContextPath() + "/eval/status?error=already_confirmed");
@@ -79,12 +79,34 @@ public class EvalWriteServlet extends HttpServlet {
                 List<BigDecimal> itemScores = evalDao.getItemScoresByEvalId(evalId, itemNames);
                 currentGrade = (String) evalData.getOrDefault("grade", "A");
 
-                String  evalComment = (String) evalData.get("evalComment");
-                boolean isRejected  = (evalComment != null && evalComment.startsWith("[반려]"));
+                String evalComment = (String) evalData.get("evalComment");
+                if (evalComment == null) evalComment = "";
 
-                request.setAttribute("isRejected", isRejected);
-                request.setAttribute("evalData",   evalData);
-                request.setAttribute("itemScores", itemScores);
+                // 반려 여부: [반려] 태그로 판별
+                boolean isRejected = evalComment.contains("[반려]");
+
+                // ── 반려 사유 추출 (서버사이드) ──────────────────────
+                // 저장 형식: "[반려] 평가자코멘트\n[반려 사유] HR이 적은 사유"
+                // cleanComment: [반려] 태그 + [반려 사유] 이하 모두 제거한 순수 코멘트
+                // rejectReason: [반려 사유] 이후 텍스트만 추출
+                String cleanComment = evalComment;
+                String rejectReason = "";
+
+                // 1. [반려 사유] 이하 추출 및 제거
+                int reasonIdx = cleanComment.indexOf("[반려 사유]");
+                if (reasonIdx >= 0) {
+                    rejectReason = cleanComment.substring(reasonIdx + "[반려 사유]".length()).trim();
+                    cleanComment = cleanComment.substring(0, reasonIdx).trim();
+                }
+
+                // 2. [반려] 태그 제거
+                cleanComment = cleanComment.replace("[반려]", "").trim();
+
+                request.setAttribute("isRejected",   isRejected);
+                request.setAttribute("cleanComment", cleanComment);
+                request.setAttribute("rejectReason", rejectReason);
+                request.setAttribute("evalData",     evalData);
+                request.setAttribute("itemScores",   itemScores);
 
             } catch (NumberFormatException e) { e.printStackTrace(); }
         }
@@ -134,29 +156,21 @@ public class EvalWriteServlet extends HttpServlet {
         String evalType    = request.getParameter("evalType");
 
         try {
-            // ── [보안 검증 추가] 수정 모드일 때 상태값 및 권한 체크 ──
+            // ── 수정 모드 보안 검증 ──
             if (evalIdStr != null && !evalIdStr.isEmpty()) {
                 int checkEvalId = Integer.parseInt(evalIdStr);
                 Map<String, Object> currentEval = evalDao.getEvaluationById(checkEvalId);
-
                 if (currentEval != null && !currentEval.isEmpty()) {
                     String dbStatus = (String) currentEval.get("evalStatus");
                     Object ownerObj = currentEval.get("evaluatorId");
                     int ownerId = (ownerObj != null) ? (Integer) ownerObj : -1;
-
-                    // 1. 이미 최종확정된 경우 서버에서 수정 원천 차단
-                    if ("최종확정".equals(dbStatus)) {
+                    if ("최종확정".equals(dbStatus))
                         throw new Exception("already_confirmed");
-                    }
-
-                    // 2. 작성자 본인이 아니고 HR담당자도 아닌 경우 수정 거부
-                    if (ownerId != loginEmpId && !"HR담당자".equals(userRole)) {
+                    if (ownerId != loginEmpId && !"HR담당자".equals(userRole))
                         throw new Exception("forbidden");
-                    }
                 }
             }
 
-            // 필수값 검증
             if (empIdStr == null || empIdStr.isEmpty())
                 throw new Exception("target_required");
             if (evalComment == null || evalComment.trim().isEmpty())
@@ -188,21 +202,19 @@ public class EvalWriteServlet extends HttpServlet {
                 }
             }
 
-            // [NEW-8 수정] 중복 처리 검증
+            // 신규 작성 중복 체크
             boolean isNewWrite = (eval.getEvalId() == 0);
             if (isNewWrite) {
-                // 본인 작성 중복 체크
                 Map<String, Object> myExisting = evalService.loadExistingEval(
                         targetEmpId, eval.getEvalYear(), eval.getEvalPeriod(),
                         eval.getEvalType(), loginEmpId);
                 if (myExisting != null)
                     throw new Exception("duplicate");
 
-                // [M-3 수정] 타인이 같은 조건으로 이미 작성중인 건이 있으면 차단
+                // 타인 작성중 건 덮어쓰기 방지
                 if (isOccupiedByOther(targetEmpId, eval.getEvalYear(),
-                        eval.getEvalPeriod(), eval.getEvalType(), loginEmpId)) {
+                        eval.getEvalPeriod(), eval.getEvalType(), loginEmpId))
                     throw new Exception("occupied_by_other");
-                }
 
                 if (evalService.isAlreadyConfirmed(targetEmpId, eval.getEvalYear(),
                         eval.getEvalPeriod(), eval.getEvalType()))
@@ -215,7 +227,7 @@ public class EvalWriteServlet extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
             setCommonAttributes(request, loginEmpId, userRole);
-            request.setAttribute("errorCode",  e.getMessage());
+            request.setAttribute("errorCode",   e.getMessage());
             request.setAttribute("tempComment", evalComment);
 
             if (evalIdStr != null && !evalIdStr.isEmpty()) {
@@ -238,10 +250,7 @@ public class EvalWriteServlet extends HttpServlet {
         }
     }
 
-    /**
-     * [M-3] 타인이 동일 조건으로 이미 작성중인 평가가 있는지 확인
-     * ON DUPLICATE KEY UPDATE가 타인 건을 evaluator_id만 바꿔 덮어쓰는 문제 방지
-     */
+    /** 타인이 동일 조건으로 이미 작성중인 평가가 있는지 확인 */
     private boolean isOccupiedByOther(int empId, int year, String period,
                                        String type, int myEmpId) {
         String sql = "SELECT evaluator_id FROM evaluation "
@@ -252,10 +261,7 @@ public class EvalWriteServlet extends HttpServlet {
             pstmt.setInt(1, empId); pstmt.setInt(2, year);
             pstmt.setString(3, period); pstmt.setString(4, type);
             try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    int existingEvaluatorId = rs.getInt("evaluator_id");
-                    return existingEvaluatorId != myEmpId; // 본인이 아닌 타인이 작성중
-                }
+                if (rs.next()) return rs.getInt("evaluator_id") != myEmpId;
             }
         } catch (Exception e) { e.printStackTrace(); }
         return false;
@@ -316,7 +322,7 @@ public class EvalWriteServlet extends HttpServlet {
             if (existing != null) {
                 int    evalId    = (Integer) existing.get("evalId");
                 String comment   = (String)  existing.get("evalComment");
-                boolean isRejected = (comment != null && comment.startsWith("[반려]"));
+                boolean isRejected = (comment != null && comment.contains("[반려]"));
                 response.getWriter().write("{\"found\":true,\"evalId\":" + evalId
                         + ",\"isRejected\":" + isRejected + "}");
             } else {
@@ -347,7 +353,6 @@ public class EvalWriteServlet extends HttpServlet {
         return false;
     }
 
-    /** JSON 응답용 이스케이프 (XSS + JSON 파싱 오류 방지) */
     private String escapeForJson(String input) {
         if (input == null) return "";
         return input.replace("\\", "\\\\")
