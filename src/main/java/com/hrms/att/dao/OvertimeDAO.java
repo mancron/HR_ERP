@@ -17,8 +17,8 @@ public class OvertimeDAO {
 	// 초과근무 신청
 	public void insertOvertime(Connection conn, OvertimeDTO dto) {
 		String sql = "INSERT INTO overtime_request "
-				+ "(emp_id, ot_date, start_time, end_time, ot_hours, reason, status) "
-				+ "VALUES (?, ?, ?, ?, ?, ?, '대기')";
+				+ "(emp_id, ot_date, start_time, end_time, ot_hours, reason, status, approver_id) "
+				+ "VALUES (?, ?, ?, ?, ?, ?, '대기', ?)";
 
 		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -28,6 +28,7 @@ public class OvertimeDAO {
 			pstmt.setTime(4, dto.getEndTime());
 			pstmt.setDouble(5, dto.getOtHours());
 			pstmt.setString(6, dto.getReason());
+			pstmt.setInt(7, dto.getApproverId());
 
 			pstmt.executeUpdate();
 
@@ -406,10 +407,10 @@ public class OvertimeDAO {
 	    return list;
 	}
 	
-	public List<OvertimeDTO> getPendingByDept(Connection conn,
-	        int deptId,
+	public List<OvertimeDTO> getPendingByApprover(Connection conn,
+	        int approverId,
 	        String dept, String sort, String startDate, String endDate,
-	        int loginEmpId, int offset, int size) {
+	        int offset, int size) {
 
 	    List<OvertimeDTO> list = new ArrayList<>();
 
@@ -422,7 +423,7 @@ public class OvertimeDAO {
 	    sql.append("JOIN job_position jp ON e.position_id = jp.position_id ");
 	    sql.append("WHERE o.status = '대기' ");
 	    sql.append("AND o.emp_id != ? ");
-	    sql.append("AND e.dept_id = ? ");
+	    sql.append("AND o.approver_id = ? "); // 🔥 핵심
 
 	    if (dept != null && !dept.isEmpty()) {
 	        sql.append("AND d.dept_name = ? ");
@@ -443,8 +444,8 @@ public class OvertimeDAO {
 
 	        int idx = 1;
 
-	        pstmt.setInt(idx++, loginEmpId);
-	        pstmt.setInt(idx++, deptId);
+	        pstmt.setInt(idx++, approverId); // 자기 제외용
+	        pstmt.setInt(idx++, approverId); // 승인자
 
 	        if (dept != null && !dept.isEmpty()) {
 	            pstmt.setString(idx++, dept);
@@ -547,9 +548,8 @@ public class OvertimeDAO {
 	}
 	
 	//부서장용 리스트 출력
-	public int getPendingCountByDept(Connection conn,
-	        int deptId, String startDate, String endDate,
-	        int loginEmpId) {
+	public int getPendingCountByApprover(Connection conn,
+	        int approverId, String startDate, String endDate) {
 
 	    StringBuilder sql = new StringBuilder();
 
@@ -558,7 +558,7 @@ public class OvertimeDAO {
 	    sql.append("JOIN employee e ON o.emp_id = e.emp_id ");
 	    sql.append("WHERE o.status = '대기' ");
 	    sql.append("AND o.emp_id != ? ");
-	    sql.append("AND e.dept_id = ? ");
+	    sql.append("AND o.approver_id = ? "); // 🔥 핵심
 
 	    if (startDate != null && !startDate.isEmpty()) {
 	        sql.append("AND o.ot_date >= ? ");
@@ -572,13 +572,9 @@ public class OvertimeDAO {
 
 	        int idx = 1;
 
-	        // 🔥 자기 제외
-	        pstmt.setInt(idx++, loginEmpId);
+	        pstmt.setInt(idx++, approverId);
+	        pstmt.setInt(idx++, approverId);
 
-	        // 🔥 부서 조건
-	        pstmt.setInt(idx++, deptId);
-
-	        // 🔥 날짜 조건
 	        if (startDate != null && !startDate.isEmpty()) {
 	            pstmt.setDate(idx++, Date.valueOf(startDate));
 	        }

@@ -62,6 +62,9 @@ public class OvertimeService {
 			    throw new RuntimeException("이미 해당 날짜에 처리 중이거나 승인된 초과근무가 있습니다.");
 			}
 			
+			int approverId = findApprover(dto.getEmpId());
+			dto.setApproverId(approverId);
+			
 			// 2. 저장
 			overtimeDAO.insertOvertime(conn, dto);
 
@@ -237,9 +240,7 @@ public class OvertimeService {
 	            // 🔥 HR → 전체 조회
 	            return overtimeDAO.getPendingAll(conn, dept, sort, startDate, endDate, loginEmpId, offset, size);
 	        } else {
-	            // 🔥 팀장 → 자기 부서
-	            int deptId = empDAO.getDeptIdByEmpId(loginEmpId);
-	            return overtimeDAO.getPendingByDept(conn, deptId, dept, sort, startDate, endDate, loginEmpId, offset, size);
+	        	 return overtimeDAO.getPendingByApprover(conn, loginEmpId, dept, sort, startDate, endDate, offset, size);
 	        }
 
 	    } catch (Exception e) {
@@ -256,8 +257,7 @@ public class OvertimeService {
 	        if (isHR(loginEmpId)) {
 	            return overtimeDAO.getPendingCountAll(conn, dept, startDate, endDate, loginEmpId);
 	        } else {
-	            int deptId = empDAO.getDeptIdByEmpId(loginEmpId);
-	            return overtimeDAO.getPendingCountByDept(conn, deptId, startDate, endDate, loginEmpId);
+	        	return overtimeDAO.getPendingCountByApprover(conn, loginEmpId, startDate, endDate);
 	        }
 
 	    } catch (Exception e) {
