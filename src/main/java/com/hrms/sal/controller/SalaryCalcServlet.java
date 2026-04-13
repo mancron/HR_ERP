@@ -57,7 +57,7 @@ public class SalaryCalcServlet extends HttpServlet {
 
         request.setAttribute("salaryList",    salaryList);
         request.setAttribute("hasPending",    hasPending);
-        request.setAttribute("isClosed",      isClosed);   // ← 추가
+        request.setAttribute("isClosed",      isClosed);
         request.setAttribute("yearOptions",   service.getYearOptions());
         request.setAttribute("selectedYear",  year);
         request.setAttribute("selectedMonth", month);

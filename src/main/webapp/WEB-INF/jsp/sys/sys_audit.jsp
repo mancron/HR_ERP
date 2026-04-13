@@ -7,22 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HR ERP - 변경 이력 조회 (audit_log)</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sys/audit.css">
     <style>
-        /* 기본 레이아웃 및 폼/테이블 스타일 뼈대 (style.css에 병합 가능) */
-        .search-container { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .search-form { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
-        .form-group { display: flex; align-items: center; gap: 10px; }
-        .form-control { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-primary { background: #007bff; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
-        
-        .table-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
-        .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .data-table th, .data-table td { padding: 12px; border-bottom: 1px solid #eee; }
-        .data-table th { background: #f8f9fa; font-weight: bold; color: #333; }
-        .text-center { text-align: center; }
-        .empty-row { text-align: center; padding: 30px !important; color: #777; }
+
     </style>
 </head>
 <body>

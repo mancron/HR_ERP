@@ -45,11 +45,18 @@ public class AuthenticationFilter implements Filter {
     ));
 
     private static final Set<String> CEO_ALLOWED_POST_PREFIXES = new HashSet<>(Arrays.asList(
-        "/emp/approval",
-        "/emp/leave",
-        "/emp/resign",
-        "/auth/",
-        "/att/record"
+    	    "/emp/approval",
+    	    "/emp/leave",
+    	    "/emp/resign",
+    	    "/auth/",
+    	    "/att/record",
+    	    "/notification"   // 알람 읽기만 추가
+    ));
+    
+ // CEO 전용 접근 금지 경로 (GET 포함 전면 차단)
+    private static final Set<String> CEO_BLOCKED_PREFIXES = new HashSet<>(Arrays.asList(
+        "/att/leave/req",
+        "/att/overtime/req"
     ));
 
     @Override
@@ -126,8 +133,17 @@ public class AuthenticationFilter implements Filter {
 
         // [CEO] 읽기 전용 강제
         if ("최종승인자".equals(role)) {
-            if ("POST".equalsIgnoreCase(method) ||
-                "PUT".equalsIgnoreCase(method)  ||
+            
+            boolean ceoPagesBlocked = CEO_BLOCKED_PREFIXES.stream()
+                                        .anyMatch(p -> path.startsWith(p));
+            if (ceoPagesBlocked) {
+                sendForbidden(req, res);
+                return;
+            }
+
+            // 기존 POST 차단 로직
+            if ("POST".equalsIgnoreCase(method) || 
+                "PUT".equalsIgnoreCase(method)  || 
                 "DELETE".equalsIgnoreCase(method)) {
                 boolean ceoPostAllowed = CEO_ALLOWED_POST_PREFIXES.stream()
                                             .anyMatch(p -> path.startsWith(p));
@@ -154,14 +170,6 @@ public class AuthenticationFilter implements Filter {
             }
         }
 
-        // [직원 관리] 휴직·복직·퇴직 승인 (HR, 최종승인자, 부서장만)
-        // 주의: /emp/approvalHistory (단순 내역 조회)는 통과시키고 실제 결재 화면만 막음
-//        if (path.startsWith("/emp/approval") && !path.startsWith("/emp/approvalHistory")) {
-//            if (!"HR담당자".equals(role) && !"최종승인자".equals(role) && !isManager) {
-//                res.sendError(HttpServletResponse.SC_FORBIDDEN, "결재 권한이 없습니다.");
-//                return;
-//            }
-//        }
 
         // [근태 관리] 초과근무 승인 — HR담당자·부서장
         if (path.startsWith("/att/overtime/approve")) {
@@ -181,6 +189,21 @@ public class AuthenticationFilter implements Filter {
 
         // [근태 관리] 연차 일괄 부여 — HR담당자 전용
         if (path.startsWith("/att/annual/grant")) {
+            if (!"HR담당자".equals(role)) {
+                sendForbidden(req, res);
+                return;
+            }
+        }
+        
+        if (path.startsWith("/att/annual")) {
+            if (!"HR담당자".equals(role)) {
+                sendForbidden(req, res);
+                return;
+            }
+        }
+        
+        // [근태 관리] 연차 현황 — HR담당자 전용
+        if (path.startsWith("/att/annual/adjust")) {
             if (!"HR담당자".equals(role)) {
                 sendForbidden(req, res);
                 return;
