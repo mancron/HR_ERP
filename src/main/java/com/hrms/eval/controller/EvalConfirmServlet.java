@@ -136,7 +136,7 @@ public class EvalConfirmServlet extends HttpServlet {
 
             // [추가] 중복 처리 방지 로직
             Map<String, Object> currentData = evalService.getEvaluationById(evalId);
-            if (currentData != null && "최종확정".equals(currentData.get("status"))) {
+            if (currentData != null && "최종확정".equals(currentData.get("evalStatus"))) {
                 sendJson(response, false, "이미 최종확정된 평가입니다.");
                 return;
             }

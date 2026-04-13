@@ -131,7 +131,16 @@ public class DeptService {
         }
 
         // 9. 저장 (기존과 동일)
-        boolean success = (dept.getDept_id() == 0) ? (deptDao.insertDept(dept) > 0) : deptDao.updateDept(dept);
+        boolean success;
+        if (dept.getDept_id() == 0) {
+            int newDeptId = deptDao.insertDept(dept);
+            success = newDeptId > 0;
+            if (success) {
+                dept.setDept_id(newDeptId);
+            }
+        } else {
+            success = deptDao.updateDept(dept);
+        }
 
         // 10. 순서 재정렬 (빈자리 메우기)
         // [수정] 여기서도 parent_dept_id != 0 제약을 풀어서 최상위 부서들도 이빨을 맞춰줍니다.
