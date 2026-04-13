@@ -25,20 +25,19 @@ public class AttendanceSummaryService {
 	private OvertimeDAO overtimeDAO = new OvertimeDAO();
 	private EmpDAO empDAO = new EmpDAO();
 
-	public List<Map<String, Object>> getSummaryList(String keyword, String dept, int positionId, String status, int year,
-			int month) {
+	public List<Map<String, Object>> getSummaryList(String keyword, String dept, int positionId, String status,
+			int year, int month) {
 
 		List<Map<String, Object>> result = new ArrayList<>();
 
 		Connection conn = null;
-		
+
 		int deptId = 0;
 
 		if (dept != null && !dept.isEmpty()) {
-		    deptId = getDeptIdByName(dept);
+			deptId = getDeptIdByName(dept);
 		}
 
-		
 		try {
 			conn = DatabaseConnection.getConnection();
 
@@ -87,6 +86,7 @@ public class AttendanceSummaryService {
 		int workDays = 0; // 정상 출근
 		int late = 0; // 지각
 		int absent = 0; // 결근
+		int absentCandidate = 0; // 결근 후보
 		int noCheckout = 0; // 퇴근 미처리
 
 		double leaveDays = 0;
@@ -110,11 +110,11 @@ public class AttendanceSummaryService {
 
 			AttendanceDTO att = attMap.get(date);
 
-// 🔥 1. 데이터 없음 → 결근 후보
+// 1. 데이터 없음 → 결근 후보
 			if (att == null) {
 
 				if (!leaveDAO.existsByDate(emp.getEmp_id(), date)) {
-					absent++;
+					absentCandidate++;
 				}
 
 				continue;
@@ -123,13 +123,18 @@ public class AttendanceSummaryService {
 			Time checkIn = att.getCheckIn();
 			Time checkOut = att.getCheckOut();
 
-// 🔥 2. 퇴근 미처리
+			if ("결근".equals(att.getStatus())) {
+				absent++;
+				continue;
+			}
+
+// 2. 퇴근 미처리
 			if (checkIn != null && checkOut == null) {
 				noCheckout++;
 				continue;
 			}
 
-// 🔥 3. 정상 / 지각
+// 3. 정상 / 지각
 			if (checkIn != null && checkOut != null) {
 
 				if (checkIn.toLocalTime().isAfter(LocalTime.of(9, 0))) {
@@ -141,20 +146,20 @@ public class AttendanceSummaryService {
 				continue;
 			}
 
-// 🔥 4. checkIn 자체가 없는 경우 → 결근
+// 4. checkIn 자체가 없는 경우 → 결근
 			if (!leaveDAO.existsByDate(emp.getEmp_id(), date)) {
 				absent++;
 			}
 		}
 
-// 🔥 휴가 집계
+// 휴가 집계
 		for (LeaveDTO leave : leaveList) {
 			if ("승인".equals(leave.getStatus())) {
 				leaveDays += leave.getDays();
 			}
 		}
 
-// 🔥 결과 세팅
+// 결과 세팅
 		map.put("empId", emp.getEmp_id());
 		map.put("empName", emp.getEmp_name());
 		map.put("deptName", emp.getDept_name());
@@ -163,7 +168,8 @@ public class AttendanceSummaryService {
 		map.put("workDays", workDays);
 		map.put("lateCount", late);
 		map.put("absentCount", absent);
-		map.put("noCheckoutCount", noCheckout); // ⭐ 추가 필수
+		map.put("absentCandidateCount", absentCandidate);
+		map.put("noCheckoutCount", noCheckout);
 
 		map.put("leaveDays", leaveDays);
 
@@ -173,29 +179,29 @@ public class AttendanceSummaryService {
 	private boolean isWeekend(LocalDate date) {
 		return date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY;
 	}
-	
+
 	public List<String> getDeptList() {
-	    return empDAO.getDeptList();
+		return empDAO.getDeptList();
 	}
-	
+
 	private int getDeptIdByName(String deptName) {
 
-	    String sql = "SELECT dept_id FROM department WHERE dept_name = ?";
+		String sql = "SELECT dept_id FROM department WHERE dept_name = ?";
 
-	    try (Connection conn = DatabaseConnection.getConnection();
-	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-	        pstmt.setString(1, deptName);
-	        ResultSet rs = pstmt.executeQuery();
+			pstmt.setString(1, deptName);
+			ResultSet rs = pstmt.executeQuery();
 
-	        if (rs.next()) {
-	            return rs.getInt("dept_id");
-	        }
+			if (rs.next()) {
+				return rs.getInt("dept_id");
+			}
 
-	    } catch (Exception e) {
-	        throw new RuntimeException(e);
-	    }
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 
-	    return 0;
+		return 0;
 	}
 }

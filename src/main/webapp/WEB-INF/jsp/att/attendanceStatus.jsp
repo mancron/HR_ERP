@@ -88,6 +88,7 @@
 							<th>출근</th>
 							<th>지각</th>
 							<th>결근</th>
+							<th>결근 후보</th>
 							<th>휴가</th>
 							<th>퇴근 미처리</th>
 							<th>관리</th>
@@ -105,6 +106,7 @@
 								<td>${item.workDays}</td>
 								<td>${item.lateCount}</td>
 								<td class="absent">${item.absentCount}</td>
+								<td class="absent-candidate">${item.absentCandidateCount}</td>
 								<td>${item.leaveDays}</td>
 								<td>${item.noCheckoutCount}</td>
 
