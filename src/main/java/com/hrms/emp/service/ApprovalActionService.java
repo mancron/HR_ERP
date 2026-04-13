@@ -1,6 +1,7 @@
 package com.hrms.emp.service;
 
 import java.sql.Connection;
+import java.time.LocalDate;
 import java.util.List;
 
 import com.hrms.common.db.DatabaseConnection;
@@ -283,33 +284,40 @@ public class ApprovalActionService {
 	        String leaveType = dao.getLeaveType(con, requestId);
 	        String newStatus = "휴직".equals(leaveType) ? "휴직" : "재직";
 	        String startDate = dao.getLeaveStartDate(con, requestId);
+	        java.time.LocalDate changeDate = java.time.LocalDate.parse(startDate);
 	        history.setChange_type(leaveType);
-	        history.setChange_date(java.time.LocalDate.parse(startDate).atStartOfDay());
+	        history.setChange_date(changeDate.atStartOfDay());
 	        history.setReason(dao.getLeaveReason(con, requestId));
-	        // leave는 to = from 그대로 (부서/직급 변동 없음)
 	        history.setTo_dept_id(currentDeptId);
 	        history.setTo_position_id(currentPositionId);
 	        history.setTo_role(currentRole);
-
 	        dao.insertPersonnelHistory(con, history);
-	        dao.updateEmployeeStatus(con, empId, newStatus);
+
+	        // 적용일이 오늘이거나 이미 지난 날짜면 즉시 반영
+	        if (!changeDate.isAfter(java.time.LocalDate.now())) {
+	            dao.updateEmployeeStatus(con, empId, newStatus);
+	            dao.markLeaveAsApplied(con, requestId);
+	        }
+	        // 미래 날짜면 is_applied=0 유지 → 로그인 시 처리
 
 	    } else {
 	        String resignDate = dao.getResignDate(con, requestId);
+	        java.time.LocalDate changeDate = java.time.LocalDate.parse(resignDate);
 	        history.setChange_type("퇴직");
-	        history.setChange_date(java.time.LocalDate.parse(resignDate).atStartOfDay());
+	        history.setChange_date(changeDate.atStartOfDay());
 	        history.setReason(dao.getResignReason(con, requestId));
-	        // 퇴직 후 소속 없음
 	        history.setTo_dept_id(0);
 	        history.setTo_position_id(0);
 	        history.setTo_role(null);
-
-	        // 이력 먼저 (from 정보 살아있을 때)
 	        dao.insertPersonnelHistory(con, history);
-	        // 퇴직 처리
-	        dao.updateEmployeeResign(con, empId, resignDate);
-	        // 부서장이었으면 department.manager_id NULL
-	        dao.clearDeptManagerIfResign(con, empId);
+
+	        // 적용일 기준 즉시 또는 대기
+	        if (!changeDate.isAfter(java.time.LocalDate.now())) {
+	            dao.updateEmployeeResign(con, empId, resignDate);
+	            dao.clearDeptManagerIfResign(con, empId);
+	            dao.markResignAsApplied(con, requestId);
+	        }
+	        // 미래 날짜면 is_applied=0 유지 → 로그인 시 처리
 	    }
 	}
 }
