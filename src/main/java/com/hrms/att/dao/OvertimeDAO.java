@@ -489,6 +489,7 @@ public class OvertimeDAO {
 	    return list;
 	}
 	
+	//HR담당자용 리스트 출력
 	public int getPendingCountAll(Connection conn,
 	        String dept, String startDate, String endDate,
 	        int loginEmpId) {
@@ -545,6 +546,7 @@ public class OvertimeDAO {
 	    return 0;
 	}
 	
+	//부서장용 리스트 출력
 	public int getPendingCountByDept(Connection conn,
 	        int deptId, String startDate, String endDate,
 	        int loginEmpId) {
