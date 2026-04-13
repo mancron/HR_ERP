@@ -420,19 +420,14 @@ public class DeptDAO {
         Connection con = null;
         PreparedStatement pstmt = null;
         String sql = "";
+        String parentCondition = (parentId == 0) ? "parent_dept_id IS NULL" : "parent_dept_id = ?";
 
-        if (oldOrder == 0) {
-            // 신규 등록: 새 위치 이후를 +1
-            sql = "UPDATE department SET sort_order = sort_order + 1 " +
-                  "WHERE parent_dept_id = ? AND sort_order >= ? AND is_active = 1";
+        if (oldOrder == 0 || oldOrder == newOrder) {
+            sql = "UPDATE department SET sort_order = sort_order + 1 WHERE " + parentCondition + " AND sort_order >= ? AND is_active = 1";
         } else if (oldOrder > newOrder) {
-            // 높은 번호 → 낮은 번호 이동 (사이 번호 +1)
-            sql = "UPDATE department SET sort_order = sort_order + 1 " +
-                  "WHERE parent_dept_id = ? AND sort_order >= ? AND sort_order < ? AND is_active = 1";
+            sql = "UPDATE department SET sort_order = sort_order + 1 WHERE " + parentCondition + " AND sort_order >= ? AND sort_order < ? AND is_active = 1";
         } else if (oldOrder < newOrder) {
-            // 낮은 번호 → 높은 번호 이동 (사이 번호 -1)
-            sql = "UPDATE department SET sort_order = sort_order - 1 " +
-                  "WHERE parent_dept_id = ? AND sort_order > ? AND sort_order <= ? AND is_active = 1";
+            sql = "UPDATE department SET sort_order = sort_order - 1 WHERE " + parentCondition + " AND sort_order > ? AND sort_order <= ? AND is_active = 1";
         } else {
             return;
         }
@@ -440,37 +435,45 @@ public class DeptDAO {
         try {
             con = DatabaseConnection.getConnection();
             pstmt = con.prepareStatement(sql);
-            pstmt.setInt(1, parentId);
-            if (oldOrder == 0) {
-                pstmt.setInt(2, newOrder);
-            } else if (oldOrder > newOrder) {
-                pstmt.setInt(2, newOrder);
-                pstmt.setInt(3, oldOrder);
-            } else {
-                pstmt.setInt(2, oldOrder);
-                pstmt.setInt(3, newOrder);
+            
+            int idx = 1;
+            if (parentId != 0) {
+                pstmt.setInt(idx++, parentId);
             }
-            pstmt.executeUpdate();
-        } catch (Exception e) { e.printStackTrace(); }
-        finally { closeResources(null, pstmt, con); }
+
+            if (oldOrder == 0 || oldOrder == newOrder) {
+                pstmt.setInt(idx++, newOrder);
+            } else if (oldOrder > newOrder) {
+                pstmt.setInt(idx++, newOrder);
+                pstmt.setInt(idx++, oldOrder);
+            } else {
+                pstmt.setInt(idx++, oldOrder);
+                pstmt.setInt(idx++, newOrder);
+            }
+            
+            int rowCount = pstmt.executeUpdate();
+
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+        } finally { closeResources(null, pstmt, con); }
     }
 
     public void reorderSortOrder(int parentId) {
         Connection con = null;
         PreparedStatement pstmt = null;
-        String sql = "UPDATE department d " +
-                "INNER JOIN (" +
-                "    SELECT dept_id, (@seq := @seq + 1) AS new_order " +
-                "    FROM department, (SELECT @seq := 0) temp " +
-                "    WHERE parent_dept_id = ? AND is_active = 1 " +
-                "    ORDER BY sort_order ASC, dept_id ASC" +
-                ") AS ordered_data ON d.dept_id = ordered_data.dept_id " +
-                "SET d.sort_order = ordered_data.new_order";
+        String parentCondition = (parentId == 0) ? "parent_dept_id IS NULL" : "parent_dept_id = ?";
+        
+        String sql = "UPDATE department d INNER JOIN (SELECT dept_id, (@seq := @seq + 1) AS new_order " +
+                     "FROM department, (SELECT @seq := 0) temp WHERE " + parentCondition + 
+                     " AND is_active = 1 ORDER BY sort_order ASC, dept_id ASC) AS ordered_data " +
+                     "ON d.dept_id = ordered_data.dept_id SET d.sort_order = ordered_data.new_order";
+
         try {
             con = DatabaseConnection.getConnection();
             pstmt = con.prepareStatement(sql);
-            pstmt.setInt(1, parentId);
-            pstmt.executeUpdate();
+            if (parentId != 0) pstmt.setInt(1, parentId);
+            
+            int rowCount = pstmt.executeUpdate();
         } catch (Exception e) { e.printStackTrace(); }
         finally { closeResources(null, pstmt, con); }
     }

@@ -369,16 +369,29 @@ function buildTree(nodes, isRoot = false) {
 // 3. 트리 렌더링 실행
 function renderTree() {
     const container = document.getElementById('deptTreeContainer');
-    if (!container) return;
-    // 루트 회사 노드부터 시작
-    const rootHtml = `
-        <li class="tree-node root-node">
-            <div class="tree-company">
-                <span class="tree-icon">🏢</span> <span class="tree-text">\${companyName}</span>
-            </div>
-            \${buildTree(deptData, true)}
-        </li>`;
-    container.innerHTML = rootHtml;
+    if (!container || !deptData || deptData.length === 0) return;
+
+    let totalHtml = "";
+
+    deptData.forEach((rootDept) => {
+        // 선택된 부서인지 확인 (일반 부서와 동일한 active 로직)
+        const activeClass = (selectedDeptId == rootDept.deptId) ? 'active' : '';
+        
+        // 최상위 부서도 일반 부서처럼 'tree-row' 클래스를 사용하여 클릭 및 스타일 동작을 통일
+        totalHtml += `
+            <li class="tree-node root-node">
+                <div class="tree-row \${activeClass}" 
+                     onclick="location.href='?deptId=\${rootDept.deptId}'"
+                     style="cursor:pointer;">
+                    <span class="tree-icon">🏢</span> 
+                    <span class="tree-text">\${rootDept.deptName}</span>
+                    \${rootDept.managerName ? `<span class="tree-manager">\${rootDept.managerName}</span>` : ''}
+                </div>
+                \${buildTree(rootDept.children, true)}
+            </li>`;
+    });
+        
+    container.innerHTML = totalHtml;
 }
 
 // [기존 JS 로직 유지]
