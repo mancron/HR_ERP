@@ -31,8 +31,21 @@ public class AnnualLeaveServlet extends HttpServlet {
                 ? LocalDate.now().getYear()
                 : Integer.parseInt(yearParam);
 
+        int page = 1;
+        int size = 10;
+
+        String pageParam = request.getParameter("page");
+        if (pageParam != null && !pageParam.trim().isEmpty()) {
+            page = Integer.parseInt(pageParam.trim());
+        }
+
+        int offset = (page - 1) * size;
+        
+        int totalCount = dao.getAnnualLeaveCount(year, dept, name);
+        int totalPage = (int) Math.ceil((double) totalCount / size);
+        
         // 2. 데이터 조회
-        List<AnnualLeaveDTO> list = dao.getAnnualLeaveList(year, dept, name);
+        List<AnnualLeaveDTO> list = dao.getAnnualLeaveList(year, dept, name, offset, size);
         List<Integer> yearList = dao.getAvailableYears();
         List<String> deptList = edao.getDeptList();
 
@@ -44,6 +57,8 @@ public class AnnualLeaveServlet extends HttpServlet {
         request.setAttribute("year", year);
         request.setAttribute("dept", dept);
         request.setAttribute("name", name);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPage", totalPage);
 
         // 4. 이동
         request.getRequestDispatcher("/WEB-INF/jsp/att/annualList.jsp")

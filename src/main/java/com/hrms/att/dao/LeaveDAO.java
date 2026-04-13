@@ -522,42 +522,6 @@ public class LeaveDAO {
 		return false;
 	}
 
-	// 연차 리스트
-	public List<AnnualLeaveDTO> getAnnualLeaveList(int year) {
-
-		List<AnnualLeaveDTO> list = new ArrayList<>();
-
-		String sql = "SELECT e.emp_id, e.emp_name, d.dept_name, " + "a.total_days, a.used_days, a.remain_days "
-				+ "FROM annual_leave a " + "JOIN employee e ON a.emp_id = e.emp_id "
-				+ "JOIN department d ON e.dept_id = d.dept_id " + "WHERE a.leave_year = ? " + "ORDER BY e.emp_name ";
-
-		try (Connection conn = DatabaseConnection.getConnection();
-				PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-			pstmt.setInt(1, year);
-			ResultSet rs = pstmt.executeQuery();
-
-			while (rs.next()) {
-				AnnualLeaveDTO dto = new AnnualLeaveDTO();
-
-				dto.setEmpId(rs.getInt("emp_id"));
-				dto.setEmpName(rs.getString("emp_name"));
-				dto.setDeptName(rs.getString("dept_name"));
-
-				dto.setTotalDays(rs.getDouble("total_days"));
-				dto.setUsedDays(rs.getDouble("used_days"));
-				dto.setRemainDays(rs.getDouble("remain_days"));
-
-				list.add(dto);
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return list;
-	}
-
 	// 연도 조회
 	public List<Integer> getAvailableYears() {
 
@@ -581,7 +545,7 @@ public class LeaveDAO {
 	}
 
 	// 연차 현황 필터 조회
-	public List<AnnualLeaveDTO> getAnnualLeaveList(int year, String dept, String name) {
+	public List<AnnualLeaveDTO> getAnnualLeaveList(int year, String dept, String name, int offset, int size) {
 
 		List<AnnualLeaveDTO> list = new ArrayList<>();
 
@@ -603,6 +567,7 @@ public class LeaveDAO {
 		}
 
 		sql.append("ORDER BY e.emp_name ");
+		sql.append("LIMIT ?, ? ");
 
 		try (Connection conn = DatabaseConnection.getConnection();
 				PreparedStatement ps = conn.prepareStatement(sql.toString())) {
@@ -617,7 +582,10 @@ public class LeaveDAO {
 			if (name != null && !name.isEmpty()) {
 				ps.setString(idx++, "%" + name + "%");
 			}
-
+			
+			ps.setInt(idx++, offset);
+			ps.setInt(idx++, size);
+			
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
@@ -639,6 +607,56 @@ public class LeaveDAO {
 		}
 
 		return list;
+	}
+	
+	//페이징용 카운트
+	public int getAnnualLeaveCount(int year, String dept, String name) {
+
+	    int count = 0;
+
+	    StringBuilder sql = new StringBuilder();
+
+	    sql.append("SELECT COUNT(*) ");
+	    sql.append("FROM employee e ");
+	    sql.append("JOIN department d ON e.dept_id = d.dept_id ");
+	    sql.append("WHERE 1=1 ");
+
+	    // 🔥 부서 필터
+	    if (dept != null && !dept.isEmpty()) {
+	        sql.append("AND d.dept_name = ? ");
+	    }
+
+	    // 🔥 이름 검색
+	    if (name != null && !name.isEmpty()) {
+	        sql.append("AND e.emp_name LIKE ? ");
+	    }
+
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+	        int idx = 1;
+
+	        // dept
+	        if (dept != null && !dept.isEmpty()) {
+	            pstmt.setString(idx++, dept);
+	        }
+
+	        // name
+	        if (name != null && !name.isEmpty()) {
+	            pstmt.setString(idx++, "%" + name + "%");
+	        }
+
+	        ResultSet rs = pstmt.executeQuery();
+
+	        if (rs.next()) {
+	            count = rs.getInt(1);
+	        }
+
+	    } catch (Exception e) {
+	        throw new RuntimeException("연차 현황 COUNT 조회 실패", e);
+	    }
+
+	    return count;
 	}
 
 	// 연차 부여 연차 조정
