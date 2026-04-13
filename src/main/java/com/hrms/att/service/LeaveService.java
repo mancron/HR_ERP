@@ -40,10 +40,12 @@ public class LeaveService {
 				throw new RuntimeException("부서 없음");
 			}
 
+			int managerId = dept.getManager_id();
+			
 			// ⭐ 팀장 있으면 바로 반환
-			if (dept.getManager_id() != 0) {
-				return dept.getManager_id();
-			}
+			if (managerId != 0 && managerId != empId) {
+	            return managerId;
+	        }
 
 			// ⭐ 없으면 상위 부서로 이동
 			deptId = dept.getParent_dept_id();
