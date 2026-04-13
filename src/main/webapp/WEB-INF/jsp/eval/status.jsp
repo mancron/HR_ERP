@@ -2,6 +2,9 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
+<%-- 세션에서 empId를 loginEmpId 변수로 안전하게 가져옴 --%>
+<c:set var="loginEmpId" value="${sessionScope.empId}" />
+
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/eval/evaluation.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 
@@ -39,11 +42,10 @@
                 <option value="하위평가" ${selectedType == '하위평가' ? 'selected' : ''}>하위평가</option>
             </select>
             
-            <%-- [팁] 사원은 다른 사람을 검색할 수 없도록 검색창 제어 (선택 사항) --%>
             <input type="text" name="searchTarget" value="${searchTarget}"
                 placeholder="대상자 이름" class="search-input">
             
-            <%-- [핵심] 일반 사원은 '평가자 이름'으로 검색하지 못하게 하거나 숨김 처리 가능 --%>
+            <%-- HR담당자나 최종승인자만 평가자 이름 검색 가능 --%>
             <c:if test="${isHr || sessionScope.userRole == '최종승인자'}">
                 <input type="text" name="searchEvaluator" value="${searchEvaluator}"
                     placeholder="평가자 이름" class="search-input">
@@ -58,12 +60,12 @@
 
     <%-- ── 요약 카드 ── --%>
     <div class="summary-cards">
-        <div class="card s-card"><span>S 등급</span><strong>${summary.S}</strong></div>
-        <div class="card a-card"><span>A 등급</span><strong>${summary.A}</strong></div>
-        <div class="card b-card"><span>B 등급</span><strong>${summary.B}</strong></div>
-        <div class="card c-card"><span>C 등급</span><strong>${summary.C}</strong></div>
-        <div class="card d-card"><span>D 등급</span><strong>${summary.D}</strong></div>
-        <div class="card pending-card"><span>미완료</span><strong>${summary['미완료']}</strong></div>
+        <div class="card s-card"><span>S 등급</span><strong>${summary.S != null ? summary.S : 0}</strong></div>
+        <div class="card a-card"><span>A 등급</span><strong>${summary.A != null ? summary.A : 0}</strong></div>
+        <div class="card b-card"><span>B 등급</span><strong>${summary.B != null ? summary.B : 0}</strong></div>
+        <div class="card c-card"><span>C 등급</span><strong>${summary.C != null ? summary.C : 0}</strong></div>
+        <div class="card d-card"><span>D 등급</span><strong>${summary.D != null ? summary.D : 0}</strong></div>
+        <div class="card pending-card"><span>미완료</span><strong>${summary['미완료'] != null ? summary['미완료'] : 0}</strong></div>
     </div>
 
     <%-- ── 테이블 ── --%>
@@ -79,104 +81,106 @@
                 </tr>
             </thead>
             <tbody>
-                <c:forEach var="item" items="${statusList}">
-                    <tr>
-                        <td>${item.empName}</td>
-                        <td>${item.deptName}</td>
-                        <c:if test="${selectedPeriod == '전체'}"><td>${item.evalPeriod}</td></c:if>
-                        <c:if test="${selectedType == '전체'}"><td>${item.evalType}</td></c:if>
-                        <td>
-                            <c:choose>
-                                <c:when test="${item.score != null}">
-                                    <fmt:formatNumber value="${item.score}" pattern="0.#"/>
-                                </c:when>
-                                <c:otherwise>—</c:otherwise>
-                            </c:choose>
-                        </td>
-                        <td>
-                            <c:choose>
-                                <c:when test="${not empty item.grade}">
-                                    <span class="badge-${item.grade}">${item.grade}</span>
-                                </c:when>
-                                <c:otherwise>—</c:otherwise>
-                            </c:choose>
-                        </td>
-                        <td>
-                            <c:choose>
-                                <c:when test="${item.status == '최종확정'}">
-                                    <span class="status-complete">최종확정</span>
-                                </c:when>
-                                <c:when test="${item.isRejected == true}">
-                                    <span class="status-reject">반려됨</span>
-                                </c:when>
-                                <c:otherwise>
-                                    <span class="status-working">작성중</span>
-                                </c:otherwise>
-                            </c:choose>
-                        </td>
-                        
-                        <%-- ── 평가자 이름 익명화 로직 ── --%>
-                        <td>
-                            <c:choose>
-                                <%-- 1. 인사담당자(isHr)이거나 사장님(최종승인자)이면 모든 실명 노출 --%>
-                                <%-- 2. 로그인한 사람(loginEmpId)이 평가 작성자 본인인 경우 실명 노출 --%>
-                                <c:when test="${isHr || sessionScope.userRole == '최종승인자' || loginEmpId == item.evaluatorId}">
-                                    ${item.evaluatorName}
-                                </c:when>
-                                <%-- 3. 피평가자가 본인 기록을 볼 때는 무조건 '익명' 처리 --%>
-                                <c:otherwise>
-                                    <span class="eval-anon" style="color: #999; font-style: italic;">익명</span>
-                                </c:otherwise>
-                            </c:choose>
-                        </td>
-                        
-                        <td>
-                            <c:choose>
-                                <c:when test="${not empty item.confirmedAt}">
-                                    <fmt:formatDate value="${item.confirmedAt}" pattern="yyyy-MM-dd"/>
-                                </c:when>
-                                <c:otherwise>—</c:otherwise>
-                            </c:choose>
-                        </td>
-                        
-                        <%-- ── 상세 버튼 제어 (피평가자는 버튼 미노출) ── --%>
-                        <td>
-                            <c:set var="isOwner" value="${item.evaluatorId == loginEmpId}"/>
-                            <c:set var="isCEO" value="${sessionScope.userRole == '최종승인자'}"/>
-                            
-                            <c:choose>
-                                <%-- 최종확정 상태: 권한자(HR, 작성자, CEO)에게만 '조회' 버튼 노출 --%>
-                                <c:when test="${item.status == '최종확정'}">
-                                    <c:if test="${isHr || isOwner || isCEO}">
-                                        <button class="btn-view" onclick="openModal(${item.evalId})">조회</button>
-                                    </c:if>
-                                </c:when>
-                                
-                                <%-- 작성 중/반려 상태 --%>
-                                <c:otherwise>
+                <c:choose>
+                    <c:when test="${not empty statusList}">
+                        <c:forEach var="item" items="${statusList}">
+                            <tr>
+                                <td>${item.empName}</td>
+                                <td>${item.deptName}</td>
+                                <c:if test="${selectedPeriod == '전체'}"><td>${item.evalPeriod}</td></c:if>
+                                <c:if test="${selectedType == '전체'}"><td>${item.evalType}</td></c:if>
+                                <td>
                                     <c:choose>
-                                        <%-- 사장님: 조회 버튼 --%>
-                                        <c:when test="${isCEO && !isOwner}">
-                                            <button class="btn-view" onclick="openModal(${item.evalId})">조회</button>
+                                        <c:when test="${item.score != null}">
+                                            <fmt:formatNumber value="${item.score}" pattern="0.#"/>
                                         </c:when>
-                                        <%-- 인사담당자: 확정 버튼 --%>
-                                        <c:when test="${isHr && !isOwner}">
-                                            <button class="btn-edit" onclick="openModal(${item.evalId})">확정</button>
-                                        </c:when>
-                                        <%-- 작성자 본인: 수정 버튼 --%>
-                                        <c:when test="${isOwner}">
-                                            <button class="btn-edit"
-                                                onclick="location.href='${pageContext.request.contextPath}/eval/write?id=${item.evalId}'">
-                                                수정
-                                            </button>
-                                        </c:when>
+                                        <c:otherwise>—</c:otherwise>
                                     </c:choose>
-                                </c:otherwise>
-                            </c:choose>
-                            <%-- 피평가자(loginEmpId == item.empId)인 경우 위 조건들에 해당하지 않으면 아무것도 출력되지 않음 --%>
-                        </td>
-                    </tr>
-                </c:forEach>
+                                </td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${not empty item.grade}">
+                                            <span class="badge-${item.grade}">${item.grade}</span>
+                                        </c:when>
+                                        <c:otherwise>—</c:otherwise>
+                                    </c:choose>
+                                </td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${item.status == '최종확정'}">
+                                            <span class="status-complete">최종확정</span>
+                                        </c:when>
+                                        <c:when test="${item.isRejected == true}">
+                                            <span class="status-reject">반려됨</span>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <span class="status-working">작성중</span>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </td>
+                                
+                                <%-- 평가자 이름 익명화 --%>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${isHr || sessionScope.userRole == '최종승인자' || loginEmpId == item.evaluatorId}">
+                                            ${not empty item.evaluatorName ? item.evaluatorName : '—'}
+                                        </c:when>
+                                        <c:otherwise>
+                                            <span class="eval-anon" style="color: #999; font-style: italic;">익명</span>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </td>
+                                
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${not empty item.confirmedAt}">
+                                            <fmt:formatDate value="${item.confirmedAt}" pattern="yyyy-MM-dd"/>
+                                        </c:when>
+                                        <c:otherwise>—</c:otherwise>
+                                    </c:choose>
+                                </td>
+                                
+                                <%-- 상세 버튼 제어 --%>
+                                <td>
+                                    <c:set var="isOwner" value="${item.evaluatorId == loginEmpId}"/>
+                                    <c:set var="isCEO" value="${sessionScope.userRole == '최종승인자'}"/>
+                                    
+                                    <c:choose>
+                                        <c:when test="${item.status == '최종확정'}">
+                                            <c:if test="${isHr || isOwner || isCEO}">
+                                                <button class="btn-view" onclick="openModal(${item.evalId})">조회</button>
+                                            </c:if>
+                                        </c:when>
+                                        
+                                        <c:otherwise>
+                                            <c:choose>
+                                                <c:when test="${isCEO && !isOwner}">
+                                                    <button class="btn-view" onclick="openModal(${item.evalId})">조회</button>
+                                                </c:when>
+                                                <c:when test="${isHr && !isOwner}">
+                                                    <button class="btn-edit" onclick="openModal(${item.evalId})">확정</button>
+                                                </c:when>
+                                                <c:when test="${isOwner}">
+                                                    <button class="btn-edit"
+                                                        onclick="location.href='${pageContext.request.contextPath}/eval/write?id=${item.evalId}'">
+                                                        수정
+                                                    </button>
+                                                </c:when>
+                                            </c:choose>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </td>
+                            </tr>
+                        </c:forEach>
+                    </c:when>
+                    <c:otherwise>
+                        <tr>
+                            <td colspan="10" style="text-align:center; padding: 50px 0; color: #999;">
+                                조회된 평가 데이터가 없습니다.
+                            </td>
+                        </tr>
+                    </c:otherwise>
+                </c:choose>
             </tbody>
         </table>
     </div>
@@ -186,6 +190,7 @@
 const ctx = '${pageContext.request.contextPath}';
 
 function openModal(evalId) {
+    if(!evalId) return;
     document.getElementById('confirmFrame').src = ctx + '/eval/confirm?id=' + evalId;
     document.getElementById('confirmOverlay').style.display = 'block';
     document.body.style.overflow = 'hidden';
@@ -202,6 +207,10 @@ function resetFilter() {
     location.href = ctx + '/eval/status?year=' + currentYear;
 }
 
-document.getElementById('confirmOverlay').addEventListener('click', e => { if (e.target.id === 'confirmOverlay') closeConfirmModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeConfirmModal(); });
+document.getElementById('confirmOverlay').addEventListener('click', e => { 
+    if (e.target.id === 'confirmOverlay') closeConfirmModal(); 
+});
+document.addEventListener('keydown', e => { 
+    if (e.key === 'Escape') closeConfirmModal(); 
+});
 </script>

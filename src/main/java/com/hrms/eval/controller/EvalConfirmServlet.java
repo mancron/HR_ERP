@@ -11,10 +11,6 @@ import java.util.*;
 
 /**
  * iframe 모달용 평가 확정/반려 서블릿
- * GET  → confirm.jsp 직접 포워딩 (index.jsp 레이아웃 제외)
- * POST → 확정 or 반려 처리 후 JSON → 부모창(status.jsp) reloadStatusTable() 호출
- *
- * 권한: HR담당자만 확정/반려 가능 (관리자는 일반사용자 취급)
  */
 @WebServlet("/eval/confirm")
 public class EvalConfirmServlet extends HttpServlet {
@@ -31,7 +27,6 @@ public class EvalConfirmServlet extends HttpServlet {
             return;
         }
 
-        // 세션 정보 및 권한 설정
         int loginEmpId = (Integer) session.getAttribute("empId");
         String userRole = (String) session.getAttribute("userRole");
         if (userRole == null) userRole = "일반사원";
@@ -39,7 +34,6 @@ public class EvalConfirmServlet extends HttpServlet {
         boolean isHr = "HR담당자".equals(userRole);
         boolean isCEO = "사장님".equals(userRole) || "최종승인자".equals(userRole);
 
-        // 파라미터 확인
         String idParam = request.getParameter("id");
         if (idParam == null || idParam.isEmpty()) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -54,25 +48,24 @@ public class EvalConfirmServlet extends HttpServlet {
             return;
         }
 
-        // 1. 권한 체크를 위한 사번 추출 (평가자 및 피평가자)
+        // 1. 사번 추출 및 Null 방어
         Object evalIdObj = evalData.get("evaluatorId");
         if (evalIdObj == null) evalIdObj = evalData.get("EVALUATOR_ID");
-        int evaluatorId = (evalIdObj != null) ? Integer.parseInt(String.valueOf(evalIdObj)) : 0;
+        int evaluatorId = (evalIdObj != null) ? Integer.parseInt(String.valueOf(evalIdObj).trim()) : -1;
 
         Object targetIdObj = evalData.get("empId"); 
         if (targetIdObj == null) targetIdObj = evalData.get("EMP_ID");
-        int targetEmpId = (targetIdObj != null) ? Integer.parseInt(String.valueOf(targetIdObj)) : 0;
+        int targetEmpId = (targetIdObj != null) ? Integer.parseInt(String.valueOf(targetIdObj).trim()) : -1;
 
-        // 2. 보안 필터: HR, CEO, 평가자(작성자), 피평가자(본인) 모두 일단 접근은 허용
-        boolean isAuthorized = isHr || isCEO || (loginEmpId == evaluatorId) || (loginEmpId == targetEmpId);
+        // 2. 보안 필터 (피평가자는 상세 보기 버튼이 없으므로, URL 직접 접근 시에도 차단)
+        boolean isAuthorized = isHr || isCEO || (loginEmpId == evaluatorId);
 
         if (!isAuthorized) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "상세 정보 조회 권한이 없습니다.");
             return;
         }
 
-        // 3. [핵심] 피평가자 본인이 조회하는 경우, 평가자 정보를 익명 처리
-        // HR/CEO가 아니고, 내가 '피평가자' 본인이며, 내가 나를 평가한 것이 아닐 때 실행
+        // 3. 익명화 처리 (혹시 모를 예외 상황 대비 유지)
         if (!isHr && !isCEO && loginEmpId == targetEmpId && loginEmpId != evaluatorId) {
             evalData.put("evaluatorName", "익명");
             evalData.put("evaluatorId", 0);
@@ -95,10 +88,11 @@ public class EvalConfirmServlet extends HttpServlet {
         List<BigDecimal> itemScores = evalService.getItemScoresByEvalId(evalId, itemNames);
 
         // JSP 데이터 바인딩
+        String grade = (String) evalData.get("grade");
         request.setAttribute("evalData",     evalData);
         request.setAttribute("itemNames",    itemNames);
         request.setAttribute("itemScores",   itemScores);
-        request.setAttribute("gradeColor",   evalService.getGradeColor((String) evalData.get("grade")));
+        request.setAttribute("gradeColor",   evalService.getGradeColor(grade != null ? grade : ""));
         request.setAttribute("userRole",     userRole);
         request.setAttribute("isHr",         isHr);
         request.setAttribute("isRejected",   isRejected);
@@ -140,18 +134,18 @@ public class EvalConfirmServlet extends HttpServlet {
         try {
             int evalId = Integer.parseInt(idParam.trim());
 
+            // [추가] 중복 처리 방지 로직
+            Map<String, Object> currentData = evalService.getEvaluationById(evalId);
+            if (currentData != null && "최종확정".equals(currentData.get("status"))) {
+                sendJson(response, false, "이미 최종확정된 평가입니다.");
+                return;
+            }
+
             if ("confirm".equals(action)) {
                 boolean ok = evalService.confirmEvaluation(evalId, userRole, loginEmpId);
-
-                // TODO [급여 인상 연동 포인트]
-                // ok가 true일 때 급여 인상 처리:
-                // Map<String,Object> evalData = evalService.getEvaluationById(evalId);
-                // salaryService.applyGradeRaise((Integer)evalData.get("empId"), (String)evalData.get("grade"), loginEmpId);
-
                 sendJson(response, ok, ok ? "success" : "처리 중 오류가 발생했습니다.");
 
             } else if ("reject".equals(action)) {
-                // 반려 사유 파라미터 수신
                 String rejectReason = request.getParameter("rejectReason");
                 if (rejectReason == null) rejectReason = "";
                 rejectReason = rejectReason.trim();
@@ -173,7 +167,11 @@ public class EvalConfirmServlet extends HttpServlet {
 
     private void sendJson(HttpServletResponse response, boolean ok, String msg) throws IOException {
         response.setContentType("application/json; charset=UTF-8");
-        String safeMsg = (msg != null) ? msg.replace("\\", "\\\\").replace("\"", "\\\"") : "";
+        // 이스케이프 보완 (줄바꿈 및 특수문자 대응)
+        String safeMsg = (msg != null) ? msg.replace("\\", "\\\\")
+                                            .replace("\"", "\\\"")
+                                            .replace("\n", "\\n")
+                                            .replace("\r", "") : "";
         response.getWriter().write("{\"ok\":" + ok + ",\"msg\":\"" + safeMsg + "\"}");
     }
 }
