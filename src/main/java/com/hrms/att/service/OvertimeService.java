@@ -57,10 +57,6 @@ public class OvertimeService {
 		try {
 			conn = DatabaseConnection.getConnection();
 			conn.setAutoCommit(false);
-
-			// 1. 승인자 찾기
-			int approverId = findApprover(dto.getEmpId());
-			dto.setApproverId(approverId);
 			
 			if (overtimeDAO.existsValidOvertime(dto.getEmpId(), dto.getOtDate())) {
 			    throw new RuntimeException("이미 해당 날짜에 처리 중이거나 승인된 초과근무가 있습니다.");
@@ -79,11 +75,23 @@ public class OvertimeService {
 			String dateTime = date + " " + start + "~" + end;
 
 			conn.commit();
+			
+			// 🔥 4. 알림 (팀장 + HR)
 
-			// 4. NotificationUtil 사용
-			NotificationUtil.sendOvertimePending(approverId, empName, dateTime, dto.getOtId() // PK 있으면, 없으면 null 가능
-			);
+	        // 👉 팀장
+	        int managerId = findApprover(dto.getEmpId());
 
+	        // 👉 HR 리스트
+	        List<Integer> hrList = empDAO.getHRList();
+
+	        // 팀장 알림
+	        NotificationUtil.sendOvertimePending(managerId, empName, dateTime, dto.getOtId());
+
+	        // HR 알림
+	        for (int hrId : hrList) {
+	            NotificationUtil.sendOvertimePending(hrId, empName, dateTime, dto.getOtId());
+	        }
+			
 		} catch (Exception e) {
 
 			try {
@@ -159,13 +167,9 @@ public class OvertimeService {
 				throw new RuntimeException("자신의 신청은 승인할 수 없습니다.");
 			}
 
-			// 3. 승인자 null 방어 + 권한 체크
-			Integer approver = ot.getApproverId();
-			if (approver == null) {
-				throw new RuntimeException("승인자가 없는 데이터입니다.");
-			}
-			if (approver != approverId) {
-				throw new RuntimeException("승인 권한 없음");
+			// 🔥 권한 체크 (핵심)
+			if (!canApprove(approverId, ot.getEmpId())) {
+			    throw new RuntimeException("승인 권한 없음");
 			}
 
 			// 4. 상태 체크
@@ -174,7 +178,7 @@ public class OvertimeService {
 			}
 
 			// 5. 상태 변경
-			boolean result = overtimeDAO.updateStatus(conn, otId, status, reason);
+			boolean result = overtimeDAO.updateStatus(conn, otId, approverId, status, reason);
 			if (!result) {
 				throw new RuntimeException("상태 변경 실패");
 			}
@@ -223,26 +227,43 @@ public class OvertimeService {
 		}
 	}
 
-	public List<OvertimeDTO> getPendingOvertimes(String dept, String sort, String startDate, String endDate,
-			int approverId, int offset, int size) {
+	public List<OvertimeDTO> getPendingOvertimes(String dept, String sort,
+	        String startDate, String endDate,
+	        int loginEmpId, int offset, int size) {
 
-		try (Connection conn = DatabaseConnection.getConnection()) {
-			return overtimeDAO.getPendingList(conn, dept, sort, startDate, endDate, approverId, offset, size);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+	    try (Connection conn = DatabaseConnection.getConnection()) {
+
+	        if (isHR(loginEmpId)) {
+	            // 🔥 HR → 전체 조회
+	            return overtimeDAO.getPendingAll(conn, dept, sort, startDate, endDate, loginEmpId, offset, size);
+	        } else {
+	            // 🔥 팀장 → 자기 부서
+	            int deptId = empDAO.getDeptIdByEmpId(loginEmpId);
+	            return overtimeDAO.getPendingByDept(conn, deptId, dept, sort, startDate, endDate, loginEmpId, offset, size);
+	        }
+
+	    } catch (Exception e) {
+	        throw new RuntimeException(e);
+	    }
 	}
 	
 	public int getPendingOvertimeCount(
-		    String dept, String startDate, String endDate,
-		    int approverId
-		) {
-		    try (Connection conn = DatabaseConnection.getConnection()) {
-		        return overtimeDAO.getPendingCount(conn, dept, startDate, endDate, approverId);
-		    } catch (Exception e) {
-		        throw new RuntimeException(e);
-		    }
-		}
+	        String dept, String startDate, String endDate,
+	        int loginEmpId) {
+
+	    try (Connection conn = DatabaseConnection.getConnection()) {
+
+	        if (isHR(loginEmpId)) {
+	            return overtimeDAO.getPendingCountAll(conn, dept, startDate, endDate, loginEmpId);
+	        } else {
+	            int deptId = empDAO.getDeptIdByEmpId(loginEmpId);
+	            return overtimeDAO.getPendingCountByDept(conn, deptId, startDate, endDate, loginEmpId);
+	        }
+
+	    } catch (Exception e) {
+	        throw new RuntimeException(e);
+	    }
+	}
 
 	public List<String> getPendingDeptList() {
 
@@ -251,5 +272,25 @@ public class OvertimeService {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public boolean isHR(int empId) {
+	    String role = empDAO.getRoleByEmpId(empId);
+	    return "HR담당자".equals(role);
+	}
+
+	public boolean canApprove(int loginEmpId, int requesterId) {
+
+	    // 자기 승인 금지
+	    if (loginEmpId == requesterId) return false;
+
+	    // HR이면 무조건 가능
+	    if (isHR(loginEmpId)) return true;
+
+	    // 팀장인지 확인
+	    int deptId = empDAO.getDeptIdByEmpId(requesterId);
+	    int managerId = deptDAO.getDeptById(deptId).getManager_id();
+
+	    return loginEmpId == managerId;
 	}
 }
