@@ -9,7 +9,8 @@
 	href="${pageContext.request.contextPath}/css/att/overtimeApprove.css">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/common/modal.css">
-	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/css/style.css">
 </head>
 
 <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
@@ -131,6 +132,30 @@
 					</c:choose>
 				</tbody>
 			</table>
+			<div class="pagination">
+
+				<!-- 이전 -->
+				<c:if test="${currentPage > 1}">
+					<a
+						href="?page=${currentPage - 1}&dept=${dept}&sort=${sort}&startDate=${startDate}&endDate=${endDate}">
+						이전 </a>
+				</c:if>
+
+				<!-- 페이지 번호 -->
+				<c:forEach var="i" begin="1" end="${totalPage}">
+					<a
+						href="?page=${i}&dept=${dept}&sort=${sort}&startDate=${startDate}&endDate=${endDate}"
+						class="${i == currentPage ? 'active' : ''}"> ${i} </a>
+				</c:forEach>
+
+				<!-- 다음 -->
+				<c:if test="${currentPage < totalPage}">
+					<a
+						href="?page=${currentPage + 1}&dept=${dept}&sort=${sort}&startDate=${startDate}&endDate=${endDate}">
+						다음 </a>
+				</c:if>
+
+			</div>
 
 		</div>
 

@@ -272,9 +272,10 @@ public class OvertimeDAO {
 			throw new RuntimeException("초과근무 취소 실패", e);
 		}
 	}
-
+	
+	//초과근무 신청 리스트
 	public List<OvertimeDTO> getPendingList(Connection conn, String dept, String sort, String startDate, String endDate,
-			int approverId) {
+			int approverId, int offset, int size) {
 
 		List<OvertimeDTO> list = new ArrayList<>();
 
@@ -317,6 +318,8 @@ public class OvertimeDAO {
 		default:
 			sql.append(" o.created_at DESC ");
 		}
+		
+		sql.append(" LIMIT ?, ? ");
 
 		try (PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
@@ -335,6 +338,9 @@ public class OvertimeDAO {
 			if (endDate != null && !endDate.isEmpty()) {
 				pstmt.setString(idx++, endDate);
 			}
+			
+			pstmt.setInt(idx++, offset);
+			pstmt.setInt(idx++, size);
 
 			ResultSet rs = pstmt.executeQuery();
 
@@ -365,6 +371,71 @@ public class OvertimeDAO {
 		}
 
 		return list;
+	}
+	
+	//페이징용 카운트 메서드
+	public int getPendingCount(Connection conn,
+	        String dept, String startDate, String endDate,
+	        int approverId) {
+
+	    int count = 0;
+
+	    StringBuilder sql = new StringBuilder();
+
+	    sql.append("SELECT COUNT(*) ");
+	    sql.append("FROM overtime_request o ");
+	    sql.append("JOIN employee e ON o.emp_id = e.emp_id ");
+	    sql.append("JOIN department d ON e.dept_id = d.dept_id ");
+	    sql.append("WHERE o.status = '대기' ");
+	    sql.append("AND o.approver_id = ? ");
+
+	    // 🔥 부서 필터
+	    if (dept != null && !dept.isEmpty()) {
+	        sql.append("AND d.dept_name = ? ");
+	    }
+
+	    // 🔥 기간 필터
+	    if (startDate != null && !startDate.isEmpty()) {
+	        sql.append("AND o.ot_date >= ? ");
+	    }
+
+	    if (endDate != null && !endDate.isEmpty()) {
+	        sql.append("AND o.ot_date <= ? ");
+	    }
+
+	    try (PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+	        int idx = 1;
+
+	        // 1. approver
+	        pstmt.setInt(idx++, approverId);
+
+	        // 2. dept
+	        if (dept != null && !dept.isEmpty()) {
+	            pstmt.setString(idx++, dept);
+	        }
+
+	        // 3. 날짜
+	        if (startDate != null && !startDate.isEmpty()) {
+	            pstmt.setDate(idx++, java.sql.Date.valueOf(startDate));
+	        }
+
+	        if (endDate != null && !endDate.isEmpty()) {
+	            pstmt.setDate(idx++, java.sql.Date.valueOf(endDate));
+	        }
+
+	        ResultSet rs = pstmt.executeQuery();
+
+	        if (rs.next()) {
+	            count = rs.getInt(1);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        throw new RuntimeException("초과근무 COUNT 조회 실패", e);
+	    }
+
+	    return count;
 	}
 	
 	public List<String> getPendingDeptList(Connection conn) {
