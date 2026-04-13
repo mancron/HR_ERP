@@ -210,7 +210,8 @@ public class LeaveDAO {
 	}
 
 	// 대기 휴가 목록
-	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int approverId) {
+	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int approverId,
+			int offset, int size) {
 
 		List<LeaveDTO> list = new ArrayList<>();
 
@@ -249,6 +250,8 @@ public class LeaveDAO {
 		} else {
 			sql.append("ORDER BY lr.created_at DESC ");
 		}
+		
+		sql.append("LIMIT ?, ? ");
 
 		try (Connection conn = DatabaseConnection.getConnection();
 				PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
@@ -272,6 +275,9 @@ public class LeaveDAO {
 				pstmt.setDate(idx++, Date.valueOf(endDate));
 				pstmt.setDate(idx++, Date.valueOf(startDate));
 			}
+
+			pstmt.setInt(idx++, offset);
+			pstmt.setInt(idx++, size);
 
 			ResultSet rs = pstmt.executeQuery();
 
@@ -306,6 +312,67 @@ public class LeaveDAO {
 		}
 
 		return list;
+	}
+
+	// 페이징용 카운트
+	public int getPendingLeavesCount(String dept, String startDate, String endDate, int approverId) {
+
+		int count = 0;
+
+		StringBuilder sql = new StringBuilder();
+
+		sql.append("SELECT COUNT(*) ");
+		sql.append("FROM leave_request lr ");
+		sql.append("JOIN employee e ON lr.emp_id = e.emp_id ");
+		sql.append("JOIN department d ON e.dept_id = d.dept_id ");
+		sql.append("WHERE lr.status = '대기' ");
+		sql.append("AND lr.emp_id != ? ");
+		sql.append("AND lr.approver_id = ? ");
+
+		// 🔥 1. 부서 필터
+		if (dept != null && !dept.isEmpty()) {
+			sql.append("AND d.dept_name = ? ");
+		}
+
+		// 🔥 2. 기간 필터 (겹침 기준)
+		if (startDate != null && endDate != null && !startDate.isEmpty() && !endDate.isEmpty()) {
+			sql.append("AND lr.start_date <= ? ");
+			sql.append("AND lr.end_date >= ? ");
+		}
+
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+			int idx = 1;
+
+			// 1. emp_id != ?
+			pstmt.setInt(idx++, approverId);
+
+			// 2. approver_id = ?
+			pstmt.setInt(idx++, approverId);
+
+			// 3. dept
+			if (dept != null && !dept.isEmpty()) {
+				pstmt.setString(idx++, dept);
+			}
+
+			// 4. 날짜
+			if (startDate != null && endDate != null && !startDate.isEmpty() && !endDate.isEmpty()) {
+				pstmt.setDate(idx++, java.sql.Date.valueOf(endDate));
+				pstmt.setDate(idx++, java.sql.Date.valueOf(startDate));
+			}
+
+			ResultSet rs = pstmt.executeQuery();
+
+			if (rs.next()) {
+				count = rs.getInt(1);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return count;
 	}
 
 	// 6. 휴가 승인 / 반려 처리

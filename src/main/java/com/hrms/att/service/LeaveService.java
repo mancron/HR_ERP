@@ -220,8 +220,12 @@ public class LeaveService {
 	}
 
 	// 필터 + 정렬 포함 (신규 기능)
-	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int approverId) {
-		return leaveDAO.getPendingLeaves(dept, sort, startDate, endDate, approverId);
+	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int approverId, int offset, int size) {
+		return leaveDAO.getPendingLeaves(dept, sort, startDate, endDate, approverId, offset, size);
+	}
+	
+	public int getPendingLeavesCount(String dept, String startDate, String endDate, int approverId) {
+		return leaveDAO.getPendingLeavesCount(dept, startDate, endDate, approverId);
 	}
 
 	// 부서 목록 조회 (드롭다운용)

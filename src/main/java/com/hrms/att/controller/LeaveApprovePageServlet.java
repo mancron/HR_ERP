@@ -24,12 +24,21 @@ public class LeaveApprovePageServlet extends HttpServlet {
 			resp.sendRedirect(req.getContextPath() + "/login.jsp");
 			return;
 		}
-		
+
 		// 🔥 1. 파라미터 받기
 		String dept = req.getParameter("dept");
 		String sort = req.getParameter("sort");
 		String startDate = req.getParameter("startDate");
 		String endDate = req.getParameter("endDate");
+		int page = 1;
+		int size = 10;
+
+		String pageParam = req.getParameter("page");
+		if (pageParam != null) {
+			page = Integer.parseInt(pageParam.trim());
+		}
+
+		int offset = (page - 1) * size;
 
 		// null 방지 (선택 안했을 경우)
 		if (dept == null)
@@ -63,8 +72,12 @@ public class LeaveApprovePageServlet extends HttpServlet {
 		}
 
 		// 🔥 2. 데이터 조회 (필터 + 정렬 적용)
-		List<LeaveDTO> list = service.getPendingLeaves(dept, sort, startDate, endDate, approverId);
+		List<LeaveDTO> list = service.getPendingLeaves(dept, sort, startDate, endDate, approverId, offset, size);
 
+		int totalCount = service.getPendingLeavesCount(dept, startDate, endDate, approverId);
+
+		int totalPage = (int) Math.ceil((double) totalCount / size);
+		
 		// 🔥 3. 부서 목록 (드롭다운용)
 		List<String> deptList = service.getPendingDeptList(approverId);
 
@@ -75,6 +88,8 @@ public class LeaveApprovePageServlet extends HttpServlet {
 		req.setAttribute("sort", sort);
 		req.setAttribute("startDate", startDate);
 		req.setAttribute("endDate", endDate);
+		req.setAttribute("currentPage", page);
+		req.setAttribute("totalPage", totalPage);
 
 		// JSP로 forward
 		req.getRequestDispatcher("/WEB-INF/jsp/att/leaveApprove.jsp").forward(req, resp);
