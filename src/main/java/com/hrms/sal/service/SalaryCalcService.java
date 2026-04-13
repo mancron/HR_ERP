@@ -282,8 +282,10 @@ public void recalculateInTransaction(int year, int month,
 		int baseSalary = dto.getBaseSalary();
 		
 		// ── 초과근무수당 ──
+		double hourlyWage = baseSalary / 209.0; // 시급 계산
+		double overtimeRate = 1.5;             // 가산율
 		double overtimeHours = dao.selectOvertimeHours(dto.getEmpId(), year, month, conn);
-		int overtimePay = (int) Math.round((baseSalary / 209.0) * overtimeHours * 1.5);
+		int overtimePay = (int) Math.round((baseSalary / hourlyWage) * overtimeHours * overtimeRate);
 		dto.setOvertimePay(overtimePay);
 		dto.setOtherAllowance(0);
 		
