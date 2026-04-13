@@ -2,6 +2,7 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<fmt:setLocale value="ko_KR" />
 
 <!DOCTYPE html>
 <html>
@@ -71,7 +72,7 @@
             <div class="score-item">
                 <label class="score-label">${itemName}</label>
                 <div class="slider-container">
-                    <fmt:parseNumber var="sc" value="${not empty itemScores ? itemScores[loop.index] : 0}" integerOnly="true"/>
+                    <fmt:formatNumber var="sc" value="${not empty itemScores ? itemScores[loop.index] : 0}" pattern="0"/>
                     <input type="range" class="sro" min="0" max="100" value="${sc}" disabled>
                     <span class="current-val">${sc}</span><span class="max-val">/100</span>
                 </div>
