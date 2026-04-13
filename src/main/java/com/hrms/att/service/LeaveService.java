@@ -225,8 +225,8 @@ public class LeaveService {
 	}
 
 	// 부서 목록 조회 (드롭다운용)
-	public List<String> getPendingDeptList() {
-		return leaveDAO.getPendingDeptList();
+	public List<String> getPendingDeptList(int approverId) {
+		return leaveDAO.getPendingDeptList(approverId);
 	}
 
 	// 휴가 승인 반려 처리

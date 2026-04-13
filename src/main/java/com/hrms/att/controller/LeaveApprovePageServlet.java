@@ -53,7 +53,7 @@ public class LeaveApprovePageServlet extends HttpServlet {
 				req.setAttribute("endDate", endDate);
 
 				// 🔥 부서 리스트만 조회
-				List<String> deptList = service.getPendingDeptList();
+				List<String> deptList = service.getPendingDeptList(approverId);
 				req.setAttribute("deptList", deptList);
 
 				// 🔥 조회 막고 바로 JSP로
@@ -66,7 +66,7 @@ public class LeaveApprovePageServlet extends HttpServlet {
 		List<LeaveDTO> list = service.getPendingLeaves(dept, sort, startDate, endDate, approverId);
 
 		// 🔥 3. 부서 목록 (드롭다운용)
-		List<String> deptList = service.getPendingDeptList();
+		List<String> deptList = service.getPendingDeptList(approverId);
 
 		// 🔥 4. JSP로 전달
 		req.setAttribute("list", list);
