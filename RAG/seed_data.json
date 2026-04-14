@@ -1,0 +1,330 @@
+[
+  {
+    "id": "emp_001",
+    "category": ["EMPLOYEE"],
+    "is_cross_domain": false,
+    "question": "부장 목록",
+    "sql": "SELECT emp_name, dept_name, position_name, email, phone\n   FROM v_employee_full\n   WHERE position_name = '부장' AND status = '재직';",
+    "tags": ["부장", "직급", "과장", "차장"]
+  },
+  {
+    "id": "emp_002",
+    "category": ["EMPLOYEE"],
+    "is_cross_domain": false,
+    "question": "부서장 목록",
+    "sql": "SELECT e.emp_name, d.dept_name, p.position_name\n   FROM department d\n   JOIN employee e ON d.manager_id = e.emp_id\n   JOIN job_position p ON e.position_id = p.position_id\n   WHERE d.is_active = 1;",
+    "tags": ["부서장", "팀장", "매니저"]
+  },
+  {
+    "id": "emp_003",
+    "category": ["EMPLOYEE"],
+    "is_cross_domain": false,
+    "question": "30세 이상 40세 이하 재직 직원",
+    "sql": "SELECT emp_name, dept_name, TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) AS age\n   FROM v_employee_full\n   WHERE status = '재직' AND TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) BETWEEN 30 AND 40;",
+    "tags": ["나이", "연령", "만나이", "세", "30", "40"]
+  },
+  {
+    "id": "emp_004",
+    "category": ["EMPLOYEE"],
+    "is_cross_domain": false,
+    "question": "올해 발령 이력",
+    "sql": "SELECT e.emp_name, ph.change_type, ph.change_date, ph.reason\n   FROM personnel_history ph\n   JOIN employee e ON ph.emp_id = e.emp_id\n   WHERE YEAR(ph.change_date) = YEAR(CURDATE())\n   ORDER BY ph.change_date DESC;",
+    "tags": ["발령", "승진", "전보", "인사이동"]
+  },
+  {
+    "id": "emp_005",
+    "category": ["EMPLOYEE"],
+    "is_cross_domain": false,
+    "question": "부서별 재직 직원 수",
+    "sql": "SELECT dept_name, COUNT(*) AS emp_count\n   FROM v_employee_full\n   WHERE status = '재직'\n   GROUP BY dept_name\n   ORDER BY emp_count DESC;",
+    "tags": ["부서", "직원수", "인원수", "통계", "부서별"]
+  },
+  {
+    "id": "emp_006",
+    "category": ["EMPLOYEE"],
+    "is_cross_domain": false,
+    "question": "근속 5년 이상 직원",
+    "sql": "SELECT emp_name, dept_name, hire_date, TIMESTAMPDIFF(YEAR, hire_date, CURDATE()) AS years_worked\n   FROM v_employee_full\n   WHERE status = '재직' AND TIMESTAMPDIFF(YEAR, hire_date, CURDATE()) >= 5\n   ORDER BY hire_date;",
+    "tags": ["근속", "년", "경력", "5년"]
+  },
+  {
+    "id": "emp_007",
+    "category": ["EMPLOYEE"],
+    "is_cross_domain": false,
+    "question": "현재 대기 중인 휴직 신청 목록",
+    "sql": "SELECT e.emp_name, d.dept_name, loa.leave_type, loa.start_date, loa.end_date, loa.reason, loa.status\n   FROM leave_of_absence_request loa\n   JOIN employee e ON loa.emp_id = e.emp_id\n   JOIN department d ON e.dept_id = d.dept_id\n   WHERE loa.status NOT IN ('최종승인', '반려')\n   ORDER BY loa.created_at;",
+    "tags": ["휴직신청", "휴직", "대기", "승인", "복직신청"]
+  },
+  {
+    "id": "emp_008",
+    "category": ["EMPLOYEE"],
+    "is_cross_domain": false,
+    "question": "퇴직 신청 현황 (승인 단계별)",
+    "sql": "SELECT e.emp_name, d.dept_name, rr.resign_date, rr.reason, rr.status,\n          dm.emp_name AS dept_manager, hr.emp_name AS hr_manager, pr.emp_name AS president\n   FROM resign_request rr\n   JOIN employee e ON rr.emp_id = e.emp_id\n   JOIN department d ON e.dept_id = d.dept_id\n   LEFT JOIN employee dm ON rr.dept_manager_id = dm.emp_id\n   LEFT JOIN employee hr ON rr.hr_manager_id = hr.emp_id\n   LEFT JOIN employee pr ON rr.president_id = pr.emp_id\n   ORDER BY rr.created_at DESC;",
+    "tags": ["퇴직신청", "퇴직", "대기", "승인단계"]
+  },
+  {
+    "id": "sal_001",
+    "category": ["SALARY"],
+    "is_cross_domain": false,
+    "question": "이번달 급여 현황",
+    "sql": "SELECT emp_name, dept_name, gross_salary, total_deduction, net_salary, salary_status\n   FROM v_salary_summary\n   WHERE salary_year = YEAR(CURDATE()) AND salary_month = MONTH(CURDATE());",
+    "tags": ["급여", "이번달", "현황", "월급"]
+  },
+  {
+    "id": "sal_002",
+    "category": ["SALARY"],
+    "is_cross_domain": false,
+    "question": "미지급 급여 목록",
+    "sql": "SELECT emp_name, dept_name, salary_year, salary_month, net_salary, salary_status\n   FROM v_salary_summary\n   WHERE salary_status = '대기';",
+    "tags": ["미지급", "대기", "미완료", "지급안된"]
+  },
+  {
+    "id": "sal_003",
+    "category": ["SALARY"],
+    "is_cross_domain": false,
+    "question": "이번달 공제 내역",
+    "sql": "SELECT emp_name, national_pension, health_insurance, employment_insurance, income_tax, total_deduction\n   FROM v_salary_summary\n   WHERE salary_year = YEAR(CURDATE()) AND salary_month = MONTH(CURDATE());",
+    "tags": ["공제", "국민연금", "건강보험", "고용보험", "항목"]
+  },
+  {
+    "id": "sal_004",
+    "category": ["SALARY"],
+    "is_cross_domain": false,
+    "question": "이번달 직원별 수당 상세 내역",
+    "sql": "SELECT e.emp_name, d.dept_name, s.meal_allowance, s.transport_allowance,\n          s.position_allowance, s.overtime_pay, s.other_allowance\n   FROM salary s\n   JOIN employee e ON s.emp_id = e.emp_id\n   JOIN department d ON e.dept_id = d.dept_id\n   WHERE s.salary_year = YEAR(CURDATE()) AND s.salary_month = MONTH(CURDATE());",
+    "tags": ["식대", "교통비", "직책수당", "수당", "항목별", "상세"]
+  },
+  {
+    "id": "sal_005",
+    "category": ["SALARY"],
+    "is_cross_domain": false,
+    "question": "무급 공제가 발생한 직원",
+    "sql": "SELECT e.emp_name, d.dept_name, s.unpaid_leave_days, s.unpaid_deduction, s.gross_salary, s.net_salary\n   FROM salary s\n   JOIN employee e ON s.emp_id = e.emp_id\n   JOIN department d ON e.dept_id = d.dept_id\n   WHERE s.unpaid_leave_days > 0 AND s.salary_year = YEAR(CURDATE());",
+    "tags": ["무급", "무급공제", "결근공제", "병가공제"]
+  },
+  {
+    "id": "att_001",
+    "category": ["ATTENDANCE"],
+    "is_cross_domain": false,
+    "question": "이번달 지각 직원",
+    "sql": "SELECT e.emp_name, a.work_date, a.check_in\n   FROM attendance a\n   JOIN employee e ON a.emp_id = e.emp_id\n   WHERE a.status = '지각' AND YEAR(a.work_date) = YEAR(CURDATE()) AND MONTH(a.work_date) = MONTH(CURDATE());",
+    "tags": ["지각", "이번달", "이번주"]
+  },
+  {
+    "id": "att_002",
+    "category": ["ATTENDANCE"],
+    "is_cross_domain": false,
+    "question": "이번달 승인된 초과근무 건수 및 총 시간",
+    "sql": "SELECT COUNT(*) AS approved_count, SUM(ot_hours) AS total_ot_hours\n   FROM overtime_request\n   WHERE status = '승인' AND YEAR(ot_date) = YEAR(CURDATE()) AND MONTH(ot_date) = MONTH(CURDATE());",
+    "tags": ["초과근무", "야근", "잔업", "승인", "오버타임"]
+  },
+  {
+    "id": "att_003",
+    "category": ["ATTENDANCE"],
+    "is_cross_domain": false,
+    "question": "이번달 결근 현황",
+    "sql": "SELECT e.emp_name, a.work_date\n   FROM attendance a\n   JOIN employee e ON a.emp_id = e.emp_id\n   WHERE a.status = '결근' AND YEAR(a.work_date) = YEAR(CURDATE()) AND MONTH(a.work_date) = MONTH(CURDATE());",
+    "tags": ["결근", "이번달"]
+  },
+  {
+    "id": "lev_001",
+    "category": ["LEAVE"],
+    "is_cross_domain": false,
+    "question": "잔여 연차 3일 이하 직원",
+    "sql": "SELECT v.emp_name, v.dept_name, al.remain_days\n   FROM v_employee_full v\n   JOIN annual_leave al ON v.emp_id = al.emp_id\n   WHERE al.leave_year = YEAR(CURDATE()) AND v.status = '재직' AND al.remain_days <= 3;",
+    "tags": ["잔여", "남은", "연차", "3일"]
+  },
+  {
+    "id": "lev_002",
+    "category": ["LEAVE"],
+    "is_cross_domain": false,
+    "question": "승인 대기 중인 휴가 신청",
+    "sql": "SELECT emp_name, dept_name, leave_type, start_date, end_date, days\n   FROM v_leave_status\n   WHERE leave_status = '대기';",
+    "tags": ["대기", "신청", "승인대기", "휴가"]
+  },
+  {
+    "id": "lev_003",
+    "category": ["LEAVE"],
+    "is_cross_domain": false,
+    "question": "올해 병가 사용 현황",
+    "sql": "SELECT emp_name, dept_name, start_date, end_date, days\n   FROM v_leave_status\n   WHERE leave_type = '병가' AND leave_year = YEAR(CURDATE()) AND leave_status = '승인';",
+    "tags": ["병가", "경조사"]
+  },
+  {
+    "id": "eva_001",
+    "category": ["EVALUATION"],
+    "is_cross_domain": false,
+    "question": "2024년 하반기 S등급 직원",
+    "sql": "SELECT emp_name, dept_name, total_score, grade\n   FROM v_evaluation_result\n   WHERE eval_year = 2024 AND eval_period = '하반기' AND grade = 'S';",
+    "tags": ["S등급", "하반기", "상반기", "등급"]
+  },
+  {
+    "id": "eva_002",
+    "category": ["EVALUATION"],
+    "is_cross_domain": false,
+    "question": "평가자별 평가 건수",
+    "sql": "SELECT evaluator_name, COUNT(*) AS eval_count\n   FROM v_evaluation_result\n   WHERE eval_status = '최종확정'\n   GROUP BY evaluator_name ORDER BY eval_count DESC;",
+    "tags": ["평가자", "건수", "담당"]
+  },
+  {
+    "id": "eva_003",
+    "category": ["EVALUATION"],
+    "is_cross_domain": false,
+    "question": "부서별 평균 평가 점수",
+    "sql": "SELECT dept_name, ROUND(AVG(total_score), 2) AS avg_score\n   FROM v_evaluation_result\n   WHERE eval_status = '최종확정'\n   GROUP BY dept_name ORDER BY avg_score DESC;",
+    "tags": ["부서", "평균", "점수"]
+  },
+  {
+    "id": "acc_001",
+    "category": ["ACCOUNT"],
+    "is_cross_domain": false,
+    "question": "관리자 목록",
+    "sql": "SELECT e.emp_name, e.email, e.phone, a.username, a.role\n   FROM account a\n   JOIN employee e ON a.emp_id = e.emp_id\n   WHERE a.role = '관리자' AND a.is_active = 1;",
+    "tags": ["관리자", "목록"]
+  },
+  {
+    "id": "acc_002",
+    "category": ["ACCOUNT"],
+    "is_cross_domain": false,
+    "question": "잠긴 계정 목록",
+    "sql": "SELECT a.account_id, e.emp_name, a.username, a.login_attempts, a.locked_at\n   FROM account a\n   JOIN employee e ON a.emp_id = e.emp_id\n   WHERE a.locked_at IS NOT NULL;",
+    "tags": ["잠긴", "잠금", "차단", "계정", "로그인실패"]
+  },
+  {
+    "id": "acc_003",
+    "category": ["ACCOUNT"],
+    "is_cross_domain": false,
+    "question": "권한별 계정 수",
+    "sql": "SELECT role, COUNT(*) AS cnt FROM account WHERE is_active = 1 GROUP BY role;",
+    "tags": ["권한", "역할", "현황", "HR담당자", "최종승인자"]
+  },
+  {
+    "id": "sys_001",
+    "category": ["SYSTEM"],
+    "is_cross_domain": false,
+    "question": "올해 공휴일 목록",
+    "sql": "SELECT holiday_date, holiday_name FROM public_holiday\n   WHERE holiday_year = YEAR(CURDATE()) ORDER BY holiday_date;",
+    "tags": ["공휴일", "휴일", "명절"]
+  },
+  {
+    "id": "sys_002",
+    "category": ["SYSTEM"],
+    "is_cross_domain": false,
+    "question": "최근 감사로그 10건",
+    "sql": "SELECT al.created_at, e.emp_name AS actor, al.target_table, al.action, al.column_name, al.old_value, al.new_value\n   FROM audit_log al\n   LEFT JOIN employee e ON al.actor_id = e.emp_id\n   ORDER BY al.created_at DESC LIMIT 10;",
+    "tags": ["감사", "로그", "이력", "변경"]
+  },
+  {
+    "id": "sys_003",
+    "category": ["SYSTEM"],
+    "is_cross_domain": false,
+    "question": "안읽은 알림이 많은 직원",
+    "sql": "SELECT e.emp_name, COUNT(*) AS unread_count\n   FROM notification n\n   JOIN employee e ON n.emp_id = e.emp_id\n   WHERE n.is_read = 0\n   GROUP BY n.emp_id, e.emp_name ORDER BY unread_count DESC;",
+    "tags": ["알림", "안읽은", "읽지않은"]
+  },
+  {
+    "id": "cross_att_emp_001",
+    "category": ["EMPLOYEE", "ATTENDANCE"],
+    "is_cross_domain": true,
+    "question": "부장들 중 오늘 출근시간이 가장 빠른 사람",
+    "sql": "SELECT e.emp_name, d.dept_name, p.position_name, a.check_in\n   FROM attendance a\n   JOIN employee e ON a.emp_id = e.emp_id\n   JOIN job_position p ON e.position_id = p.position_id\n   JOIN department d ON e.dept_id = d.dept_id\n   WHERE p.position_name = '부장' AND e.status = '재직'\n     AND a.work_date = CURDATE() AND a.check_in IS NOT NULL\n   ORDER BY a.check_in ASC LIMIT 1;",
+    "tags": ["부장", "출근", "빠른", "가장", "이른", "먼저"]
+  },
+  {
+    "id": "cross_att_emp_002",
+    "category": ["EMPLOYEE", "ATTENDANCE"],
+    "is_cross_domain": true,
+    "question": "부서별 직급별 이번달 지각 횟수",
+    "sql": "SELECT d.dept_name, p.position_name, COUNT(*) AS late_count\n   FROM attendance a\n   JOIN employee e ON a.emp_id = e.emp_id\n   JOIN department d ON e.dept_id = d.dept_id\n   JOIN job_position p ON e.position_id = p.position_id\n   WHERE a.status = '지각' AND YEAR(a.work_date) = YEAR(CURDATE()) AND MONTH(a.work_date) = MONTH(CURDATE())\n   GROUP BY d.dept_name, p.position_name ORDER BY late_count DESC;",
+    "tags": ["부서별", "지각", "횟수", "직급", "많은"]
+  },
+  {
+    "id": "cross_att_emp_003",
+    "category": ["EMPLOYEE", "ATTENDANCE"],
+    "is_cross_domain": true,
+    "question": "이번달 과장들 중 가장 늦게 퇴근한 사람 TOP 5",
+    "sql": "SELECT e.emp_name, d.dept_name, a.work_date, a.check_out\n   FROM attendance a\n   JOIN employee e ON a.emp_id = e.emp_id\n   JOIN job_position p ON e.position_id = p.position_id\n   JOIN department d ON e.dept_id = d.dept_id\n   WHERE p.position_name = '과장' AND e.status = '재직' AND a.check_out IS NOT NULL\n     AND YEAR(a.work_date) = YEAR(CURDATE()) AND MONTH(a.work_date) = MONTH(CURDATE())\n   ORDER BY a.check_out DESC LIMIT 5;",
+    "tags": ["과장", "퇴근", "늦은", "야근", "가장"]
+  },
+  {
+    "id": "cross_sal_emp_001",
+    "category": ["EMPLOYEE", "SALARY"],
+    "is_cross_domain": true,
+    "question": "부장들 중 이번달 실수령액이 가장 높은 사람",
+    "sql": "SELECT v.emp_name, v.dept_name, v.position_name, v.gross_salary, v.total_deduction, v.net_salary\n   FROM v_salary_summary v\n   WHERE v.position_name = '부장' AND v.salary_year = YEAR(CURDATE()) AND v.salary_month = MONTH(CURDATE())\n   ORDER BY v.net_salary DESC LIMIT 1;",
+    "tags": ["부장", "급여", "실수령", "높은", "가장"]
+  },
+  {
+    "id": "cross_sal_emp_002",
+    "category": ["EMPLOYEE", "SALARY"],
+    "is_cross_domain": true,
+    "question": "부서별 직급별 평균 실수령액",
+    "sql": "SELECT v.dept_name, v.position_name, COUNT(*) AS cnt, ROUND(AVG(v.net_salary)) AS avg_net\n   FROM v_salary_summary v\n   WHERE v.salary_year = YEAR(CURDATE()) AND v.salary_month = MONTH(CURDATE())\n   GROUP BY v.dept_name, v.position_name ORDER BY v.dept_name, avg_net DESC;",
+    "tags": ["부서", "평균", "급여", "비교", "직급"]
+  },
+  {
+    "id": "cross_lev_emp_001",
+    "category": ["EMPLOYEE", "LEAVE"],
+    "is_cross_domain": true,
+    "question": "과장들의 잔여 연차 현황",
+    "sql": "SELECT v.emp_name, v.dept_name, v.position_name, al.total_days, al.used_days, al.remain_days\n   FROM v_employee_full v\n   JOIN annual_leave al ON v.emp_id = al.emp_id\n   WHERE v.position_name = '과장' AND v.status = '재직' AND al.leave_year = YEAR(CURDATE());",
+    "tags": ["과장", "연차", "잔여", "남은"]
+  },
+  {
+    "id": "cross_eva_emp_001",
+    "category": ["EMPLOYEE", "EVALUATION"],
+    "is_cross_domain": true,
+    "question": "부장들 중 S등급 받은 사람",
+    "sql": "SELECT v.emp_name, v.dept_name, v.position_name, v.eval_year, v.eval_period, v.total_score, v.grade\n   FROM v_evaluation_result v\n   WHERE v.position_name = '부장' AND v.grade = 'S' AND v.eval_status = '최종확정';",
+    "tags": ["부장", "평가", "S등급", "A등급", "우수"]
+  },
+  {
+    "id": "cross_att_sal_emp_001",
+    "category": ["EMPLOYEE", "ATTENDANCE", "SALARY"],
+    "is_cross_domain": true,
+    "question": "이번달 초과근무 시간이 가장 많은 직원과 해당 초과근무수당",
+    "sql": "SELECT e.emp_name, d.dept_name, p.position_name,\n          SUM(a.overtime_hours) AS total_ot_hours, s.overtime_pay\n   FROM attendance a\n   JOIN employee e ON a.emp_id = e.emp_id\n   JOIN department d ON e.dept_id = d.dept_id\n   JOIN job_position p ON e.position_id = p.position_id\n   LEFT JOIN salary s ON e.emp_id = s.emp_id\n     AND s.salary_year = YEAR(CURDATE()) AND s.salary_month = MONTH(CURDATE())\n   WHERE YEAR(a.work_date) = YEAR(CURDATE()) AND MONTH(a.work_date) = MONTH(CURDATE())\n   GROUP BY e.emp_id, e.emp_name, d.dept_name, p.position_name, s.overtime_pay\n   ORDER BY total_ot_hours DESC LIMIT 1;",
+    "tags": ["야근", "초과근무", "수당", "많은", "높은"]
+  },
+  {
+    "id": "cross_lev_att_emp_001",
+    "category": ["EMPLOYEE", "LEAVE", "ATTENDANCE"],
+    "is_cross_domain": true,
+    "question": "이번달 지각이 3회 이상이면서 잔여 연차가 5일 이하인 직원",
+    "sql": "SELECT e.emp_name, d.dept_name, late_stats.late_count, al.remain_days\n   FROM employee e\n   JOIN department d ON e.dept_id = d.dept_id\n   JOIN (SELECT emp_id, COUNT(*) AS late_count FROM attendance\n         WHERE status = '지각' AND YEAR(work_date) = YEAR(CURDATE()) AND MONTH(work_date) = MONTH(CURDATE())\n         GROUP BY emp_id HAVING COUNT(*) >= 3\n   ) late_stats ON e.emp_id = late_stats.emp_id\n   JOIN annual_leave al ON e.emp_id = al.emp_id AND al.leave_year = YEAR(CURDATE())\n   WHERE al.remain_days <= 5 AND e.status = '재직';",
+    "tags": ["지각", "많은", "연차", "적은", "잔여"]
+  },
+  {
+    "id": "cross_eva_sal_emp_001",
+    "category": ["EMPLOYEE", "EVALUATION", "SALARY"],
+    "is_cross_domain": true,
+    "question": "S등급 받은 직원들의 평균 급여와 D등급 직원들의 평균 급여 비교",
+    "sql": "SELECT ev.grade, COUNT(DISTINCT ev.emp_id) AS emp_count, ROUND(AVG(s.net_salary)) AS avg_net_salary\n   FROM evaluation ev\n   JOIN salary s ON ev.emp_id = s.emp_id\n     AND s.salary_year = YEAR(CURDATE()) AND s.salary_month = MONTH(CURDATE())\n   WHERE ev.grade IN ('S', 'D') AND ev.eval_status = '최종확정' AND ev.eval_year = YEAR(CURDATE())\n   GROUP BY ev.grade;",
+    "tags": ["평가", "등급", "급여", "비교", "높은", "낮은", "연봉"]
+  },
+  {
+    "id": "cross_acc_att_emp_001",
+    "category": ["EMPLOYEE", "ACCOUNT", "ATTENDANCE"],
+    "is_cross_domain": true,
+    "question": "관리자 계정의 이번달 출근 현황",
+    "sql": "SELECT e.emp_name, acc.username, acc.role, a.work_date, a.check_in, a.check_out, a.status\n   FROM account acc\n   JOIN employee e ON acc.emp_id = e.emp_id\n   JOIN attendance a ON e.emp_id = a.emp_id\n   WHERE acc.role = '관리자' AND acc.is_active = 1\n     AND YEAR(a.work_date) = YEAR(CURDATE()) AND MONTH(a.work_date) = MONTH(CURDATE())\n   ORDER BY a.work_date DESC;",
+    "tags": ["관리자", "출근", "근태", "출퇴근"]
+  },
+  {
+    "id": "cross_sal_emp_003",
+    "category": ["EMPLOYEE", "SALARY"],
+    "is_cross_domain": true,
+    "question": "사장의 이번달 급여 명세 상세",
+    "sql": "SELECT e.emp_name, p.position_name,\n          s.base_salary, s.meal_allowance, s.transport_allowance,\n          s.position_allowance, s.overtime_pay, s.gross_salary,\n          s.national_pension, s.health_insurance, s.income_tax,\n          s.unpaid_leave_days, s.unpaid_deduction,\n          s.total_deduction, s.net_salary\n   FROM salary s\n   JOIN employee e ON s.emp_id = e.emp_id\n   JOIN job_position p ON e.position_id = p.position_id\n   WHERE p.position_name = '사장'\n     AND s.salary_year = YEAR(CURDATE()) AND s.salary_month = MONTH(CURDATE());",
+    "tags": ["사장", "최종승인자", "급여", "명세"]
+  },
+  {
+    "id": "emp_009",
+    "category": ["EMPLOYEE"],
+    "is_cross_domain": false,
+    "question": "재직 중인 정규직 직원 목록",
+    "sql": "SELECT emp_id, emp_name, dept_name, position_name, emp_type, base_salary, hire_date, birth_date, gender, email, phone\n   FROM v_employee_full\n   WHERE status = '재직' AND emp_type = '정규직';",
+    "tags": ["재직", "정규직", "직원", "목록", "전체"]
+  }
+]

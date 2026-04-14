@@ -779,6 +779,34 @@ WHERE ev.eval_status != '최종확정'
 ORDER BY ev.eval_year DESC, ev.eval_period DESC
 LIMIT 20;
 
+-- ================================================================
+-- rag_success_log
+-- 역할: Text-to-SQL 성공 케이스를 누적하여 주간 배치로 벡터 DB에 반영
+--
+-- 적재 기준 (TextToSqlService에서 판단):
+--   ① SQL 실행 성공 (예외 없음)
+--   ② 결과 행 수 > 0
+--   ③ is_upserted = 0 (아직 벡터 DB에 반영 안 됨)
+--
+-- 주간 배치 (upsert_success_log.py):
+--   is_upserted = 0 인 행을 읽어 Python RAG 서버 /api/v1/upsert 호출
+--   성공 시 is_upserted = 1 로 업데이트
+-- ================================================================
+
+CREATE TABLE rag_success_log (
+    log_id        BIGINT       NOT NULL AUTO_INCREMENT,
+    question      VARCHAR(500) NOT NULL COMMENT '사용자 자연어 질문',
+    generated_sql TEXT         NOT NULL COMMENT 'LLM이 생성하고 실행 성공한 SQL',
+    category      VARCHAR(100) NOT NULL COMMENT 'RAG 또는 폴백이 결정한 카테고리 (콤마 구분)',
+    row_count     INT          NOT NULL DEFAULT 0 COMMENT '쿼리 결과 행 수',
+    used_rag      TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '1=RAG 경로, 0=폴백 경로',
+    similarity    DECIMAL(5,4)          COMMENT 'RAG 최고 유사도 점수 (폴백 시 NULL)',
+    is_upserted   TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '0=미반영, 1=벡터DB 반영 완료',
+    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (log_id),
+    INDEX idx_upserted (is_upserted),        -- 배치 쿼리 최적화
+    INDEX idx_created  (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Text-to-SQL 성공 로그 (벡터 DB 선순환용)';
 
 
 -- ================================================
