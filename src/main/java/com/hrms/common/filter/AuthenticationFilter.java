@@ -51,6 +51,7 @@ public class AuthenticationFilter implements Filter {
     	    "/emp/resign",
     	    "/auth/",
     	    "/att/record",
+    	    "/sys/sqlQuery",
     	    "/notification"   // 알람 읽기만 추가
     ));
     

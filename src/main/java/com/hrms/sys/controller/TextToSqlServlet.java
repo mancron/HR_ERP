@@ -50,10 +50,6 @@ public class TextToSqlServlet extends HttpServlet {
             return;
         }
         
-        if (session == null || !"관리자".equals(session.getAttribute("userRole"))) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "관리자만 접근할 수 있습니다.");
-            return;
-        }
 
         request.setCharacterEncoding("UTF-8");
         String question = request.getParameter("question");
