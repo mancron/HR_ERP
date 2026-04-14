@@ -1,0 +1,147 @@
+@charset "UTF-8";
+
+.container {
+	padding: 30px;
+}
+
+.page-title {
+	font-size: 24px;
+	font-weight: bold;
+	margin-bottom: 20px;
+}
+
+.card {
+	background: #fff;
+	border-radius: 10px;
+	padding: 20px;
+	margin-bottom: 20px;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.info-box ul {
+	margin-top: 10px;
+	padding-left: 20px;
+}
+
+.action-box {
+	text-align: center;
+}
+
+.btn {
+	padding: 12px 20px;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+}
+
+.btn-primary {
+	background-color: #4CAF50;
+	color: white;
+}
+
+.btn-primary:hover {
+	background-color: #45a049;
+}
+
+.warning-text {
+	margin-top: 10px;
+	font-size: 12px;
+	color: #999;
+}
+
+.alert.success {
+	margin-top: 20px;
+	padding: 15px;
+	background: #e6f9ec;
+	color: #2e7d32;
+	border-radius: 6px;
+}
+
+.filter-box {
+	margin-bottom: 20px;
+}
+
+.grant-wrapper {
+	display: flex;
+	gap: 20px;
+	margin-top: 20px;
+}
+
+.grant-box {
+	width: 50%;
+	background: #fff;
+	padding: 20px;
+	border-radius: 10px;
+	box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.table th, .table td {
+	padding: 10px;
+	border-bottom: 1px solid #eee;
+	text-align: center;
+}
+
+.modern-card {
+    border-radius: 14px;
+    padding: 25px;
+    background: linear-gradient(135deg, #f8fafc, #eef2f7);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+/* 🔥 그리드 */
+.rule-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+/* 🔥 개별 박스 */
+.rule-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: white;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    border: 1px solid #eee;
+}
+
+.rule-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* 아이콘 */
+.rule-icon {
+    font-size: 20px;
+}
+
+/* 텍스트 */
+.rule-title {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.rule-desc {
+    font-size: 13px;
+    color: #666;
+}
+
+/* 🔥 강조 (최대 연차) */
+.rule-item.highlight {
+    background: #e8f5e9;
+    border: 1px solid #c8e6c9;
+}
