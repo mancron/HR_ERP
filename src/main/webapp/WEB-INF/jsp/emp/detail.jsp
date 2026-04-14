@@ -126,8 +126,10 @@
 
     <%-- ===== 버튼 영역 ===== --%>
     <div class="btn-area">
-        <%-- data-mode="view" → 수정 버튼, data-mode="edit" → 저장 버튼으로 전환 --%>
-        <button type="button" id="btnEditSave" class="btn-edit" data-mode="view" onclick="toggleEditSave()">&nbsp;&nbsp;수정&nbsp;&nbsp;</button>
+    	<c:if test="${userRole != '최종승인자'}">
+	        <%-- data-mode="view" → 수정 버튼, data-mode="edit" → 저장 버튼으로 전환 --%>
+	        <button type="button" id="btnEditSave" class="btn-edit" data-mode="view" onclick="toggleEditSave()">&nbsp;&nbsp;수정&nbsp;&nbsp;</button>
+        </c:if>
     </div>
 
 </form>
