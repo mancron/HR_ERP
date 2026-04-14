@@ -34,6 +34,10 @@ public class AuthenticationFilter implements Filter {
         "/emp/list",
         "/emp/detail",
         "/emp/approvalHistory",
+        "/emp/history",
+        "/emp/leave",
+        "/emp/resign",
+        "/emp/update",
         "/sys/",
         "/org/"
     ));
@@ -183,6 +187,27 @@ public class AuthenticationFilter implements Filter {
             }
         }
 
+        // emp/reg 차단 로직 아래에 삽입)
+        if (path.startsWith("/emp/approval")) {
+            if (!"HR담당자".equals(role) && !isManager && !"최종승인자".equals(role)) {
+                sendForbidden(req, res);
+                return;
+            }
+        }
+
+        if (path.startsWith("/att/leave/approve")) {
+            if (!"HR담당자".equals(role) && !isManager && !"최종승인자".equals(role)) {
+                sendForbidden(req, res);
+                return;
+            }
+        }
+        
+        if (path.startsWith("/emp/history")) {
+            if (!"HR담당자".equals(role) && !"최종승인자".equals(role)) {
+                sendForbidden(req, res);
+                return;
+            }
+        }
 
         // [근태 관리] 초과근무 승인 — HR담당자·부서장
         if (path.startsWith("/att/overtime/approve")) {
@@ -208,8 +233,8 @@ public class AuthenticationFilter implements Filter {
             }
         }
         
-        if (path.startsWith("/att/annual")) {
-            if (!"HR담당자".equals(role)) {
+        if (path.startsWith("/att/annual") && !path.startsWith("/att/annual/grant")) {
+            if ("최종승인자".equals(role)) {
                 sendForbidden(req, res);
                 return;
             }
