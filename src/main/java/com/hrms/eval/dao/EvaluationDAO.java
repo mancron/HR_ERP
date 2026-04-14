@@ -333,199 +333,242 @@ public class EvaluationDAO {
 	 */
 
 	public Vector<Map<String, Object>> getEvaluationStatusList(int year, String period, String type,
-            String searchTarget, String searchEvaluator, int loginEmpId, String userRole) {
+			String searchTarget, String searchEvaluator, int loginEmpId, String userRole) {
 
-        Vector<Map<String, Object>> list = new Vector<>();
-        
-        // [수정] 프로젝트 공통 권한 명칭인 "사장님", "HR담당자", "최종승인자"로 변경
-        boolean isPrivileged = "사장님".equals(userRole) || "HR담당자".equals(userRole) || "최종승인자".equals(userRole);
+		Vector<Map<String, Object>> list = new Vector<>();
 
-        StringBuilder sql = new StringBuilder("SELECT e.eval_id, emp.emp_name, e.emp_id, " 
-                + "COALESCE(d.dept_name,'미지정') AS dept_name, "
-                + "e.total_score, e.grade, e.eval_status, e.evaluator_id, "
-                + "evalr.emp_name AS evaluator_name, e.confirmed_at, e.eval_comment, "
-                + "e.eval_year, e.eval_period, e.eval_type " 
-                + "FROM evaluation e "
-                + "JOIN employee emp ON e.emp_id = emp.emp_id " 
-                + "LEFT JOIN department d ON emp.dept_id = d.dept_id "
-                + "LEFT JOIN employee evalr ON e.evaluator_id = evalr.emp_id " 
-                + "WHERE e.eval_year=? ");
-        
-        List<Object> params = new ArrayList<>();
-        params.add(year);
+		// [수정] 프로젝트 공통 권한 명칭인 "사장님", "HR담당자", "최종승인자"로 변경
+		boolean isPrivileged = "사장님".equals(userRole) || "HR담당자".equals(userRole) || "최종승인자".equals(userRole);
 
-        // 권한이 없는 일반 사용자는 본인이 대상자이거나 평가자인 데이터만 조회
-        if (!isPrivileged && loginEmpId > 0) {
-            sql.append("AND (e.emp_id = ? OR e.evaluator_id = ?) ");
-            params.add(loginEmpId);
-            params.add(loginEmpId);
-        }
+		StringBuilder sql = new StringBuilder("SELECT e.eval_id, emp.emp_name, e.emp_id, "
+				+ "COALESCE(d.dept_name,'미지정') AS dept_name, "
+				+ "e.total_score, e.grade, e.eval_status, e.evaluator_id, "
+				+ "evalr.emp_name AS evaluator_name, e.confirmed_at, e.eval_comment, "
+				+ "e.eval_year, e.eval_period, e.eval_type " + "FROM evaluation e "
+				+ "JOIN employee emp ON e.emp_id = emp.emp_id " + "LEFT JOIN department d ON emp.dept_id = d.dept_id "
+				+ "LEFT JOIN employee evalr ON e.evaluator_id = evalr.emp_id " + "WHERE e.eval_year=? ");
 
-        if (period != null && !period.isEmpty() && !"전체".equals(period)) {
-            sql.append("AND e.eval_period=? ");
-            params.add(period);
-        }
-        if (type != null && !type.isEmpty() && !"전체".equals(type)) {
-            sql.append("AND e.eval_type=? ");
-            params.add(type);
-        }
-        if (searchTarget != null && !searchTarget.trim().isEmpty()) {
-            sql.append("AND emp.emp_name LIKE ? ");
-            params.add("%" + searchTarget.trim() + "%");
-        }
-        if (searchEvaluator != null && !searchEvaluator.trim().isEmpty()) {
-            sql.append("AND evalr.emp_name LIKE ? ");
-            params.add("%" + searchEvaluator.trim() + "%");
-        }
-        
-        sql.append("ORDER BY e.eval_year DESC, e.created_at DESC");
+		List<Object> params = new ArrayList<>();
+		params.add(year);
 
-        try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++)
-                pstmt.setObject(i + 1, params.get(i));
-                
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    Map<String, Object> map = new HashMap<>();
-                    String evalComment = rs.getString("eval_comment");
-                    map.put("evalId", rs.getInt("eval_id"));
-                    map.put("empId", rs.getInt("emp_id"));
-                    map.put("empName", rs.getString("emp_name"));
-                    map.put("deptName", rs.getString("dept_name"));
-                    map.put("score", rs.getBigDecimal("total_score"));
-                    map.put("grade", rs.getString("grade"));
-                    map.put("status", rs.getString("eval_status"));
-                    map.put("evaluatorId", rs.getInt("evaluator_id"));
-                    map.put("evaluatorName", rs.getString("evaluator_name"));
-                    map.put("confirmedAt", rs.getTimestamp("confirmed_at"));
-                    map.put("evalComment", evalComment);
-                    map.put("isRejected", evalComment != null && evalComment.startsWith("[반려]"));
-                    map.put("evalYear", rs.getInt("eval_year"));
-                    map.put("evalPeriod", rs.getString("eval_period"));
-                    map.put("evalType", rs.getString("eval_type"));
-                    list.add(map);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
+		// 권한이 없는 일반 사용자는 본인이 대상자이거나 평가자인 데이터만 조회
+		if (!isPrivileged && loginEmpId > 0) {
+			sql.append("AND (e.emp_id = ? OR e.evaluator_id = ?) ");
+			params.add(loginEmpId);
+			params.add(loginEmpId);
+		}
 
-    /** 기존 시그니처 호환용 (기본값은 가장 낮은 권한인 일반사원으로 설정) */
-    public Vector<Map<String, Object>> getEvaluationStatusList(int year, String period, String type) {
-        return getEvaluationStatusList(year, period, type, null, null, 0, "일반사원");
-    }
+		if (period != null && !period.isEmpty() && !"전체".equals(period)) {
+			sql.append("AND e.eval_period=? ");
+			params.add(period);
+		}
+		if (type != null && !type.isEmpty() && !"전체".equals(type)) {
+			sql.append("AND e.eval_type=? ");
+			params.add(type);
+		}
+		if (searchTarget != null && !searchTarget.trim().isEmpty()) {
+			sql.append("AND emp.emp_name LIKE ? ");
+			params.add("%" + searchTarget.trim() + "%");
+		}
+		if (searchEvaluator != null && !searchEvaluator.trim().isEmpty()) {
+			sql.append("AND evalr.emp_name LIKE ? ");
+			params.add("%" + searchEvaluator.trim() + "%");
+		}
 
-    /**
-     * 평가 통계 요약 집계
-     */
-    public Map<String, Integer> getEvaluationSummary(int year, String period, String type, String searchTarget,
-            String searchEvaluator, int loginEmpId, String userRole) {
-        
-        Map<String, Integer> summary = new HashMap<>();
-        summary.put("S", 0); summary.put("A", 0); summary.put("B", 0);
-        summary.put("C", 0); summary.put("D", 0); summary.put("미완료", 0);
+		sql.append("ORDER BY e.eval_year DESC, e.created_at DESC");
 
-        // [수정] 프로젝트 공통 권한 명칭으로 변경
-        boolean isPrivileged = "사장님".equals(userRole) || "HR담당자".equals(userRole) || "최종승인자".equals(userRole);
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+			for (int i = 0; i < params.size(); i++)
+				pstmt.setObject(i + 1, params.get(i));
 
-        // 1. 등급별 인원 집계
-        StringBuilder sqlGrade = new StringBuilder(
-                "SELECT grade, COUNT(*) AS cnt FROM evaluation WHERE eval_status='최종확정' AND eval_year=? ");
-        List<Object> params = new ArrayList<>();
-        params.add(year);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				while (rs.next()) {
+					Map<String, Object> map = new HashMap<>();
+					String evalComment = rs.getString("eval_comment");
+					map.put("evalId", rs.getInt("eval_id"));
+					map.put("empId", rs.getInt("emp_id"));
+					map.put("empName", rs.getString("emp_name"));
+					map.put("deptName", rs.getString("dept_name"));
+					map.put("score", rs.getBigDecimal("total_score"));
+					map.put("grade", rs.getString("grade"));
+					map.put("status", rs.getString("eval_status"));
+					map.put("evaluatorId", rs.getInt("evaluator_id"));
+					map.put("evaluatorName", rs.getString("evaluator_name"));
+					map.put("confirmedAt", rs.getTimestamp("confirmed_at"));
+					map.put("evalComment", evalComment);
+					map.put("isRejected", evalComment != null && evalComment.startsWith("[반려]"));
+					map.put("evalYear", rs.getInt("eval_year"));
+					map.put("evalPeriod", rs.getString("eval_period"));
+					map.put("evalType", rs.getString("eval_type"));
+					list.add(map);
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return list;
+	}
 
-        if (!isPrivileged && loginEmpId > 0) {
-            sqlGrade.append("AND (emp_id = ? OR evaluator_id = ?) ");
-            params.add(loginEmpId);
-            params.add(loginEmpId);
-        }
+	/** 기존 시그니처 호환용 (기본값은 가장 낮은 권한인 일반사원으로 설정) */
+	public Vector<Map<String, Object>> getEvaluationStatusList(int year, String period, String type) {
+		return getEvaluationStatusList(year, period, type, null, null, 0, "일반사원");
+	}
 
-        if (period != null && !"전체".equals(period) && !period.isEmpty()) {
-            sqlGrade.append("AND eval_period=? ");
-            params.add(period);
-        }
-        if (type != null && !"전체".equals(type) && !type.isEmpty()) {
-            sqlGrade.append("AND eval_type=? ");
-            params.add(type);
-        }
-        sqlGrade.append("GROUP BY grade");
+	/**
+	 * 평가 통계 요약 집계
+	 */
+	/**
+	 * [미완료 계산 정책 수정본] 1. 전체 유형 선택 시: 현재 필터(연도/기수) 내에서 실제 생성된 문서 중 '최종확정'이 아닌 건수 집계
+	 * 2. 특정 유형 선택 시: (전체 재직자 - 해당 유형 완료자)를 통해 미제출자 포함 집계
+	 */
+	public Map<String, Integer> getEvaluationSummary(int year, String period, String type, String searchTarget,
+			String searchEvaluator, int loginEmpId, String userRole) {
+		Map<String, Integer> summary = new HashMap<>();
+		summary.put("S", 0);
+		summary.put("A", 0);
+		summary.put("B", 0);
+		summary.put("C", 0);
+		summary.put("D", 0);
+		summary.put("미완료", 0);
 
-        try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sqlGrade.toString())) {
-            for (int i = 0; i < params.size(); i++)
-                pstmt.setObject(i + 1, params.get(i));
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    String grade = rs.getString("grade");
-                    if (grade != null && summary.containsKey(grade)) {
-                        summary.put(grade, rs.getInt("cnt"));
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+		boolean isPrivileged = "사장님".equals(userRole) || "HR담당자".equals(userRole) || "최종승인자".equals(userRole);
+// [중요] type이 "전체"인지 여부를 판단하는 플래그
+		boolean isAllType = (type == null || type.isEmpty() || "전체".equals(type));
+		boolean isAllPeriod = (period == null || period.isEmpty() || "전체".equals(period));
 
-        // 2. 미완료 계산
-        if (!isPrivileged) {
-            String sqlPending = "SELECT COUNT(*) FROM evaluation WHERE eval_status <> '최종확정' AND eval_year=? "
-                              + "AND (emp_id = ? OR evaluator_id = ?)";
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(sqlPending)) {
-                pstmt.setInt(1, year);
-                pstmt.setInt(2, loginEmpId);
-                pstmt.setInt(3, loginEmpId);
-                try (ResultSet rs = pstmt.executeQuery()) {
-                    if (rs.next()) summary.put("미완료", rs.getInt(1));
-                }
-            } catch (SQLException e) { e.printStackTrace(); }
-        } else {
-            boolean isAllPeriod = (period == null || period.isEmpty() || "전체".equals(period));
-            boolean isAllType = (type == null || type.isEmpty() || "전체".equals(type));
+// ── 1. 등급별 집계 (최종확정 된 문서들만) ───────────────────────────
+		StringBuilder sqlGrade = new StringBuilder(
+				"SELECT grade, COUNT(*) AS cnt FROM evaluation WHERE eval_status='최종확정' AND eval_year=? ");
+		List<Object> gParams = new ArrayList<>();
+		gParams.add(year);
 
-            if (isAllPeriod && isAllType) {
-                String sqlPendingAll = "SELECT COUNT(DISTINCT emp_id) AS pending_cnt FROM evaluation "
-                        + "WHERE eval_status <> '최종확정' AND eval_year=? ";
-                try (Connection conn = DatabaseConnection.getConnection();
-                        PreparedStatement pstmt = conn.prepareStatement(sqlPendingAll)) {
-                    pstmt.setInt(1, year);
-                    try (ResultSet rs = pstmt.executeQuery()) {
-                        if (rs.next()) summary.put("미완료", rs.getInt("pending_cnt"));
-                    }
-                } catch (SQLException e) { e.printStackTrace(); }
-            } else {
-                int totalTarget = 0;
-                String sqlTargetCount = "SELECT COUNT(*) FROM employee e JOIN job_position p ON e.position_id = p.position_id "
-                                      + "WHERE e.status='재직' AND p.position_level < 6";
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement(sqlTargetCount);
-                     ResultSet rs = pstmt.executeQuery()) {
-                    if (rs.next()) totalTarget = rs.getInt(1);
-                } catch (SQLException e) { e.printStackTrace(); }
+		if (!isPrivileged && loginEmpId > 0) {
+			sqlGrade.append("AND (emp_id=? OR evaluator_id=?) ");
+			gParams.add(loginEmpId);
+			gParams.add(loginEmpId);
+		}
+		if (!isAllPeriod) {
+			sqlGrade.append("AND eval_period=? ");
+			gParams.add(period);
+		}
+		if (!isAllType) {
+			sqlGrade.append("AND eval_type=? ");
+			gParams.add(type);
+		}
 
-                StringBuilder sqlConfirmedTarget = new StringBuilder("SELECT COUNT(DISTINCT emp_id) FROM evaluation WHERE eval_status='최종확정' AND eval_year=? ");
-                if (!isAllPeriod) sqlConfirmedTarget.append("AND eval_period='").append(period).append("' ");
-                if (!isAllType) sqlConfirmedTarget.append("AND eval_type='").append(type).append("' ");
+// 검색 필터 적용 (이름 검색 시 숫자도 같이 줄어들게)
+		if (searchTarget != null && !searchTarget.trim().isEmpty()) {
+			sqlGrade.append("AND emp_id IN (SELECT emp_id FROM employee WHERE emp_name LIKE ?) ");
+			gParams.add("%" + searchTarget.trim() + "%");
+		}
+		sqlGrade.append("GROUP BY grade");
 
-                int confirmedCount = 0;
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement(sqlConfirmedTarget.toString())) {
-                    pstmt.setInt(1, year);
-                    try (ResultSet rs = pstmt.executeQuery()) { if (rs.next()) confirmedCount = rs.getInt(1); }
-                } catch (SQLException e) { e.printStackTrace(); }
-                summary.put("미완료", Math.max(0, totalTarget - confirmedCount));
-            }
-        }
-        return summary;
-    }
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sqlGrade.toString())) {
+			for (int i = 0; i < gParams.size(); i++)
+				pstmt.setObject(i + 1, gParams.get(i));
+			try (ResultSet rs = pstmt.executeQuery()) {
+				while (rs.next()) {
+					String grade = rs.getString("grade");
+					if (grade != null && summary.containsKey(grade))
+						summary.put(grade, rs.getInt("cnt"));
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 
-    /** 기존 시그니처 호환용 */
-    public Map<String, Integer> getEvaluationSummary(int year, String period, String type) {
-        return getEvaluationSummary(year, period, type, null, null, 0, "일반사원");
-    }
+// ── 2. 미완료 계산 (질문하신 핵심 로직 분기) ────────────────────────
+		if (isAllType) {
+			/**
+			 * [로직 A] 유형이 "전체"일 때: '문서' 기준 "상반기 & 전체유형"을 고르면 리스트에 뜬 문서들 중 '최종확정'이 아닌 것만 셉니다.
+			 * 데이터가 상반기만 있다면, 전체기간이든 상반기든 여기서 '3'이 나옵니다.
+			 */
+			StringBuilder sqlPendingDoc = new StringBuilder(
+					"SELECT COUNT(*) FROM evaluation WHERE eval_status != '최종확정' AND eval_year=? ");
+			List<Object> pParams = new ArrayList<>();
+			pParams.add(year);
+
+			if (!isPrivileged && loginEmpId > 0) {
+				sqlPendingDoc.append("AND (emp_id=? OR evaluator_id=?) ");
+				pParams.add(loginEmpId);
+				pParams.add(loginEmpId);
+			}
+			if (!isAllPeriod) {
+				sqlPendingDoc.append("AND eval_period=? ");
+				pParams.add(period);
+			}
+
+			if (searchTarget != null && !searchTarget.trim().isEmpty()) {
+				sqlPendingDoc.append("AND emp_id IN (SELECT emp_id FROM employee WHERE emp_name LIKE ?) ");
+				pParams.add("%" + searchTarget.trim() + "%");
+			}
+
+			try (Connection conn = DatabaseConnection.getConnection();
+					PreparedStatement pstmt = conn.prepareStatement(sqlPendingDoc.toString())) {
+				for (int i = 0; i < pParams.size(); i++)
+					pstmt.setObject(i + 1, pParams.get(i));
+				try (ResultSet rs = pstmt.executeQuery()) {
+					if (rs.next())
+						summary.put("미완료", rs.getInt(1));
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+		} else {
+			/**
+			 * [로직 B] 특정 유형(자기평가 등) 선택 시: '사람' 기준 "상반기 & 자기평가"를 고르면 (전체 재직자 - 상반기 자기평가 완료자)를
+			 * 계산합니다. 이때는 아직 문서를 안 만든 사람(미제출자)까지 포함되어 '9' 같은 숫자가 나옵니다.
+			 */
+			int totalActive = 0;
+			String sqlTotal = "SELECT COUNT(*) FROM employee e "
+					+ "JOIN job_position p ON e.position_id = p.position_id "
+					+ "WHERE e.status='재직' AND p.position_level < (SELECT MAX(position_level) FROM job_position)";
+			try (Connection conn = DatabaseConnection.getConnection();
+					PreparedStatement pstmt = conn.prepareStatement(sqlTotal);
+					ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next())
+					totalActive = rs.getInt(1);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			StringBuilder sqlDone = new StringBuilder(
+					"SELECT COUNT(DISTINCT emp_id) FROM evaluation WHERE eval_status='최종확정' AND eval_year=? AND eval_type=? ");
+			List<Object> dParams = new ArrayList<>();
+			dParams.add(year);
+			dParams.add(type);
+
+			if (!isAllPeriod) {
+				sqlDone.append("AND eval_period=? ");
+				dParams.add(period);
+			}
+
+			int doneCount = 0;
+			try (Connection conn = DatabaseConnection.getConnection();
+					PreparedStatement pstmt = conn.prepareStatement(sqlDone.toString())) {
+				for (int i = 0; i < dParams.size(); i++)
+					pstmt.setObject(i + 1, dParams.get(i));
+				try (ResultSet rs = pstmt.executeQuery()) {
+					if (rs.next())
+						doneCount = rs.getInt(1);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			summary.put("미완료", Math.max(0, totalActive - doneCount));
+		}
+
+		return summary;
+	}
+
+	/** 기존 시그니처 호환용 */
+	public Map<String, Integer> getEvaluationSummary(int year, String period, String type) {
+		return getEvaluationSummary(year, period, type, null, null, 0, "일반사원");
+	}
 
 	/** 불러오기: 본인 작성 + 최종확정 아닌 것 */
 	public Map<String, Object> getEvaluationByCondition(int empId, int year, String period, String type,
@@ -629,66 +672,66 @@ public class EvaluationDAO {
 	 * [수정] 평가 유형별 대상자 목록 조회 (사장님 레벨 6 제외)
 	 */
 	public Vector<Map<String, Object>> getEmployeeListForEvaluator(int evaluatorId, int posLevel, String evalType) {
-	    Vector<Map<String, Object>> list = new Vector<>();
-	    String sql;
-	    boolean needSecondParam = true;
+		Vector<Map<String, Object>> list = new Vector<>();
+		String sql;
+		boolean needSecondParam = true;
 
-	    // [수정] 공통 필터에 인사팀 상호 평가 방지 로직 추가
-	    // e.dept_id != (내 부서 ID) 조건을 걸되, 내가 인사팀일 때만 이 조건이 작동하도록 서브쿼리 결합
-	    String commonFilter = "WHERE e.status='재직' AND e.emp_id != ? AND p.position_level < 6 "
-	            + "AND NOT (e.dept_id = (SELECT dept_id FROM employee WHERE emp_id = ?) "
-	            + "         AND e.dept_id IN (SELECT dept_id FROM department WHERE dept_name LIKE '%인사%')) ";
+		// [수정] 공통 필터에 인사팀 상호 평가 방지 로직 추가
+		// e.dept_id != (내 부서 ID) 조건을 걸되, 내가 인사팀일 때만 이 조건이 작동하도록 서브쿼리 결합
+		String commonFilter = "WHERE e.status='재직' AND e.emp_id != ? AND p.position_level < 6 "
+				+ "AND NOT (e.dept_id = (SELECT dept_id FROM employee WHERE emp_id = ?) "
+				+ "         AND e.dept_id IN (SELECT dept_id FROM department WHERE dept_name LIKE '%인사%')) ";
 
-	    if ("자기평가".equals(evalType)) {
-	        sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos "
-	                + "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id "
-	                + "WHERE e.emp_id = ?";
-	        needSecondParam = false;
-	    } else if ("동료평가".equals(evalType)) {
-	        sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos "
-	                + "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " + commonFilter
-	                + "AND p.position_level = ? ORDER BY e.emp_name ASC";
-	    } else if ("하위평가".equals(evalType)) {
-	        sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos "
-	                + "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " + commonFilter
-	                + "AND p.position_level > ? ORDER BY p.position_level ASC, e.emp_name ASC";
-	    } else { // 상위평가 및 기타
-	        sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos "
-	                + "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " + commonFilter
-	                + (posLevel == 0 || posLevel >= 999 ? "" : "AND p.position_level < ? ")
-	                + "ORDER BY p.position_level DESC, e.emp_name ASC";
-	        if (posLevel == 0 || posLevel >= 999)
-	            needSecondParam = false;
-	    }
+		if ("자기평가".equals(evalType)) {
+			sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos "
+					+ "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id "
+					+ "WHERE e.emp_id = ?";
+			needSecondParam = false;
+		} else if ("동료평가".equals(evalType)) {
+			sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos "
+					+ "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " + commonFilter
+					+ "AND p.position_level = ? ORDER BY e.emp_name ASC";
+		} else if ("하위평가".equals(evalType)) {
+			sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos "
+					+ "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " + commonFilter
+					+ "AND p.position_level > ? ORDER BY p.position_level ASC, e.emp_name ASC";
+		} else { // 상위평가 및 기타
+			sql = "SELECT e.emp_id, e.emp_name, COALESCE(p.position_name,'사원') AS pos "
+					+ "FROM employee e LEFT JOIN job_position p ON e.position_id = p.position_id " + commonFilter
+					+ (posLevel == 0 || posLevel >= 999 ? "" : "AND p.position_level < ? ")
+					+ "ORDER BY p.position_level DESC, e.emp_name ASC";
+			if (posLevel == 0 || posLevel >= 999)
+				needSecondParam = false;
+		}
 
-	    try (Connection conn = DatabaseConnection.getConnection();
-	            PreparedStatement pstmt = conn.prepareStatement(sql)) {
-	        
-	        // 첫 번째 파라미터: 본인 제외 (e.emp_id != ?)
-	        pstmt.setInt(1, evaluatorId);
-	        
-	        // [중요] 추가된 두 번째 파라미터 처리
-	        if (!"자기평가".equals(evalType)) {
-	            // commonFilter 내부의 (WHERE emp_id = ?) 에 대응
-	            pstmt.setInt(2, evaluatorId);
-	            if (needSecondParam) {
-	                pstmt.setInt(3, posLevel);
-	            }
-	        }
+		try (Connection conn = DatabaseConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-	        try (ResultSet rs = pstmt.executeQuery()) {
-	            while (rs.next()) {
-	                Map<String, Object> map = new HashMap<>();
-	                map.put("empId", rs.getInt("emp_id"));
-	                map.put("empName", rs.getString("emp_name"));
-	                map.put("pos", rs.getString("pos"));
-	                list.add(map);
-	            }
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-	    return list;
+			// 첫 번째 파라미터: 본인 제외 (e.emp_id != ?)
+			pstmt.setInt(1, evaluatorId);
+
+			// [중요] 추가된 두 번째 파라미터 처리
+			if (!"자기평가".equals(evalType)) {
+				// commonFilter 내부의 (WHERE emp_id = ?) 에 대응
+				pstmt.setInt(2, evaluatorId);
+				if (needSecondParam) {
+					pstmt.setInt(3, posLevel);
+				}
+			}
+
+			try (ResultSet rs = pstmt.executeQuery()) {
+				while (rs.next()) {
+					Map<String, Object> map = new HashMap<>();
+					map.put("empId", rs.getInt("emp_id"));
+					map.put("empName", rs.getString("emp_name"));
+					map.put("pos", rs.getString("pos"));
+					list.add(map);
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return list;
 	}
 
 	/**
