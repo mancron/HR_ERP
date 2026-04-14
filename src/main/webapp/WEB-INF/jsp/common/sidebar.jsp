@@ -46,18 +46,14 @@
         <a href="${ctx}/emp/reg" class="nav-item">직원 등록</a>
       </c:if>
 
-      <%-- 휴·퇴직 승인: HR담당자 / 부서장 / CEO --%>
-      <c:if test="${isHR or isCEO or isMgr}">
-        <a href="${ctx}/emp/approval" class="nav-item">휴·퇴직 승인 관리</a>
-      </c:if>
+      <%-- 휴·퇴직 승인: 전체 공개 --%>
+      <a href="${ctx}/emp/approval" class="nav-item">휴·퇴직 승인 관리</a>
 
       <%-- 휴·퇴직 완료 내역: 전체 공개 --%>
       <a href="${ctx}/emp/approvalHistory" class="nav-item">휴·퇴직 완료 내역</a>
 
-      <%-- 인사발령 이력: HR담당자 / CEO --%>
-      <c:if test="${isHR or isCEO}">
-        <a href="${ctx}/emp/history" class="nav-item">인사발령 이력</a>
-      </c:if>
+      <%-- 인사발령 이력: 전체 공개 --%>
+      <a href="${ctx}/emp/history" class="nav-item">인사발령 이력</a>
 
     </div>
   </div>
