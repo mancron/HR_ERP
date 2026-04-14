@@ -100,10 +100,12 @@
     </div>
 
     <%-- 5. 코멘트 영역 --%>
-    <div class="form-group">
-        <label>평가 코멘트</label>
-        <textarea class="txt-area" readonly><c:out value="${fn:trim(fn:replace(fn:replace(evalData.evalComment, '[반려]', ''), '[반려 사유]', '※반려사유:'))}"/></textarea>
-    </div>
+   	<%-- 5. 코멘트 영역 (공백 방지를 위해 태그를 바짝 붙였습니다) --%>
+<div class="form-group">
+    <label>평가 코멘트</label>
+    <c:set var="full" value="${evalData.evalComment}" />
+    <textarea class="txt-area" readonly><c:choose><c:when test="${fn:contains(full, '[반려]') && fn:contains(full, '[반려 사유]')}"><c:out value="${fn:trim(fn:substring(full, fn:indexOf(full, '[반려]') + 4, fn:indexOf(full, '[반려 사유]')))}" /></c:when><c:otherwise><c:out value="${fn:trim(fn:replace(fn:replace(full, '[반려]', ''), '[반려 사유]', ''))}" /></c:otherwise></c:choose></textarea>
+</div>
 
     <%-- 6. 반려 사유 표시 (이미 반려된 경우) --%>
     <c:if test="${(isRejected || evalData.isRejected) && not empty rejectReason}">
