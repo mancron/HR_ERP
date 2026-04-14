@@ -37,7 +37,7 @@ public class LeaveCancelServlet extends HttpServlet {
         
         try {
             // 🔥 파라미터 받기
-            int leaveId = Integer.parseInt(request.getParameter("leave_id"));
+            int leaveId = Integer.parseInt(request.getParameter("id"));
 
             // 🔥 Service 호출
             boolean result = leaveService.cancelLeave(leaveId, empId);

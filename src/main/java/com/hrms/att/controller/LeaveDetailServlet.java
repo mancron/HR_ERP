@@ -11,6 +11,8 @@ import com.google.gson.GsonBuilder;
 import com.hrms.att.dto.LeaveDTO;
 import com.hrms.att.dto.RequestDTO;
 import com.hrms.att.service.LeaveService;
+import com.hrms.emp.dao.EmpDAO;
+import com.hrms.emp.dto.EmpDTO;
 
 @WebServlet("/att/leave/detail")
 public class LeaveDetailServlet extends HttpServlet {
@@ -39,11 +41,30 @@ public class LeaveDetailServlet extends HttpServlet {
 		}
 		r.setEmpName(empInfo != null ? empInfo : "-");
 
-		// 🔥 승인자 (이름 + 부서 + 직급)
-		String approverInfo = dto.getApproverName();
-		if (dto.getApproverDept() != null && dto.getApproverPosition() != null) {
-			approverInfo += " (" + dto.getApproverDept() + " / " + dto.getApproverPosition() + ")";
+		// 🔥 승인자 (이름 + 부서 + 직급) + 인사팀
+		String approverInfo;
+
+		// 🔥 대기 상태일 경우
+		if ("대기".equals(dto.getStatus())) {
+
+		    // 👉 팀장 찾기
+		    int managerId = new LeaveService().findApprover(dto.getEmpId());
+		    EmpDTO manager = new EmpDAO().getEmployeeById(managerId);
+
+		    String managerInfo = manager.getEmp_name()
+		            + " (" + manager.getDept_name() + " / " + manager.getPosition_name() + ")";
+
+		    approverInfo = managerInfo + " 또는 인사팀";
+
+		} else {
+		    // 👉 실제 승인자
+		    approverInfo = dto.getApproverName();
+
+		    if (dto.getApproverDept() != null && dto.getApproverPosition() != null) {
+		        approverInfo += " (" + dto.getApproverDept() + " / " + dto.getApproverPosition() + ")";
+		    }
 		}
+
 		r.setApproverName(approverInfo != null ? approverInfo : "-");
 		r.setApproveDate(dto.getApprovedAt() != null ? dto.getApprovedAt().toString() : "-");
 		r.setRejectReason(dto.getRejectReason());

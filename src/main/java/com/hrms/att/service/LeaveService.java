@@ -104,26 +104,35 @@ public class LeaveService {
 			conn = DatabaseConnection.getConnection();
 			conn.setAutoCommit(false);
 
-			// 🔥 6. 승인자 찾기
 			int approverId = findApprover(empId);
 			dto.setApproverId(approverId);
-
-			// 🔥 7. 휴가 저장
+			
+			// 6. 휴가 저장			
 			boolean result = leaveDAO.insertLeave(dto);
 			if (!result) {
 				throw new Exception("휴가 저장 실패");
 			}
 
-			// 🔥 8. 신청자 이름
+			// 7. 신청자 이름
 			String empName = empDAO.getEmployeeById(empId).getEmp_name();
 
-			// 🔥 9. 기간 문자열
+			// 8. 기간 문자열
 			String period = dto.getStartDate() + " ~ " + dto.getEndDate();
 
 			conn.commit();
+			
+			int managerId = findApprover(empId);
+			
+			List<Integer> hrList = empDAO.getHRList();
+			
+			// 👉 팀장 알림
+	        NotificationUtil.sendLeavePending(managerId, empName, period, dto.getLeaveId());
 
-			NotificationUtil.sendLeavePending(approverId, empName, period, dto.getLeaveId());
-
+	        // 👉 HR 전체 알림
+	        for (int hrId : hrList) {
+	            NotificationUtil.sendLeavePending(hrId, empName, period, dto.getLeaveId());
+	        }
+	        
 			return "success";
 
 		} catch (Exception e) {
@@ -183,11 +192,6 @@ public class LeaveService {
 		return days;
 	}
 
-	// 휴가 리스트 출력
-	public List<LeaveDTO> getLeaveList(int empId) {
-		return leaveDAO.getLeaveList(empId);
-	}
-
 	// 월별 휴가 리스트 출력
 	public List<RequestDTO> getLeaveListByMonth(int empId, int year, int month) {
 		List<LeaveDTO> list = leaveDAO.getLeaveListByMonth(empId, year, month);
@@ -220,12 +224,25 @@ public class LeaveService {
 	}
 
 	// 필터 + 정렬 포함 (신규 기능)
-	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int approverId, int offset, int size) {
-		return leaveDAO.getPendingLeaves(dept, sort, startDate, endDate, approverId, offset, size);
+	public List<LeaveDTO> getPendingLeaves(String dept, String sort, String startDate, String endDate, int loginEmpId, int offset, int size) {
+		boolean isHR = isHR(loginEmpId);
+
+	    if (isHR) {
+	        // 🔥 HR → 전체 조회
+	        return leaveDAO.getPendingLeavesAll(dept, sort, startDate, endDate, loginEmpId, offset, size);
+	    } else {
+	        // 🔥 팀장 → 자기 부서만
+	    	return leaveDAO.getPendingByApprover(loginEmpId, offset, size);
+	    }
 	}
 	
-	public int getPendingLeavesCount(String dept, String startDate, String endDate, int approverId) {
-		return leaveDAO.getPendingLeavesCount(dept, startDate, endDate, approverId);
+	public int getPendingLeavesCount(String dept, String startDate, String endDate, int loginEmpId) {
+
+	    if (isHR(loginEmpId)) {
+	        return leaveDAO.getPendingCountAll(dept, startDate, endDate, loginEmpId);
+	    } else {
+	    	return leaveDAO.getPendingCountByApprover(loginEmpId);
+	    }
 	}
 
 	// 부서 목록 조회 (드롭다운용)
@@ -257,8 +274,8 @@ public class LeaveService {
 			}
 
 			// 🔥 3. 승인 권한 체크 (중요)
-			if (leave.getApproverId() != approverId) {
-				throw new Exception("승인 권한이 없습니다.");
+			if (!canApprove(approverId, leave)) {
+			    throw new Exception("승인 권한이 없습니다.");
 			}
 
 			// 🔥 4. 이미 처리된 건 막기
@@ -333,4 +350,26 @@ public class LeaveService {
 		return leaveDAO.existsByDate(empId, date);
 	}
 
+	public boolean isHR(int empId) {
+	    String role = empDAO.getRoleByEmpId(empId);
+	    return "HR담당자".equals(role);
+	}
+	
+	public boolean canApprove(int loginEmpId, LeaveDTO leave) {
+
+	    int requesterId = leave.getEmpId();
+
+	    // 1. 자기 승인 금지
+	    if (loginEmpId == requesterId) return false;
+
+	    // 2. HR이면 무조건 가능
+	    if (isHR(loginEmpId)) return true;
+
+	    // 3. 팀장인지 확인
+	    int deptId = empDAO.getDeptIdByEmpId(requesterId);
+	    int managerId = deptDAO.getDeptById(deptId).getManager_id();
+
+	    return loginEmpId == managerId;
+	}
+	
 }

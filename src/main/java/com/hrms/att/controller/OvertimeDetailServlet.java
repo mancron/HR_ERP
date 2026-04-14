@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.hrms.att.dto.OvertimeDTO;
 import com.hrms.att.dto.RequestDTO;
 import com.hrms.att.service.OvertimeService;
+import com.hrms.emp.dao.EmpDAO;
+import com.hrms.emp.dto.EmpDTO;
 
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
@@ -41,13 +43,34 @@ public class OvertimeDetailServlet extends HttpServlet {
         }
 
         r.setEmpName(empInfo);
-        String approverInfo = dto.getApproverName();
+        String approverInfo;
 
-        if (dto.getApproverDept() != null && dto.getApproverPosition() != null) {
-            approverInfo += " (" + dto.getApproverDept() + " / " + dto.getApproverPosition() + ")";
-        }
+     // 🔥 대기 상태일 경우
+     if ("대기".equals(dto.getStatus())) {
 
-        r.setApproverName(approverInfo);
+         // 👉 팀장 찾기
+         OvertimeService service = new OvertimeService();
+         int managerId = service.findApprover(dto.getEmpId());
+
+         EmpDAO empDAO = new EmpDAO();
+         EmpDTO manager = empDAO.getEmployeeById(managerId);
+
+         String managerInfo = manager.getEmp_name()
+                 + " (" + manager.getDept_name() + " / " + manager.getPosition_name() + ")";
+
+         approverInfo = managerInfo + " 또는 인사팀";
+
+     } else {
+
+         // 👉 실제 승인자
+         approverInfo = dto.getApproverName();
+
+         if (dto.getApproverDept() != null && dto.getApproverPosition() != null) {
+             approverInfo += " (" + dto.getApproverDept() + " / " + dto.getApproverPosition() + ")";
+         }
+     }
+
+     r.setApproverName(approverInfo != null ? approverInfo : "-");
         r.setApplyDate(dto.getCreatedAt() != null ? dto.getCreatedAt().toString() : "-");
         r.setApproveDate(dto.getApprovedAt() != null ? dto.getApprovedAt().toString() : "-");
         r.setRejectReason(dto.getReject_reason() != null ? dto.getReject_reason().toString() : "-");
