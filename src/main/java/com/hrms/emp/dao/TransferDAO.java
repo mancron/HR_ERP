@@ -62,7 +62,7 @@ public class TransferDAO {
 	public List<EmpDTO> getDeptList(Connection con) throws SQLException {
         List<EmpDTO> list = new ArrayList<>();
         PreparedStatement pstmt = null;
-        ResultSet rs = null;
+        ResultSet rs = null; 
         String sql = "SELECT dept_id, dept_name FROM department where is_active=1 ORDER BY dept_name ASC";
         try {
             pstmt = con.prepareStatement(sql);
