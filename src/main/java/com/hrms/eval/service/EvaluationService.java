@@ -97,9 +97,10 @@ public class EvaluationService {
         // 2. 만약 로그인한 사람이 'HR담당자'라면, 리스트에서 '인사팀' 소속 직원을 제거합니다.
         if ("HR담당자".equals(userRole)) {
             rawList.removeIf(emp -> {
-                String deptName = (String) emp.get("deptName");
-                // 부서명이 '인사팀'인 경우 리스트에서 삭제
-                return "인사팀".equals(deptName);
+                Object deptObj = emp.get("deptName");
+                if (deptObj == null) return false;
+                String deptName = deptObj.toString();
+                return deptName.contains("인사");
             });
         }
         
