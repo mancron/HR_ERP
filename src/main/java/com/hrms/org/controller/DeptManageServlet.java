@@ -162,7 +162,15 @@ public class DeptManageServlet extends HttpServlet {
 
         HttpSession session = request.getSession();
 
-        // POST는 HR담당자만 허용
+        // 1. 세션에서 로그인한 사원의 ID(actorId) 추출
+        // 세션에 저장된 객체가 EmpDTO라고 가정합니다. (상단 import 참고)
+        Object loginUserObj = session.getAttribute("loginUser");
+        int actorId = 0;
+        if (loginUserObj instanceof com.hrms.emp.dto.EmpDTO) {
+            actorId = ((com.hrms.emp.dto.EmpDTO) loginUserObj).getEmp_id();
+        }
+
+        // 2. 권한 판정 (HR담당자만 허용)
         if (!resolvePrivilege(session)) {
             response.sendRedirect(request.getContextPath() + "/org/dept?error=no_auth");
             return;
@@ -173,6 +181,7 @@ public class DeptManageServlet extends HttpServlet {
         int existingId = 0;
         boolean isParsingError = false;
 
+        // 부서 ID 파싱 로직
         try {
             if (idStr != null && !idStr.isEmpty()) {
                 existingId = Integer.parseInt(idStr);
@@ -195,13 +204,16 @@ public class DeptManageServlet extends HttpServlet {
                 }
             }
 
+            // [부서 삭제/비활성화]
             if ("delete".equals(action)) {
-                String result = deptService.deleteDept(existingId);
+                // 수정된 서비스 호출: actorId 전달
+                String result = deptService.deleteDept(existingId, actorId);
                 String msg = "SUCCESS".equals(result)
                     ? "msg=deleted"
                     : "error=" + result.toLowerCase();
                 response.sendRedirect(request.getContextPath() + "/org/dept?" + msg);
 
+            // [부서 등록/수정]
             } else if ("update".equals(action) || "insert".equals(action)) {
                 int deptId = "update".equals(action) ? existingId : 0;
                 DeptDTO dept = createDeptFromRequest(request, deptId);
@@ -216,7 +228,9 @@ public class DeptManageServlet extends HttpServlet {
                     return;
                 }
 
-                String result = deptService.saveDept(dept);
+                // 수정된 서비스 호출: actorId 전달
+                String result = deptService.saveDept(dept, actorId);
+
                 if ("SUCCESS".equals(result)) {
                     int redirectId = (deptId == 0) ? dept.getDept_id() : deptId;
                     response.sendRedirect(request.getContextPath()
