@@ -649,3 +649,32 @@ MySQL 8.0.16 이상 버전에서 `CHECK` 제약조건과 `FOREIGN KEY (ON DELETE
 1. **백엔드 검증 추가**: API 서비스 레이어에서 승인 요청 처리 시 `emp_id`와 `approver_id`가 동일하면 예외(Exception)를 발생시키도록 구현.
 2. **프론트엔드 제어**: 클라이언트 UI에서 본인 기안 건은 '승인' 버튼 자체를 비활성화 처리.
 3. **트리거 완전 삭제**: 위 1, 2번 작업이 배포되고 100% 방어가 검증된 시점에 DB에서 일괄 `DROP TRIGGER` 실행.
+
+
+
+
+
+rag 폴더 이동
+cd hr-erp/rag
+
+가상환경 생성
+python -m venv venv
+
+가상환경 활성화
+venv\Scripts\activate # Windows
+
+source venv/bin/activate # Mac/Linux
+
+패키지 설치
+pip install fastapi uvicorn chromadb sentence-transformers
+
+pip install mysql-connector-python requests python-dotenv
+
+# ChromaDB 구축 (최초 1회)
+python vector_store.py --rebuild
+
+venv\Scripts\activate
+python rag_server.py
+
+
+
