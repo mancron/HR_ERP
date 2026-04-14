@@ -180,7 +180,7 @@
 
 					<div class="dept-form-group">
 						<label>부서장</label> <input type="text" class="readonly-text"
-							value="${isNewMode ? '자동지정' : (not empty selectedDept.manager_name ? selectedDept.manager_name : '미지정')}"
+							value="${isNewMode ? '지정예정' : (not empty selectedDept.manager_name ? selectedDept.manager_name : '미지정')}"
 							readonly title="부서장은 인사발령 메뉴에서 변경합니다">
 					</div>
 

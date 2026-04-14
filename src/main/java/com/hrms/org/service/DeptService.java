@@ -17,9 +17,9 @@ public class DeptService {
     public int    getChildDeptCount(int id)     { return deptDao.getChildDeptCount(id); }
     public List<DeptDTO> getInactiveDeptList()  { return deptDao.getInactiveDepts(); }
 
-    /**
-     * 계층형 트리 조립 — managerName 포함
-     */
+    public String saveDept(DeptDTO dept) { return saveDept(dept, 0); }
+    public String deleteDept(int deptId) { return deleteDept(deptId, 0); }
+
     public List<Map<String, Object>> getDeptTree() {
         List<DeptDTO> allDepts = deptDao.getAllDepts();
         Map<Integer, Map<String, Object>> nodeMap = new LinkedHashMap<>();
@@ -45,8 +45,7 @@ public class DeptService {
                 roots.add(node);
             } else {
                 @SuppressWarnings("unchecked")
-                List<Map<String, Object>> children =
-                    (List<Map<String, Object>>) nodeMap.get(parentId).get("children");
+                List<Map<String, Object>> children = (List<Map<String, Object>>) nodeMap.get(parentId).get("children");
                 children.add(node);
             }
         }
@@ -54,123 +53,93 @@ public class DeptService {
     }
 
     /**
-     * 부서 저장/수정
-     *
-     * [BUG-1 FIX] parent_dept_id = 0 (최상위) 일 때 shiftSortOrder / reorderSortOrder 를
-     *             호출하지 않도록 변경.
-     *             DB 상 최상위 부서는 parent_dept_id 가 0 이 아닌 경우가 대부분이며,
-     *             0 기준 UPDATE 는 의도치 않은 행을 건드릴 수 있음.
-     *             → 최상위로의 이동/신규 등록은 sort_order 조정 없이 그대로 저장.
-     *
-     * [BUG-2 FIX] 5단계 초과 검증: `newLevel + maxSubDepth > 5` 에서
-     *             `newLevel + maxSubDepth > 5` 는 맞으나
-     *             maxSubDepth 계산 기준을 명확히 함.
-     *             자기 자신(newLevel) + 하위 최대 추가 깊이(maxSubDepth) 가 5를 초과할 때만 차단.
-     *             즉 newLevel=4, maxSubDepth=1 → 5 → 허용 (5단계까지 OK)
-     *                newLevel=4, maxSubDepth=2 → 6 → 차단
+     * 부서 저장/수정 (에러 수정 버전)
      */
-    public String saveDept(DeptDTO dept) {
+    public String saveDept(DeptDTO dept, int actorId) {
+        // 1. 필수 체크
+        if (dept.getDept_name() == null || dept.getDept_name().trim().isEmpty()) return "NO_DEPT_NAME";
 
-        // 1. 부서명 필수
-        if (dept.getDept_name() == null || dept.getDept_name().trim().isEmpty()) {
-            return "NO_DEPT_NAME";
-        }
+        // 2. 변수 사전 선언
+        boolean isUpdate = (dept.getDept_id() != 0);
+        DeptDTO oldDept = isUpdate ? deptDao.getDeptById(dept.getDept_id()) : null;
+        int oldParentId = (oldDept != null) ? oldDept.getParent_dept_id() : -1;
+        int newParentId = dept.getParent_dept_id();
 
-        // 2. 수정 시 기존 데이터 로드
-        DeptDTO oldDept = (dept.getDept_id() != 0)
-            ? deptDao.getDeptById(dept.getDept_id()) : null;
+        // 3. 검증 (자기 참조 및 순환 참조)
+        if (isUpdate && dept.getDept_id() == newParentId) return "SELF_PARENT";
+        if (isUpdate && newParentId != 0 && isCircularReference(dept.getDept_id(), newParentId)) return "CIRCULAR_REFERENCE";
 
-        // 3. 자기 자신을 상위로 지정 방지
-        if (dept.getDept_id() != 0 && dept.getDept_id() == dept.getParent_dept_id()) {
-            return "SELF_PARENT";
-        }
-
-        // 4. 순환 참조 방지
-        if (dept.getDept_id() != 0 && dept.getParent_dept_id() != 0) {
-            if (isCircularReference(dept.getDept_id(), dept.getParent_dept_id())) {
-                return "CIRCULAR_REFERENCE";
-            }
-        }
-
-        // 5. 레벨 계산
+        // 4. 레벨 및 깊이 체크
         int newLevel = 1;
-        if (dept.getParent_dept_id() != 0) {
-            DeptDTO parent = deptDao.getDeptById(dept.getParent_dept_id());
+        if (newParentId != 0) {
+            DeptDTO parent = deptDao.getDeptById(newParentId);
             if (parent != null) newLevel = parent.getDept_level() + 1;
         }
-
-        // 6. 5단계 초과 방지
-        //    [BUG-2 FIX] newLevel + maxSubDepth > 5 이면 차단
-        //    (newLevel=5, maxSubDepth=0 → 5 → 허용 / newLevel=5, maxSubDepth=1 → 6 → 차단)
-        int maxSubDepth = (dept.getDept_id() != 0) ? getMaxSubDepth(dept.getDept_id(), 0) : 0;
-        if (newLevel + maxSubDepth > 5) {
-            return "LEVEL_EXCEEDED";
-        }
-
+        int maxSubDepth = isUpdate ? getMaxSubDepth(dept.getDept_id(), 0) : 0;
+        if (newLevel + maxSubDepth > 5) return "LEVEL_EXCEEDED";
         dept.setDept_level(newLevel);
 
-        // 7. 비활성화 시 멤버/자식 체크
-        if (dept.getDept_id() != 0 && dept.getIs_active() == 0) {
-            if (deptDao.getMemberCount(dept.getDept_id())    > 0) return "HAS_MEMBERS_INACTIVE";
+        // 5. 비활성화 시 제약 체크
+        if (isUpdate && dept.getIs_active() == 0) {
+            if (deptDao.getMemberCount(dept.getDept_id()) > 0) return "HAS_MEMBERS_INACTIVE";
             if (deptDao.getChildDeptCount(dept.getDept_id()) > 0) return "HAS_CHILDREN_INACTIVE";
         }
 
-        int newParentId = dept.getParent_dept_id();
-        int oldParentId = (oldDept != null) ? oldDept.getParent_dept_id() : -1;
-
+        // 6. 순서 조정 (Shift)
         if (oldDept != null && oldParentId == newParentId) {
-            // 같은 부모 내 순서 이동 (최상위 부서 간 이동 포함)
-            int oldOrder = oldDept.getSort_order();
-            int newOrder = dept.getSort_order();
-            if (oldOrder != newOrder) {
-                deptDao.shiftSortOrder(newParentId, oldOrder, newOrder);
+            if (oldDept.getSort_order() != dept.getSort_order()) {
+                deptDao.shiftSortOrder(newParentId, oldDept.getSort_order(), dept.getSort_order());
             }
         } else {
-            // 신규 등록 또는 부모 변경
             deptDao.shiftSortOrder(newParentId, 0, dept.getSort_order());
         }
 
-        // 9. 저장 (기존과 동일)
-        boolean success;
-        if (dept.getDept_id() == 0) {
-            int newDeptId = deptDao.insertDept(dept);
-            success = newDeptId > 0;
-            if (success) {
-                dept.setDept_id(newDeptId);
-            }
-        } else {
+        // 7. DB 저장 및 결과 획득
+        int targetId = 0;
+        boolean success = false;
+        if (isUpdate) {
             success = deptDao.updateDept(dept);
+            targetId = dept.getDept_id();
+        } else {
+            targetId = deptDao.insertDept(dept);
+            success = (targetId > 0);
         }
 
-        // 10. 순서 재정렬 (빈자리 메우기)
-        // [수정] 여기서도 parent_dept_id != 0 제약을 풀어서 최상위 부서들도 이빨을 맞춰줍니다.
+        // 8. 후처리 및 감사 로그 기록
         if (success) {
-            // 현재 부모의 하위 부서들 재정렬
             deptDao.reorderSortOrder(newParentId);
-            
-            // 부모가 바뀌었다면 이전 부모의 하위 부서들도 재정렬
             if (oldDept != null && oldParentId != newParentId) {
                 deptDao.reorderSortOrder(oldParentId);
-            }
-
-            // 11. 하위 부서 레벨 동기화 (기존과 동일)
-            if (oldDept != null && oldDept.getDept_level() != newLevel) {
                 int diff = newLevel - oldDept.getDept_level();
                 updateChildLevelsRecursive(dept.getDept_id(), diff);
             }
+
+            // --- 로그 기록 섹션 수정 ---
+            String logAction = isUpdate ? "UPDATE" : "INSERT";
+            String columnName = "부서정보"; // 통합 수정 시
+            String oldValue = isUpdate ? String.format("명:%s, 부모:%d", oldDept.getDept_name(), oldDept.getParent_dept_id()) : null;
+            String newValue = String.format("명:%s, 부모:%d, 순서:%d", dept.getDept_name(), newParentId, dept.getSort_order());
+
+            // DAO의 수정된 insertAuditLog(actorId, action, table, targetId, column, old, new) 호출
+            deptDao.insertAuditLog(actorId, logAction, "department", targetId, columnName, oldValue, newValue);
         }
 
         return success ? "SUCCESS" : "FAIL";
     }
 
-    // ──────────────────────────────────────────
-    // 내부 유틸
-    // ──────────────────────────────────────────
+    public String deleteDept(int deptId, int actorId) {
+        DeptDTO dept = deptDao.getDeptById(deptId);
+        if (dept == null) return "NOT_FOUND";
+        if (deptDao.hasActiveMembersRecursive(deptId)) return "HAS_MEMBERS";
+        if (deptDao.getChildDeptCount(deptId) > 0) return "HAS_CHILDREN";
+        
+        boolean success = deptDao.deleteDept(deptId);
+        if (success) {
+            deptDao.insertAuditLog(actorId, "DELETE", "department", deptId, "is_active", "1", "0(비활성화)");
+        }
+        return success ? "SUCCESS" : "FAIL";
+    }
 
-    /**
-     * 하위 부서의 최대 추가 깊이 계산
-     * 예: 자식 1단계, 손자 1단계 → maxSubDepth = 2
-     */
     private int getMaxSubDepth(int parentId, int currentDepth) {
         List<DeptDTO> children = deptDao.getChildDepts(parentId);
         int maxDepth = currentDepth;
@@ -201,11 +170,5 @@ public class DeptService {
             }
         }
         return false;
-    }
-
-    public String deleteDept(int deptId) {
-        if (deptDao.hasActiveMembersRecursive(deptId)) return "HAS_MEMBERS";
-        if (deptDao.getChildDeptCount(deptId) > 0)    return "HAS_CHILDREN";
-        return deptDao.deleteDept(deptId) ? "SUCCESS" : "FAIL";
     }
 }
