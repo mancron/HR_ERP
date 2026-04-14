@@ -5,8 +5,7 @@
 .project
 .settings
 .env
-
-rag/venv/
-rag/chroma_db/
-rag/__pycache__/
-rag/*.pyc
+RAG/venv/
+RAG/chroma_db/
+RAG/__pycache__/
+RAG/*.pyc

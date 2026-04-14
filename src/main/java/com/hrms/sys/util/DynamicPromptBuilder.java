@@ -89,7 +89,9 @@ public class DynamicPromptBuilder {
     		        "Do NOT generate any SQL in that case.\n\n" +
     		        "## CRITICAL COLUMN CONSTRAINTS\n" +
     		        "- `role`            : EXISTS ONLY in `account`. Views have NO `role` column.\n" +
-    		        "- `position_name`   : Use for 사장/부장/차장/과장/대리/사원 filtering. NEVER use `emp_type` for these.\n" +
+    		        "- `dept_name`       : EXISTS ONLY in `department` and views. " +
+    		        "NEVER use e.dept_name from `employee`. Use v_employee_full or JOIN department.\n" +
+    		        "- `position_name`   : Use for 사장/부장 filtering...\n" +
     		        "- `emp_type`        : ONLY for 정규직/계약직/파트타임. NEVER for position titles.\n" +
     		        "- `manager_id`      : EXISTS ONLY in `department`. Views have NO `manager_id`.\n" +
     		        "- `age`             : NO such column. Use TIMESTAMPDIFF(YEAR, birth_date, CURDATE()).\n" +
@@ -326,6 +328,9 @@ public class DynamicPromptBuilder {
         // RULES
         RULES.put(Category.EMPLOYEE,
             "## RULES (EMPLOYEE)\n" +
+            "- GENERAL EMPLOYEE QUERY: ALWAYS use v_employee_full. NEVER SELECT dept_name or position_name FROM employee directly.\n" +
+            "- NAME SEARCH: Use emp_name LIKE '%검색어%' ONLY. NEVER add gender filter for name searches.\n" +
+            "- 성씨/이름 검색 시 gender 조건 절대 추가 금지.\n" +
             "- Position levels: 1=사원, 2=대리, 3=과장, 4=차장, 5=부장, 6=사장\n" +
             "- Position filter: WHERE position_name = '부장' -> use v_employee_full or JOIN job_position\n" +
             "- Emp type filter: WHERE emp_type = '정규직'\n" +
@@ -611,6 +616,60 @@ public class DynamicPromptBuilder {
             sb.append("## EXAMPLES\n");
             for (Example ex : top) sb.append(ex.qa).append('\n');
         }
+        sb.append("## QUESTION\n").append(question).append('\n');
+        return sb.toString();
+    }
+    
+    
+
+
+    /**
+     * RAG 서버가 결정한 카테고리 + 예제로 프롬프트 조립 (PromptAssembler 전용).
+     *
+     * @param categoryNames RAG 서버가 반환한 카테고리 문자열 목록 (예: ["ATTENDANCE","EMPLOYEE"])
+     * @param fewShotExamples RAG 서버가 반환한 예제 목록 (null이면 예제 블록 생략)
+     * @param question      사용자 원본 질문
+     * @return 완성된 프롬프트 문자열
+     */
+    public static String buildByCategories(
+            List<String> categoryNames,
+            List<com.hrms.sys.dto.RagContextDTO.FewShotExample> fewShotExamples,
+            String question) {
+
+        // 문자열 → Category enum 변환 (매칭 실패 시 무시)
+        List<Category> matched = new ArrayList<>();
+        for (String name : categoryNames) {
+            try {
+                matched.add(Category.valueOf(name.trim().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                System.err.println("[DynamicPromptBuilder] 알 수 없는 카테고리: " + name);
+            }
+        }
+        if (matched.isEmpty()) matched.add(Category.EMPLOYEE);
+
+        // 기존 build() 로직과 동일한 조립 방식
+        StringBuilder sb = new StringBuilder(4096);
+        sb.append(HEADER);
+        sb.append("## DDL\n");
+        sb.append(SHARED_DDL);
+
+        Set<Category> seen = new LinkedHashSet<>();
+        for (Category cat : matched) {
+            if (seen.add(cat) && DOMAIN_DDL.containsKey(cat)) sb.append(DOMAIN_DDL.get(cat));
+        }
+        for (Category cat : matched) {
+            if (RULES.containsKey(cat)) sb.append(RULES.get(cat));
+        }
+
+        // RAG 예제 삽입 (기존 EXAMPLE_POOL 대신 RAG가 선택한 예제 사용)
+        if (fewShotExamples != null && !fewShotExamples.isEmpty()) {
+            sb.append("## EXAMPLES\n");
+            for (com.hrms.sys.dto.RagContextDTO.FewShotExample ex : fewShotExamples) {
+                sb.append("Q: ").append(ex.getQuestion()).append("\n");
+                sb.append("A: ").append(ex.getSql()).append("\n\n");
+            }
+        }
+
         sb.append("## QUESTION\n").append(question).append('\n');
         return sb.toString();
     }
