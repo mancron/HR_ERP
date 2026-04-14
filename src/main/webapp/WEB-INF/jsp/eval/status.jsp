@@ -66,7 +66,21 @@
         <div class="card b-card"><span>B 등급</span><strong>${summary.B != null ? summary.B : 0}</strong></div>
         <div class="card c-card"><span>C 등급</span><strong>${summary.C != null ? summary.C : 0}</strong></div>
         <div class="card d-card"><span>D 등급</span><strong>${summary.D != null ? summary.D : 0}</strong></div>
-        <div class="card pending-card"><span>미완료</span><strong>${summary['미완료'] != null ? summary['미완료'] : 0}</strong></div>
+        
+        <%-- 
+           [최종 로직 결정]
+           1. '전체 유형'일 때: 여러 평가 유형이 섞여있으므로, '사람 수'가 아닌 '미완료 문서 수'를 보여줍니다.
+           2. 특정 유형 선택 시: 해당 평가에 대한 '미완료자 수(사람 수)' 통계를 보여줍니다.
+        --%>
+        <div class="card pending-card">
+            <span>
+                <c:choose>
+                    <c:when test="${selectedType == '전체'}">미완료 건수</c:when>
+                    <c:otherwise>미완료자 수</c:otherwise>
+                </c:choose>
+            </span>
+            <strong>${summary['미완료'] != null ? summary['미완료'] : 0}</strong>
+        </div>
     </div>
 
     <%-- ── 데이터 테이블 ── --%>
@@ -89,7 +103,6 @@
                             <c:set var="isOwner"  value="${item.evaluatorId == loginEmpId}"/>
                             <c:set var="isComplete" value="${item.status == '최종확정'}"/>
 
-                            <%-- 데이터 노출 보안 로직 --%>
                             <c:set var="shouldShow" value="${isComplete || isOwner || isAdmin}" />
                             <c:if test="${selectedType != '전체' && isTarget && !isAdmin && !isOwner}">
                                 <c:set var="shouldShow" value="false" />
@@ -140,30 +153,21 @@
                                         <c:if test="${empty item.confirmedAt}">—</c:if>
                                     </td>
                                     
-                                    <%-- 버튼 영역: 권한별 정밀 제어 --%>
                                     <td>
                                         <c:choose>
-                                            <%-- 상태 1: 이미 최종 확정된 건 --%>
                                             <c:when test="${isComplete}">
                                                 <c:if test="${(isAdmin || isOwner) && !(!isAdmin && isTarget)}">
                                                     <button class="btn-view" onclick="openModal(${item.evalId})">조회</button>
                                                 </c:if>
                                             </c:when>
-                                            
-                                            <%-- 상태 2: 미확정(작성중/반려) 건 --%>
                                             <c:otherwise>
                                                 <c:choose>
-                                                    <%-- 1순위: 내가 작성자면 '수정' --%>
                                                     <c:when test="${isOwner}">
                                                         <button class="btn-edit" onclick="location.href='${pageContext.request.contextPath}/eval/write?id=${item.evalId}'">수정</button>
                                                     </c:when>
-                                                    
-                                                    <%-- 2순위: 사장님/최종승인자면 무조건 '조회' (이 조건이 HR보다 앞에 있어야 함) --%>
                                                     <c:when test="${isReadOnlyAdmin}">
                                                         <button class="btn-view" onclick="openModal(${item.evalId})">조회</button>
                                                     </c:when>
-
-                                                    <%-- 3순위: 인사팀(HR)이면 '확정' (사장님은 위에서 걸러지므로 안전) --%>
                                                     <c:when test="${isHr}">
                                                         <button class="btn-edit" onclick="openModal(${item.evalId})">확정</button>
                                                     </c:when>
@@ -198,7 +202,8 @@ function closeConfirmModal() {
     document.body.style.overflow = '';
 }
 function resetFilter() {
-    location.href = ctx + '/eval/status?year=' + new Date().getFullYear();
+    // 초기화 시 현재 연도의 전체 데이터로 이동
+    location.href = ctx + '/eval/status?year=' + new Date().getFullYear() + '&period=전체&type=전체';
 }
 document.getElementById('confirmOverlay').addEventListener('click', e => { if (e.target.id === 'confirmOverlay') closeConfirmModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeConfirmModal(); });
