@@ -238,6 +238,7 @@ public class TextToSqlService extends HttpServlet {
                 rows.add(row);
             }
             result.setRows(rows);
+            result.setRowCount(rows.size());
 
         } finally {
             if (rs   != null) try { rs.close();   } catch (SQLException ignored) {}

@@ -326,5 +326,21 @@
     "question": "재직 중인 정규직 직원 목록",
     "sql": "SELECT emp_id, emp_name, dept_name, position_name, emp_type, base_salary, hire_date, birth_date, gender, email, phone\n   FROM v_employee_full\n   WHERE status = '재직' AND emp_type = '정규직';",
     "tags": ["재직", "정규직", "직원", "목록", "전체"]
+  },
+  {
+    "id": "emp_011",
+    "category": ["EMPLOYEE"],
+    "is_cross_domain": false,
+    "question": "서울 사는 재직 직원 목록",
+    "sql": "SELECT v.emp_name, v.dept_name, v.position_name, v.email, v.phone\n   FROM v_employee_full v\n   JOIN employee e ON v.emp_id = e.emp_id\n   WHERE e.address LIKE '%서울%' AND v.status = '재직';",
+    "tags": ["서울", "주소", "거주", "사는", "지역", "address"]
+  },
+  {
+    "id": "emp_012",
+    "category": ["EMPLOYEE"],
+    "is_cross_domain": false,
+    "question": "경기도 사는 재직 직원 목록",
+    "sql": "SELECT v.emp_name, v.dept_name, v.position_name, v.email, v.phone\n   FROM v_employee_full v\n   JOIN employee e ON v.emp_id = e.emp_id\n   WHERE e.address LIKE '%경기%' AND v.status = '재직';",
+    "tags": ["경기", "경기도", "주소", "거주", "사는", "지역", "address"]
   }
 ]

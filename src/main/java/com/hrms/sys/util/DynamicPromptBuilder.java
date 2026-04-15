@@ -331,6 +331,9 @@ public class DynamicPromptBuilder {
             "- GENERAL EMPLOYEE QUERY: ALWAYS use v_employee_full. NEVER SELECT dept_name or position_name FROM employee directly.\n" +
             "- NAME SEARCH: Use emp_name LIKE '%검색어%' ONLY. NEVER add gender filter for name searches.\n" +
             "- 성씨/이름 검색 시 gender 조건 절대 추가 금지.\n" +
+            "- ADDRESS SEARCH: v_employee_full v JOIN employee e ON v.emp_id = e.emp_id 사용.\n" +
+            "  SELECT 시 반드시 v.emp_name, v.dept_name 등 접두사 명시. 접두사 없으면 ambiguous 에러 발생.\n" +
+            "- 지역 검색: WHERE e.address LIKE '%지역명%' 패턴 사용.\n" +
             "- Position levels: 1=사원, 2=대리, 3=과장, 4=차장, 5=부장, 6=사장\n" +
             "- Position filter: WHERE position_name = '부장' -> use v_employee_full or JOIN job_position\n" +
             "- Emp type filter: WHERE emp_type = '정규직'\n" +
