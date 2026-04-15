@@ -210,21 +210,28 @@
 								</c:otherwise>
 							</c:choose>
 						</div>
+						<%-- 1. 생성일 출력 부분 수정 --%>
 						<c:if test="${!isNewMode && not empty selectedDept.created_at}">
 							<div class="dept-form-group">
-								<label>생성일</label> <input type="text"
-									value="${selectedDept.created_at}" readonly>
+								<label>생성일</label>
+								<%-- 시간을 무시하고 날짜만 나오게 하려면 pattern을 yyyy-MM-dd로 설정 --%>
+								<fmt:parseDate value="${selectedDept.created_at}"
+									pattern="yyyy-MM-dd" var="parsedCreatedAt" />
+								<input type="text"
+									value="<fmt:formatDate value='${parsedCreatedAt}' pattern='yyyy-MM-dd' />"
+									readonly>
 							</div>
 						</c:if>
+
+						<%-- 2. 폐지일 출력 부분 수정 --%>
 						<c:if test="${!isNewMode && not empty selectedDept.closed_at}">
 							<div class="dept-form-group">
 								<label>폐지일</label>
 								<fmt:parseDate value="${selectedDept.closed_at}"
 									pattern="yyyy-MM-dd" var="parsedClosedAt" />
-								<fmt:formatDate value="${parsedClosedAt}"
-									pattern="yyyy-MM-dd 00:00:00" var="formattedClosedAt" />
-								<input type="text" value="${formattedClosedAt}" readonly
-									class="closed-date-input">
+								<input type="text"
+									value="<fmt:formatDate value='${parsedClosedAt}' pattern='yyyy-MM-dd' />"
+									readonly class="closed-date-input">
 							</div>
 						</c:if>
 					</c:if>

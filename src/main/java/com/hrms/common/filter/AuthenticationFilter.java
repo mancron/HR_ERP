@@ -38,6 +38,7 @@ public class AuthenticationFilter implements Filter {
         "/emp/leave",
         "/emp/resign",
         "/emp/update",
+        "/emp/approval",
         "/sys/",
         "/org/"
     ));
@@ -118,10 +119,19 @@ public class AuthenticationFilter implements Filter {
         if ("관리자".equals(role)) {
             boolean allowed = ADMIN_ALLOWED_PREFIXES.stream()
                                 .anyMatch(p -> path.startsWith(p));
+            if (path.startsWith("/att/annual/grant")) {
+                allowed = false;
+            }
+            
+            // 관리자는 sqlQuery 접근 차단
+            if (path.startsWith("/sys/sqlQuery")) {
+                allowed = false;
+            }
             
             if (!allowed && path.startsWith("/org/") && "GET".equalsIgnoreCase(method)) {
                 allowed = true;
             }
+
             
             if (!allowed && isManager) {
                 allowed = ADMIN_MANAGER_EXTRA_PREFIXES.stream()
@@ -187,23 +197,16 @@ public class AuthenticationFilter implements Filter {
             }
         }
 
-        // emp/reg 차단 로직 아래에 삽입)
-        if (path.startsWith("/emp/approval")) {
-            if (!"HR담당자".equals(role) && !isManager && !"최종승인자".equals(role)) {
-                sendForbidden(req, res);
-                return;
-            }
-        }
+//        // emp/reg 차단 로직 아래에 삽입)
+//        if (path.startsWith("/emp/approval")) {
+//            if (!"HR담당자".equals(role) && !isManager && !"최종승인자".equals(role)) {
+//                sendForbidden(req, res);
+//                return;
+//            }
+//        }
 
         if (path.startsWith("/att/leave/approve")) {
             if (!"HR담당자".equals(role) && !isManager && !"최종승인자".equals(role)) {
-                sendForbidden(req, res);
-                return;
-            }
-        }
-        
-        if (path.startsWith("/emp/history")) {
-            if (!"HR담당자".equals(role) && !"최종승인자".equals(role)) {
                 sendForbidden(req, res);
                 return;
             }
