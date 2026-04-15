@@ -123,6 +123,11 @@ public class AuthenticationFilter implements Filter {
                 allowed = false;
             }
             
+            // 관리자는 sqlQuery 접근 차단
+            if (path.startsWith("/sys/sqlQuery")) {
+                allowed = false;
+            }
+            
             if (!allowed && path.startsWith("/org/") && "GET".equalsIgnoreCase(method)) {
                 allowed = true;
             }

@@ -149,7 +149,7 @@
   </c:if>
 
   <%-- ===================== 데이터 조회: HR담당자 / 관리자 / CEO ===================== --%>
-  <c:if test="${isHR or isSysAdmin or isCEO}">
+  <c:if test="${isHR or isCEO}">
     <div class="nav-group">
       <div class="nav-group-header" onclick="toggleAccordion(this)">데이터 조회</div>
       <div class="nav-group-content">
