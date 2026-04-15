@@ -204,4 +204,20 @@ public class NotificationUtil {
 	                  (rejectReason != null && !rejectReason.isEmpty() ? " 사유: " + rejectReason : "");
 	     send(requesterEmpId, "APPROVAL_REJECTED", "leave_of_absence_request", requestId, msg);
 	 }
+	 
+	 /** 인사발령 즉시처리 → 발령 대상자에게 알림 */
+	 public static void sendTransferApplied(int empId, String toDeptName,
+	         String toPositionName, String toRole, String changeDate) {
+	     String msg = changeDate + " 인사발령이 처리되었습니다. " +
+	                  "(" + toDeptName + " / " + toPositionName + " / " + toRole + ")";
+	     send(empId, "TRANSFER_APPLIED", "personnel_history", null, msg);
+	 }
+
+	 /** 인사발령 예정 → 발령 대상자에게 알림 */
+	 public static void sendTransferScheduled(int empId, String toDeptName,
+	         String toPositionName, String toRole, String changeDate) {
+	     String msg = changeDate + " 인사발령이 예정되어 있습니다. " +
+	                  "(" + toDeptName + " / " + toPositionName + " / " + toRole + ")";
+	     send(empId, "TRANSFER_SCHEDULED", "personnel_history", null, msg);
+	 }
 }
