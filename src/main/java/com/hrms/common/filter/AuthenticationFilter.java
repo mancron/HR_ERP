@@ -26,6 +26,8 @@ public class AuthenticationFilter implements Filter {
         "/att/record",
         "/att/leave/req",
         "/att/overtime/req",
+        "/att/overtime/detail",
+        "/att/overtime/cancel",
         "/att/annual",
         "/sal/slip",
         "/eval/write",
@@ -39,6 +41,8 @@ public class AuthenticationFilter implements Filter {
         "/emp/resign",
         "/emp/update",
         "/emp/approval",
+        "/att/leave/detail",
+        "/att/leave/cancel",
         "/sys/",
         "/org/"
     ));
