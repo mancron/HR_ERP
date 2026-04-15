@@ -37,6 +37,8 @@
 		<input type="hidden" name="emp_id" value="${empDetail.emp_id}">
 		<input type="hidden" name="prev_dept_id" value="${empDetail.dept_id}">
 		<input type="hidden" name="prev_position_id" value="${empDetail.position_id}">
+		<input type="hidden" id="target_dept_name" name="target_dept_name" value="${empDetail.dept_name}">
+		<input type="hidden" id="target_position_name" name="target_position_name" value="${empDetail.position_name}">
 
 		<%-- 발령 정보 --%>
 		<h3>발령 정보</h3>
@@ -54,7 +56,7 @@
 				<td><input type="text" value="${empDetail.dept_name}" readonly
 					class="readonly-input"></td>
 				<th>발령 부서</th>
-				<td><select name="target_dept">
+				<td><select name="target_dept" onchange="document.getElementById('target_dept_name').value = this.options[this.selectedIndex].text">
 						<c:forEach var="dept" items="${deptList}">
 							<option value="${dept.dept_id}"
 								<c:if test="${dept.dept_id == empDetail.dept_id}">selected</c:if>>
@@ -67,7 +69,7 @@
 				<td><input type="text" value="${empDetail.position_name}"
 					readonly class="readonly-input"></td>
 				<th>변경 직급</th>
-				<td><select name="target_position">
+				<td><select name="target_position" onchange="document.getElementById('target_position_name').value = this.options[this.selectedIndex].text">
 						<c:forEach var="pos" items="${positionList}">
 							<option value="${pos.position_id}"
 								<c:if test="${pos.position_id == empDetail.position_id}">selected</c:if>>

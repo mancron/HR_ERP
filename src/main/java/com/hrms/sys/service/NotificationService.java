@@ -110,6 +110,8 @@ public class NotificationService {
             case "APPROVAL_HR_APPROVED":   return "badge-blue";
             case "APPROVAL_FINAL":         return "badge-green";
             case "APPROVAL_REJECTED":      return "badge-red";
+            case "TRANSFER_APPLIED":   return "badge-green";
+            case "TRANSFER_SCHEDULED": return "badge-blue";
             default:                  return "badge-gray";
         }
     }

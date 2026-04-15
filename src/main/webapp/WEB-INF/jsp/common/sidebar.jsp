@@ -29,7 +29,9 @@
     <div class="nav-group-header" onclick="toggleAccordion(this)">조직 관리</div>
     <div class="nav-group-content">
       <a href="${ctx}/org/dept"     class="nav-item">부서 관리</a>
-      <a href="${ctx}/org/position" class="nav-item">직급 관리</a>
+      <c:if test="${isHR or isCEO}">
+      	<a href="${ctx}/org/position" class="nav-item">직급 관리</a>
+      </c:if>
     </div>
   </div>
 

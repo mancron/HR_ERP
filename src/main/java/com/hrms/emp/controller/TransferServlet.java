@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.hrms.common.util.NotificationUtil;
 import com.hrms.emp.dto.EmpDTO;
 import com.hrms.emp.dto.HistoryDTO;
 import com.hrms.emp.service.EmpService;
@@ -93,13 +94,27 @@ public class TransferServlet extends HttpServlet {
         boolean isSuccess = transferService.executeTransfer(empNo, dto, targetRole);
 
         if(isSuccess) {
-            // 성공 시 해당 사원의 상세 페이지로 이동
+        	// 발령 대상자에게 알림 발송
+            String toDeptName = request.getParameter("target_dept_name");     // JSP hidden 필드 필요
+            String toPositionName = request.getParameter("target_position_name"); // JSP hidden 필드 필요
+            String changeDate = request.getParameter("transfer_date");
+            boolean isToday = !LocalDate.parse(changeDate).isAfter(LocalDate.now());
+
+            if (isToday) {
+                NotificationUtil.sendTransferApplied(dto.getEmp_id(),
+                    toDeptName, toPositionName, targetRole, changeDate);
+            } else {
+                NotificationUtil.sendTransferScheduled(dto.getEmp_id(),
+                    toDeptName, toPositionName, targetRole, changeDate);
+            }
+        	
+        	// 성공 시 해당 사원의 상세 페이지로 이동
             //response.sendRedirect(request.getContextPath() + "/emp/detail?emp_no=" + empNo); //직원 상세 창으로 돌아가기
         	//발령 처리를 하자마자 창꺼지고 새로고침
             response.setContentType("text/html; charset=UTF-8");
             java.io.PrintWriter out = response.getWriter();
             out.println("<script>");
-            out.println("window.top.location.reload();"); // 부모 창(목록) 새로고침
+            out.println("window.top.location.reload();");
             out.println("</script>");
             out.flush();
         } else {
