@@ -7,7 +7,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HR ERP - 메인 대시보드</title>
+  <title>ERP-HRMS - 메인 대시보드</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>

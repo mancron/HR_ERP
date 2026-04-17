@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HR ERP - 휴직·퇴직 신청 이력</title>
+<title>ERP-HRMS - 휴직·퇴직 신청 이력</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/style.css">
 <link rel="stylesheet"

@@ -5,7 +5,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>HR ERP - 급여 현황</title>
+    <title>ERP-HRMS - 급여 현황</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sal/salary_status.css">
 </head>

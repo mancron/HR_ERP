@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HR ERP - 휴가 승인</title>
+<title>ERP-HRMS - 휴가 승인</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/leaveApprove.css">
 <link rel="stylesheet"

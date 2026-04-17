@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HR ERP - 출퇴근</title>
+<title>ERP-HRMS - 출퇴근</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/attendance.css">
 	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">

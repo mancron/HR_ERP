@@ -5,7 +5,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>HR ERP - 로그인</title>
+<title>ERP-HRMS - 로그인</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/login.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <script>
@@ -23,7 +23,7 @@
     <div class="login-card">
         <div class="logo-area">
             <i class="fa-solid fa-hotel"></i>
-            <h2>HR ERP</h2>
+            <h2>ERP-HRMS</h2>
             <p>인사관리 시스템</p>
         </div>
 

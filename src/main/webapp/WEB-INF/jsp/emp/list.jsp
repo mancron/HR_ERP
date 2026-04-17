@@ -5,7 +5,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>HR ERP - 직원 목록</title>
+	<title>ERP-HRMS - 직원 목록</title>
 	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/emp/empList.css">
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

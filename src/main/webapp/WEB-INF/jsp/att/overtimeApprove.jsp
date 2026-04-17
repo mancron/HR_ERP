@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HR ERP - 초과근무 승인</title>
+<title>ERP-HRMS - 초과근무 승인</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/overtimeApprove.css">
 <link rel="stylesheet"

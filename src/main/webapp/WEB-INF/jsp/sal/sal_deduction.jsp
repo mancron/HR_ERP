@@ -5,7 +5,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>HR ERP - 공제율 관리</title>
+    <title>ERP-HRMS - 공제율 관리</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sal/deduction.css">
 </head>

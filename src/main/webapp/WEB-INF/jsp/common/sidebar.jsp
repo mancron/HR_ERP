@@ -12,7 +12,7 @@
 <c:set var="isSysAdmin" value="${role == '관리자'}" />
 
 <nav id="sidebar">
-  <div class="nav-logo">🏢 HR ERP</div>
+  <div class="nav-logo">ERP-HRMS</div>
 
   <%-- ===================== 공통·인증 (전체 공개) ===================== --%>
   <div class="nav-group open">

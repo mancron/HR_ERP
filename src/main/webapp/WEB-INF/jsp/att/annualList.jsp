@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HR ERP - 연차 현황</title>
+<title>ERP-HRMS - 연차 현황</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/att/annual.css">
 <link rel="stylesheet"

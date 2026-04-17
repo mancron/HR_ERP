@@ -5,7 +5,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>HR ERP - 대시보드 (CEO)</title>
+    <title>ERP-HRMS - 대시보드 (CEO)</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/main/dashboard.css">
 </head>
