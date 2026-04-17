@@ -524,8 +524,10 @@ public class EvaluationDAO {
 			 */
 			int totalActive = 0;
 			String sqlTotal = "SELECT COUNT(*) FROM employee e "
-					+ "JOIN job_position p ON e.position_id = p.position_id "
-					+ "WHERE e.status='재직' AND p.position_level < (SELECT MAX(position_level) FROM job_position)";
+	                + "JOIN job_position p ON e.position_id = p.position_id "
+	                + "WHERE e.status = '재직' "           // 1. 재직자만
+	                + "AND e.emp_type = '정규직' "         // 2. 정규직만
+	                + "AND e.emp_no != 'EMP001'";        // 3. 사장님(EMP001)만 딱 제외
 			try (Connection conn = DatabaseConnection.getConnection();
 					PreparedStatement pstmt = conn.prepareStatement(sqlTotal);
 					ResultSet rs = pstmt.executeQuery()) {
